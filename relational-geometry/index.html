@@ -54,7 +54,7 @@ body { background: var(--ground); color: var(--fg); font-family: var(--f-body); 
 .dial { display: flex; gap: 12px; align-items: center; }
 .dial svg { flex: none; }
 .word { font-family: var(--f-mono); font-size: 11px; color: var(--violet); word-break: break-all; min-height: 1.4em; }
-.levels { display: grid; grid-template-columns: 12px 1fr auto 22px; gap: 4px 8px; align-items: center; font-family: var(--f-mono); font-size: 10.5px; font-variant-numeric: tabular-nums; margin-top: 10px; }
+.levels { display: grid; grid-template-columns: 12px 1fr auto auto; gap: 4px 8px; align-items: center; font-family: var(--f-mono); font-size: 10.5px; font-variant-numeric: tabular-nums; margin-top: 10px; }
 .levels i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 .levels .here { color: var(--fg); }
 .levels span { color: var(--dim); }
@@ -134,7 +134,8 @@ button kbd { font: inherit; color: var(--dim); margin-left: 4px; font-size: 10px
       <dt>pace</dt><dd id="r-speed">0.0 bodies/s</dd>
       <dt>perceived change</dt><dd id="r-perc">0.00</dd>
       <dt>tunnel you are in</dt><dd id="r-in">–</dd>
-      <dt>riding</dt><dd id="r-ride">none</dd>
+      <dt>gaze fixed on</dt><dd id="r-ride">nothing</dd>
+      <dt>to the nexus</dt><dd id="r-nexus">–</dd>
     </dl>
   </section>
   <section class="sec">
@@ -149,7 +150,7 @@ button kbd { font: inherit; color: var(--dim); margin-left: 4px; font-size: 10px
       </dl>
     </div>
     <div class="levels" id="levels"></div>
-    <p class="cap">Each scale of tunnel drifts at its own rate and in its own direction. The relative drift between scales is the motion you perceive.</p>
+    <p class="cap">Every scale orbits the nexus. The larger a scale, the slower it turns, and neighbouring scales turn in opposite directions. Scales you are looking at slow to a quarter speed. Small scales out of view speed up as much as 2.6 times.</p>
   </section>
   <section class="sec">
     <h2>Recurrence <small>PRESENT vs MEMORY</small></h2>
@@ -176,17 +177,18 @@ button kbd { font: inherit; color: var(--dim); margin-left: 4px; font-size: 10px
 <div class="intro" id="intro">
   <h2>You are inside the sponge.</h2>
   <p>Every opening is the mouth of a tunnel, and every tunnel wall is riddled with smaller tunnels. Space here is hyperbolic: your size follows the room around you. Approach a wall and you shrink until its pores become passages. Go through one and you are a scale deeper. After five scales the cycle turns over and the pattern repeats in a new place.</p>
-  <p>Each scale drifts at its own rate and in its own direction. <b style="color:var(--violet);font-weight:500">Evert</b> to pass through your own centre into memory, where the motion stops. Inside, the present shows only where it no longer matches what you remember. Come back out and the change you missed rushes in.</p>
+  <p>Everything orbits the <b style="color:#f6e7c4;font-weight:500">nexus</b>, a large ring-shaped hole that holds still. The larger a hole, the more stable it is. Small holes drift fast, and the smallest flicker in and out of existence. Whatever you look at slows down, and what you look away from speeds up.</p>
+  <p><b style="color:var(--violet);font-weight:500">Evert</b> to pass through your own centre into memory, where the motion stops. Inside, the present shows only where it no longer matches what you remember. Come back out and the change you missed rushes in.</p>
   <ul class="keys">
     <li><kbd>drag</kbd><span>look (the frame travels with you)</span></li>
     <li><kbd>W A S D · Space C</kbd><span>move · Shift for speed · wheel sets pace</span></li>
     <li><kbd>Q / E</kbd><span>roll, which also widens or narrows the pores</span></li>
     <li><kbd>1 2 3 4</kbd><span>120° turns about the four tetrahedral axes</span></li>
     <li><kbd>X</kbd><span>evert: from motion into still memory, and back</span></li>
-    <li><kbd>F</kbd><span>ride the drift of the tunnel you are in</span></li>
+    <li><kbd>F</kbd><span>fix your gaze on the hole under the crosshair and move with it</span></li>
     <li><kbd>M · H</kbd><span>memory threads · this card</span></li>
   </ul>
-  <p class="touch-hint">Drag to look. Hold ▲ go to move. Use the buttons below for turns, roll, eversion and riding the drift.</p>
+  <p class="touch-hint">Drag to look. Hold ▲ go to move. Use the buttons below for turns, roll, eversion and fixing your gaze.</p>
   <div class="row"><span class="legend">Based on <i>Relational Geometry: Holes, Memory and the Internal Observer</i>.</span><button id="enter">Enter the sponge</button></div>
 </div>
 
@@ -196,7 +198,7 @@ button kbd { font: inherit; color: var(--dim); margin-left: 4px; font-size: 10px
     <button data-turn="0" title="120° about axis 1">g₁<kbd>1</kbd></button><button data-turn="1" title="120° about axis 2">g₂<kbd>2</kbd></button><button data-turn="2" title="120° about axis 3">g₃<kbd>3</kbd></button><button data-turn="3" title="120° about axis 4">g₄<kbd>4</kbd></button>
   </div>
   <div class="grp"><button id="roll-l" title="Roll left: pores narrow">⟲<kbd>Q</kbd></button><button id="roll-r" title="Roll right: pores widen">⟳<kbd>E</kbd></button></div>
-  <div class="grp"><button id="b-evert" aria-pressed="false">evert<kbd>X</kbd></button><button id="b-ride" aria-pressed="false">ride drift<kbd>F</kbd></button><button id="b-threads" aria-pressed="true">threads<kbd>M</kbd></button></div>
+  <div class="grp"><button id="b-evert" aria-pressed="false">evert<kbd>X</kbd></button><button id="b-ride" aria-pressed="false">fix gaze<kbd>F</kbd></button><button id="b-threads" aria-pressed="true">threads<kbd>M</kbd></button></div>
   <div class="grp"><button id="b-help">help<kbd>H</kbd></button><button id="b-panel" class="panel-toggle" aria-controls="panel" aria-expanded="false">instruments</button></div>
 </nav>
 
@@ -214,9 +216,6 @@ const S_LO = 0.055, S_HI = S_LO * LAM;
 const CYCLE = 5;
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const PAL = ['#e8b25a', '#5cc8c0', '#e0866a', '#8f9ae8', '#c9c46a'];  // by absolute scale, mod 5
-const DIRS = [[0.8, 0.5, 0.3], [-0.4, 0.9, -0.2], [0.2, -0.5, 0.85], [-0.9, -0.2, 0.4], [0.5, 0.3, -0.8]]
-  .map(v => { const l = Math.hypot(...v); return v.map(x => x / l); });
-const RATES = [0.10, 0.065, 0.14, 0.045, 0.085];
 
 const lerp = (a, b, t) => a + (b - a) * t;
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
@@ -234,29 +233,47 @@ const ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 const vec3s = (n) => Array.from({ length: n }, () => new THREE.Vector3());
 const U = {
   uQ: { value: new THREE.Vector3() }, uRot: { value: new THREE.Matrix3() },
-  uPh: { value: vec3s(NL) }, uPhP: { value: vec3s(NL) }, uT: { value: new Array(NL).fill(1) }, uF: { value: FL.slice() },
-  uCol: { value: Array.from({ length: NL }, () => new THREE.Color()) },
+  uM: { value: Array.from({ length: NL }, () => new THREE.Matrix3()) }, uTau: { value: vec3s(NL) },
+  uMP: { value: Array.from({ length: NL }, () => new THREE.Matrix3()) }, uTauP: { value: vec3s(NL) },
+  uT: { value: new Array(NL).fill(1) }, uF: { value: FL.slice() }, uFl: { value: new Array(NL).fill(0) },
+  uFT: { value: 0 }, uFTP: { value: 0 },
+  uNC: { value: vec3s(4) }, uNA: { value: vec3s(4) }, uNR: { value: Array.from({ length: 4 }, () => new THREE.Vector2()) },
   uS: { value: 0.1 }, uMem: { value: 0 }, uWarp: { value: 0 }, uRes: { value: new THREE.Vector2(1, 1) }, uTime: { value: 0 },
 };
 const FRAG = `
 precision highp float;
 uniform vec3 uQ; uniform mat3 uRot;
-uniform vec3 uPh[6]; uniform vec3 uPhP[6]; uniform float uT[6]; uniform float uF[6]; uniform vec3 uCol[6];
+uniform mat3 uM[6]; uniform vec3 uTau[6]; uniform mat3 uMP[6]; uniform vec3 uTauP[6];
+uniform float uT[6]; uniform float uF[6]; uniform float uFl[6]; uniform float uFT, uFTP;
+uniform vec3 uNC[4]; uniform vec3 uNA[4]; uniform vec2 uNR[4];
 uniform float uS, uMem, uWarp, uTime; uniform vec2 uRes;
 float gyr(vec3 p){ return dot(sin(p), cos(p.yzx)); }
+// a scale's tunnels, carried round the nexus by its own rotation; the smallest flicker open and shut
+float lvH(vec3 x, int i, float ft){
+  float th = uT[i];
+  if (uFl[i] > 0.001) th += uFl[i] * gyr(x * 0.41 + vec3(0.9, 0.7, 1.1) * ft);
+  return (gyr(x) - th) / (uF[i] * 2.2);
+}
+// the nexus: a ring-shaped hole that holds still while everything else orbits it
+float nexH(vec3 q, int j){
+  vec3 p = q - uNC[j]; float ax = dot(p, uNA[j]);
+  float rad = sqrt(max(dot(p, p) - ax * ax, 0.0));
+  return uNR[j].y - length(vec2(rad - uNR[j].x, ax));
+}
 // empty space is the union of every scale's tunnels; solid is what no scale has hollowed out
 float map(vec3 q, out float lvl){
   float best = -1e9; lvl = 0.0;
   for (int i = 0; i < 6; i++) {
-    float f = uF[i];
-    float h = (gyr(q * f + uPh[i]) - uT[i]) / (f * 2.2);
+    float h = lvH(uF[i] * (uM[i] * q) + uTau[i], i, uFT);
     if (h > best) { best = h; lvl = float(i); }
   }
+  for (int j = 0; j < 4; j++) if (uNR[j].y > 0.0) { float h = nexH(q, j); if (h > best) { best = h; lvl = 6.0; } }
   return best;
 }
 float mapP(vec3 q){
   float best = -1e9;
-  for (int i = 0; i < 6; i++) { float f = uF[i]; best = max(best, (gyr(q * f + uPhP[i]) - uT[i]) / (f * 2.2)); }
+  for (int i = 0; i < 6; i++) best = max(best, lvH(uF[i] * (uMP[i] * q) + uTauP[i], i, uFTP));
+  for (int j = 0; j < 4; j++) if (uNR[j].y > 0.0) best = max(best, nexH(q, j));
   return best;
 }
 void main(){
@@ -286,6 +303,7 @@ void main(){
   col = mix(col, farC, smoothstep(2.7, 3.55, a));
   col = mix(col, voidC, smoothstep(3.5, log(1.0 + maxT / uS), a));
   float x = smoothstep(1.6, log(1.0 + maxT / uS), a);
+  if (lvl > 5.5 && t < maxT) col = mix(col, vec3(1.0, 0.94, 0.80), 0.32 * (1.0 - x));  // the nexus reads pale gold up close
   // in memory the field is still; only where the present no longer agrees does amber break through
   if (uMem > 0.01 && t < maxT) {
     float dp = mapP(uQ + rd * t);
@@ -311,67 +329,162 @@ addEventListener('resize', resize);
 
 // ---------- the field, mirrored in JS for the observer's own measurements ----------
 function gyr(x, y, z) { return Math.sin(x) * Math.cos(y) + Math.sin(y) * Math.cos(z) + Math.sin(z) * Math.cos(x); }
-function levelOffset(N) { return [mod(N * 1.618 * 3.1, TAU), mod(N * 2.414 * 1.7, TAU), mod(N * 0.577 * 5.3, TAU)]; }
-function phaseOf(N, t, out) {
-  const k = mod(N, CYCLE), d = DIRS[k], r = RATES[k], o = levelOffset(N);
-  return out.set(mod(o[0] + d[0] * r * t, TAU), mod(o[1] + d[1] * r * t, TAU), mod(o[2] + d[2] * r * t, TAU));
-}
-const PH = vec3s(NL), PHP = vec3s(NL), T = new Array(NL).fill(1);
-function sdf(q, ph = PH) {
-  let best = -1e9, lvl = 0;
-  for (let i = 0; i < NL; i++) {
-    const f = FL[i], p = ph[i];
-    const h = (gyr(q.x * f + p.x, q.y * f + p.y, q.z * f + p.z) - T[i]) / (f * LIP);
-    if (h > best) { best = h; lvl = i; }
-  }
-  sdf.lvl = lvl;
-  return best;
-}
-
 // ---------- observer ----------
 const obs = {
   q: new THREE.Vector3(), quat: new THREE.Quaternion(), vel: new THREE.Vector3(), S: 0.1, n: 0, stack: [],
-  rollAcc: 0, pace: 1, ride: false, turn: null, turnQueue: [], word: [], speed: 0, lastQ: new THREE.Vector3(),
+  rollAcc: 0, pace: 1, fix: null, turn: null, turnQueue: [], word: [], speed: 0, lastQ: new THREE.Vector3(),
 };
 const world = { tExt: 0, tView: 0, tFreeze: 0, inMem: false, ev: null, memProbe: null };
 const q0inv = new THREE.Quaternion();
 const events = [];
 let tau = 0.06, span = 1.5, showThreads = true;
-
+function levelOffset(N) { return [mod(N * 1.618 * 3.1, TAU), mod(N * 2.414 * 1.7, TAU), mod(N * 0.577 * 5.3, TAU)]; }
+// Each absolute scale N is a gyroid seen through its own rigid motion x = f·M·q + τ.
+// P is the present (always moving); V is what you see (equal to P, or held still in memory).
+const levels = new Map();
+function makeLevel(N) {
+  const o = levelOffset(N);
+  const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(o[0], o[1], o[2]));
+  const t = new THREE.Vector3(o[0] * 2.3, o[1] * 1.7, o[2] * 2.9);
+  const tilt = new THREE.Quaternion().setFromEuler(new THREE.Euler((o[1] - Math.PI) * 0.12, (o[2] - Math.PI) * 0.12, 0));
+  return { N, qP: q.clone(), tP: t.clone(), qV: q.clone(), tV: t.clone(), tilt, sign: mod(N, 2) ? 1 : -1, att: 0, omega: 0 };
+}
+function lev(N) { let L = levels.get(N); if (!L) { L = makeLevel(N); levels.set(N, L); } return L; }
+const EV = Array.from({ length: NL }, () => ({ e: new Float64Array(9), t: [0, 0, 0] }));
+const EP = Array.from({ length: NL }, () => ({ e: new Float64Array(9), t: [0, 0, 0] }));
+const T = new Array(NL).fill(1), FLK = new Array(NL).fill(0);
+const m4 = new THREE.Matrix4(), m3 = new THREE.Matrix3();
+function pack(out, q, t) {
+  m3.setFromMatrix4(m4.makeRotationFromQuaternion(q)); out.e.set(m3.elements);
+  out.t[0] = mod(t.x, TAU); out.t[1] = mod(t.y, TAU); out.t[2] = mod(t.z, TAU);
+}
+// ---------- the nexus ----------
+const nexus = [];
+let activeNexus = [];
+function anchor() {
+  let best = null, bs = Infinity;
+  for (const nx of nexus) { const s = Math.abs(Math.log(nx.r / (9 * obs.S))); if (s < bs) { bs = s; best = nx; } }
+  return best;
+}
+function nexH(nx, q) {
+  const px = q.x - nx.c.x, py = q.y - nx.c.y, pz = q.z - nx.c.z;
+  const ax = px * nx.a.x + py * nx.a.y + pz * nx.a.z;
+  const rad = Math.sqrt(Math.max(px * px + py * py + pz * pz - ax * ax, 0));
+  return nx.r * nx.grow - Math.hypot(rad - nx.R, ax);
+}
+function makeNexus(grow) {
+  const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(obs.quat), up = new THREE.Vector3(0, 1, 0).applyQuaternion(obs.quat);
+  const R = 34 * obs.S, r = 9 * obs.S;
+  nexus.push({ c: obs.q.clone().addScaledVector(fwd, R * 0.55), a: up, R, r, grow, id: ++nexusCount });
+  while (nexus.length > 4) {
+    let k = nexus.findIndex(nx => nexH(nx, obs.q) < -0.5 * obs.S);
+    if (k < 0 || k === nexus.length - 1) k = 0;
+    nexus.splice(k, 1);
+  }
+}
+let nexusCount = 0;
 function bandW() { return clamp(Math.log(S_HI / obs.S) / Math.log(LAM), 0, 1); }
 function aperture() { return Math.exp(0.5 * Math.sin(obs.rollAcc * 0.5)); }
 function updateField() {
   const tb = clamp(0.78 - 0.3 * Math.log(aperture()) / 0.5, 0.45, 1.1);
   const w = bandW();
   for (let i = 0; i < NL; i++) {
-    const N = obs.n - 2 + i;
-    phaseOf(N, world.tView, PH[i]);
-    phaseOf(N, world.tExt, PHP[i]);
+    const L = lev(obs.n - 2 + i);
     // x slides continuously as you shrink, so a scale keeps its aperture when it changes index:
     // coarse tunnels are wide, finer pores are narrower, and the finest opens from nothing
     const x = i - w;
     T[i] = x > 4 ? lerp(tb + 0.32, 1.75, x - 4) : lerp(tb - 0.28, tb + 0.32, clamp((x + 1) / 5, 0, 1));
+    FLK[i] = 0.42 * smooth(2.4, 5, x);   // small holes cannot hold themselves: they flicker in and out
+    pack(EV[i], L.qV, L.tV); pack(EP[i], L.qP, L.tP);
   }
+  activeNexus = nexus.slice().sort((a, b) => Math.abs(Math.log(a.r / (9 * obs.S))) - Math.abs(Math.log(b.r / (9 * obs.S)))).slice(0, 4);
 }
-function canDeepen() { // dropping the coarsest scale is only safe from inside its solid
-  const f = FL[0], p = PH[0], q = obs.q;
-  return gyr(q.x * f + p.x, q.y * f + p.y, q.z * f + p.z) < T[0] - 0.45;
+function levelX(i, q, E, out) {
+  const e = E[i].e, t = E[i].t, f = FL[i];
+  out[0] = f * (e[0] * q.x + e[3] * q.y + e[6] * q.z) + t[0];
+  out[1] = f * (e[1] * q.x + e[4] * q.y + e[7] * q.z) + t[1];
+  out[2] = f * (e[2] * q.x + e[5] * q.y + e[8] * q.z) + t[2];
+  return out;
+}
+const xb = [0, 0, 0];
+function levelH(i, q, E, ft) {
+  levelX(i, q, E, xb);
+  let th = T[i];
+  if (FLK[i] > 0.001) th += FLK[i] * gyr(xb[0] * 0.41 + 0.9 * ft, xb[1] * 0.41 + 0.7 * ft, xb[2] * 0.41 + 1.1 * ft);
+  return (gyr(xb[0], xb[1], xb[2]) - th) / (FL[i] * LIP);
+}
+function sdf(q, which) {
+  const E = which === 'P' ? EP : EV, ft = which === 'P' ? world.tExt : world.tView;
+  let best = -1e9, lvl = 0;
+  for (let i = 0; i < NL; i++) { const h = levelH(i, q, E, ft); if (h > best) { best = h; lvl = i; } }
+  for (const nx of activeNexus) { const h = nexH(nx, q); if (h > best) { best = h; lvl = 6; } }
+  sdf.lvl = lvl;
+  return best;
+}
+function gyroSdf(q) { let best = -1e9; for (let i = 0; i < NL; i++) best = Math.max(best, levelH(i, q, EV, world.tView)); return best; }
+function canDeepen() { // drop the coarsest scale only from inside its solid, and only from inside a finer tunnel
+  levelX(0, obs.q, EV, xb);
+  return gyr(xb[0], xb[1], xb[2]) < T[0] - 0.45 && gyroSdf(obs.q) > 0.15 * obs.S;
+}
+// ---------- the orbit: larger scales turn slowly, smaller ones fast, neighbours counter-rotate ----------
+const dq = new THREE.Quaternion(), rv = new THREE.Vector3(), axv = new THREE.Vector3();
+function rotStep(qM, tau, f, axis, ang, c) {
+  if (!ang) return;
+  dq.setFromAxisAngle(axis, -ang);                  // field(q) ← field(R⁻¹(q − c) + c)
+  rv.copy(c).applyQuaternion(dq); rv.subVectors(c, rv).applyQuaternion(qM);
+  tau.addScaledVector(rv, f);
+  qM.multiply(dq).normalize();
+}
+function integrate(dt, rateV) {
+  const A = anchor(); if (!A) return;
+  const w = bandW();
+  for (let i = 0; i < NL; i++) {
+    const L = lev(obs.n - 2 + i), x = i - w;
+    const base = 0.045 * Math.pow(3, 0.5 * (x - 2)) * L.sign;
+    const fine = clamp((x - 1) / 4, 0, 1);
+    L.omega = base * lerp(1 + 1.6 * fine, 0.25, L.att);   // attention slows what you look at; the unseen small race
+    axv.copy(A.a).applyQuaternion(L.tilt);
+    rotStep(L.qP, L.tP, FL[i], axv, L.omega * dt, A.c);
+    if (rateV > 0) rotStep(L.qV, L.tV, FL[i], axv, L.omega * dt * rateV, A.c);
+  }
+  for (const nx of nexus) nx.grow = Math.min(1, nx.grow + dt / 5);
 }
 let lastScaleLog = -10;
+const kv = new THREE.Vector3(), kq = new THREE.Vector3();
 function deepen() {
-  obs.n++;
+  const nOld = obs.n; obs.n++;
   const Q = obs.q.multiplyScalar(LAM);
   const k = [Math.floor(Q.x / P), Math.floor(Q.y / P), Math.floor(Q.z / P)];
   Q.set(Q.x - k[0] * P, Q.y - k[1] * P, Q.z - k[2] * P);
-  obs.stack.push(k);
+  kv.set(k[0] * P, k[1] * P, k[2] * P);
+  const dropped = levels.get(nOld - 2); levels.delete(nOld - 2);
+  obs.stack.push({ k, dropped });
+  for (let N = nOld - 1; N <= nOld + 3; N++) {   // re-express each scale's motion in the new units
+    const L = lev(N), f = FL[N - (obs.n - 2)];
+    L.tP.addScaledVector(kq.copy(kv).applyQuaternion(L.qP), f);
+    L.tV.addScaledVector(kq.copy(kv).applyQuaternion(L.qV), f);
+  }
+  levels.delete(nOld + 4); lev(nOld + 4);
+  for (const nx of nexus) { nx.c.multiplyScalar(LAM).sub(kv); nx.R *= LAM; nx.r *= LAM; }
   obs.S *= LAM; obs.vel.multiplyScalar(LAM); obs.lastQ.copy(obs.q);
+  makeNexus(0);
   updateField();
   scaleEvent(+1);
 }
 function ascend() {
-  obs.n--;
-  const k = obs.stack.pop() || [0, 0, 0];
-  obs.q.set((obs.q.x + k[0] * P) / LAM, (obs.q.y + k[1] * P) / LAM, (obs.q.z + k[2] * P) / LAM);
+  const nOld = obs.n; obs.n--;
+  const ent = obs.stack.pop() || { k: [0, 0, 0], dropped: null };
+  const k = ent.k;
+  kv.set(k[0] * P, k[1] * P, k[2] * P);
+  obs.q.add(kv).divideScalar(LAM);
+  for (let N = nOld - 2; N <= nOld + 2; N++) {
+    const L = lev(N), f = FL[N - (nOld - 2)];
+    L.tP.addScaledVector(kq.copy(kv).applyQuaternion(L.qP), -f);
+    L.tV.addScaledVector(kq.copy(kv).applyQuaternion(L.qV), -f);
+  }
+  levels.delete(nOld + 3);
+  levels.set(nOld - 3, ent.dropped || makeLevel(nOld - 3));
+  for (const nx of nexus) { nx.c.add(kv).divideScalar(LAM); nx.R /= LAM; nx.r /= LAM; }
   obs.S /= LAM; obs.vel.divideScalar(LAM); obs.lastQ.copy(obs.q);
   updateField();
   scaleEvent(-1);
@@ -380,9 +493,45 @@ function scaleEvent(dir) {
   const step = mod(obs.n, CYCLE);
   if (dir > 0 && step === 0) { logEvent(`σ turned over at depth ${obs.n}. The same pattern again, in a new place.`); toast('The scale cycle turned over. You came back in at the centre.'); }
   if (world.tExt - lastScaleLog > 2.5) {
-    logEvent(dir > 0 ? `Through a pore into the tunnels of scale ${obs.n}.` : `Out into the wider tunnels of scale ${obs.n}.`);
+    logEvent(dir > 0 ? `Through a pore into scale ${obs.n}. A new nexus is forming here.` : `Out into the wider tunnels of scale ${obs.n}.`);
     lastScaleLog = world.tExt;
   }
+}
+
+// ---------- attention: what you look at slows ----------
+const ATT = [[0, 0]];
+for (let i = 0; i < 6; i++) ATT.push([Math.cos(i / 6 * TAU) * 0.09, Math.sin(i / 6 * TAU) * 0.09]);
+const av = new THREE.Vector3(), ap = new THREE.Vector3();
+function updateAttention(dt) {
+  const counts = new Array(NL).fill(0);
+  for (const [ax, ay] of ATT) {
+    av.set(ax, ay, -1).normalize().applyQuaternion(obs.quat);
+    let t = 0.05 * obs.S;
+    for (let s = 0; s < 36; s++) {
+      ap.copy(av).multiplyScalar(t).add(obs.q);
+      const d = sdf(ap);
+      if (d < 0.01 * obs.S) { if (sdf.lvl < NL) counts[sdf.lvl]++; break; }
+      if (t > 60 * obs.S) break;
+      t += d * 0.85;
+    }
+  }
+  const k = 1 - Math.exp(-dt / 0.5);
+  for (let i = 0; i < NL; i++) {
+    const L = lev(obs.n - 2 + i);
+    const held = obs.fix && obs.fix.kind === 'hole' && obs.fix.N === L.N;
+    L.att = lerp(L.att, held ? 1 : Math.min(1, counts[i] / ATT.length * 1.6), k);
+  }
+}
+
+// ---------- fixing your gaze on a hole ----------
+const fixA = new THREE.Vector3(), fixB = new THREE.Vector3(), qi = new THREE.Quaternion();
+function fixPoint(out) {
+  const F = obs.fix; if (!F) return null;
+  if (F.kind === 'nexus') return out.copy(F.nx.c).addScaledVector(F.off, F.nx.R);
+  const i = F.N - (obs.n - 2);
+  if (i < 0 || i >= NL) return null;
+  const L = lev(F.N);
+  return out.copy(F.x0).sub(L.tV).divideScalar(FL[i]).applyQuaternion(qi.copy(L.qV).conjugate());
 }
 
 // ---------- probes: the observer's relations, measured from inside ----------
@@ -513,7 +662,7 @@ addEventListener('keydown', (e) => {
   keys.add(k); if (e.shiftKey) keys.add('shift');
   if (['1', '2', '3', '4'].includes(k)) obs.turnQueue.push(+k - 1);
   if (k === 'x') toggleEvert();
-  if (k === 'f') toggleRide();
+  if (k === 'f') toggleFix();
   if (k === 'm') toggleThreads();
   if (k === 'h') toggleHelp();
   if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();
@@ -539,7 +688,7 @@ function holdBtn(id, key) {
 holdBtn('t-fwd', 'fwd'); holdBtn('t-back', 'back'); holdBtn('roll-l', 'rl'); holdBtn('roll-r', 'rr');
 document.querySelectorAll('[data-turn]').forEach(b => b.addEventListener('click', () => obs.turnQueue.push(+b.dataset.turn)));
 document.getElementById('b-evert').addEventListener('click', toggleEvert);
-document.getElementById('b-ride').addEventListener('click', toggleRide);
+document.getElementById('b-ride').addEventListener('click', toggleFix);
 document.getElementById('b-threads').addEventListener('click', toggleThreads);
 document.getElementById('b-help').addEventListener('click', toggleHelp);
 document.getElementById('enter').addEventListener('click', toggleHelp);
@@ -560,9 +709,32 @@ bindRange('span', 'span-o', v => `${v.toFixed(1)} s`, v => { span = v; });
 function setPressed(id, v) { document.getElementById(id).setAttribute('aria-pressed', String(v)); }
 function toggleHelp() { const el = document.getElementById('intro'); el.hidden = !el.hidden; }
 function toggleThreads() { showThreads = !showThreads; setPressed('b-threads', showThreads); }
-function toggleRide() {
-  obs.ride = !obs.ride; setPressed('b-ride', obs.ride);
-  toast(obs.ride ? 'Riding the drift of your tunnel. Its walls stop moving relative to you.' : 'Released from the drift.');
+function toggleFix() {
+  if (obs.fix) { obs.fix = null; setPressed('b-ride', false); toast('Gaze released. Your own frame again.'); return; }
+  av.set(0, 0, -1).applyQuaternion(obs.quat);
+  let t = 0.05 * obs.S, hit = false;
+  for (let s = 0; s < 80; s++) {
+    ap.copy(av).multiplyScalar(t).add(obs.q);
+    const d = sdf(ap);
+    if (d < 0.01 * obs.S) { hit = true; break; }
+    if (t > 60 * obs.S) break;
+    t += d * 0.85;
+  }
+  if (!hit) { toast('Nothing under the crosshair to hold. Look at a wall or a pore.'); return; }
+  const lvl = sdf.lvl;
+  if (lvl === 6) {
+    const nx = activeNexus.find(n => Math.abs(nexH(n, ap)) < 0.05 * obs.S) || anchor();
+    obs.fix = { kind: 'nexus', nx, off: ap.clone().sub(nx.c).divideScalar(nx.R) };
+    toast('Gaze fixed on the nexus. It holds still; everything turns around it.');
+  } else {
+    const N = obs.n - 2 + lvl, L = lev(N);
+    levelX(lvl, ap, EV, xb);
+    // keep the unreduced coordinate so the hold survives the field's own wrapping
+    const x0 = ap.clone().applyQuaternion(L.qV).multiplyScalar(FL[lvl]).add(L.tV);
+    obs.fix = { kind: 'hole', N, x0 };
+    toast(`Gaze fixed on a hole of scale ${N}. Now everything else moves in relation to it.`);
+  }
+  setPressed('b-ride', true);
 }
 function toggleEvert() {
   if (world.ev) return;
@@ -572,7 +744,9 @@ function toggleEvert() {
     setPressed('b-evert', true);
     toast('Everting through your own centre. The motion slows into memory.');
   } else {
-    world.ev = { dir: -1, u: 0, before: probe(new Float32Array(NP)), away: world.tExt - world.tFreeze };
+    const snap = new Map();
+    for (const [N, L] of levels) snap.set(N, { q: L.qV.clone(), t: L.tV.clone() });
+    world.ev = { dir: -1, u: 0, before: probe(new Float32Array(NP)), away: world.tExt - world.tFreeze, snap };
     toast('Everting back out. The present rushes in.');
   }
 }
@@ -622,8 +796,10 @@ function stepEversion(dt) {
   U.uMem.value = 1 - smooth(0.35, 0.65, E.u);
   const e = smooth(0.15, 0.95, E.u);
   world.tView = lerp(world.tFreeze, world.tExt, e); // the change you missed plays out at once
+  for (const [N, L] of levels) { const v = E.snap.get(N); if (v) { L.qV.copy(v.q).slerp(L.qP, e); L.tV.lerpVectors(v.t, L.tP, e); } }
   if (E.u >= 1) {
     world.inMem = false; world.ev = null; U.uWarp.value = 0; world.tView = world.tExt;
+    for (const L of levels.values()) { L.qV.copy(L.qP); L.tV.copy(L.tP); }
     updateField();
     const S = selfOverlap(E.before, probe(new Float32Array(NP)));
     logEvent(`Returned after ${E.away.toFixed(0)} s within. S = ${S.toFixed(3)}: ${S > 0.8 ? 'the present still recognizes the memory.' : 'too much changed to recognize.'}`);
@@ -645,13 +821,8 @@ function gradient(q, out) {
   out.set(sdf(gv.copy(q).setX(q.x + e)) - base, sdf(gv.copy(q).setY(q.y + e)) - base, sdf(gv.copy(q).setZ(q.z + e)) - base);
   return out.normalize();
 }
-function rideVelocity(out) {
-  // walls of scale i move as their phase drifts: q = (x − φ)/f, so v = −φ'/f
-  sdf(obs.q); const i = sdf.lvl, N = obs.n - 2 + i, k = mod(N, CYCLE), d = DIRS[k], r = RATES[k] / FL[i];
-  return out.set(-d[0] * r, -d[1] * r, -d[2] * r);
-}
-
-let snapT = 0, hudT = 0, perfT = 0, perfAcc = 0, perfN = 0;
+const lookM = new THREE.Matrix4(), lookQ = new THREE.Quaternion(), upV = new THREE.Vector3();
+let attT = 0, snapT = 0, hudT = 0, perfT = 0, perfAcc = 0, perfN = 0;
 const clock = new THREE.Clock();
 function frame() {
   const dt = Math.min(clock.getDelta(), 0.05);
@@ -673,6 +844,17 @@ function frame() {
   updateTurns(dt);
   updateField();
 
+  // the field turns round the nexus; a held gaze carries you with the hole you hold
+  const fa = fixPoint(fixA);
+  integrate(dt, rate);
+  updateField();
+  const fb = fixPoint(fixB);
+  if (obs.fix && (!fb || (obs.fix.kind === 'hole' && obs.fix.N - (obs.n - 2) === NL - 1 && T[NL - 1] > 1.45))) {
+    obs.fix = null; setPressed('b-ride', false); toast('The hole you held slipped out of existence.');
+    logEvent('A held hole was too small to sustain itself and annihilated.');
+  }
+  attT -= dt; if (attT <= 0) { updateAttention(0.1); attT = 0.1; }
+
   // moving: speed is measured in your own body lengths
   const inp = mvv.set(0, 0, 0);
   if (keys.has('w') || held.fwd) inp.z -= 1;
@@ -686,7 +868,17 @@ function frame() {
   obs.vel.lerp(inp, 1 - Math.exp(-dt * 5));
   obs.lastQ.copy(obs.q);
   obs.q.addScaledVector(obs.vel, dt);
-  if (obs.ride && !world.inMem) obs.q.addScaledVector(rideVelocity(gv), dt * (world.ev ? rate : 1));
+  if (obs.fix && fa && fb) {
+    obs.q.add(gv.subVectors(fb, fa));
+    // turn gently to keep the held hole at the centre of view
+    const look = gv.subVectors(fb, obs.q);
+    if (look.lengthSq() > 1e-8) {
+      lookM.lookAt(new THREE.Vector3(), look.multiplyScalar(-1), upV.set(0, 1, 0).applyQuaternion(obs.quat));
+      lookQ.setFromRotationMatrix(lookM);
+      if (lookQ.dot(obs.quat) < 0) lookQ.set(-lookQ.x, -lookQ.y, -lookQ.z, -lookQ.w);
+      obs.quat.slerp(lookQ, 1 - Math.exp(-dt * 2.5));
+    }
+  }
 
   // the hyperbolic metric: your size follows your distance to the walls
   let d = sdf(obs.q);
@@ -695,8 +887,7 @@ function frame() {
   const deep = canDeepen();
   if (!deep) target = Math.max(target, S_LO * 1.001);
   obs.S = Math.exp(lerp(Math.log(obs.S), Math.log(target), 1 - Math.exp(-dt * 2.2)));
-  if (obs.S < S_LO && deep) deepen();
-  else if (obs.S > S_HI) ascend();
+  if (!world.ev) { if (obs.S < S_LO && deep) deepen(); else if (obs.S > S_HI) ascend(); }
   obs.speed = lerp(obs.speed, obs.q.distanceTo(obs.lastQ) / Math.max(dt, 1e-3) / obs.S, 0.15);
   updateField();
 
@@ -708,8 +899,15 @@ function frame() {
   U.uRot.value.setFromMatrix4(new THREE.Matrix4().makeRotationFromQuaternion(obs.quat));
   U.uS.value = obs.S;
   for (let i = 0; i < NL; i++) {
-    U.uPh.value[i].copy(PH[i]); U.uPhP.value[i].copy(PHP[i]); U.uT.value[i] = T[i];
-    U.uCol.value[i].set(PAL[mod(obs.n - 2 + i, CYCLE)]);
+    U.uM.value[i].fromArray(EV[i].e); U.uTau.value[i].fromArray(EV[i].t);
+    U.uMP.value[i].fromArray(EP[i].e); U.uTauP.value[i].fromArray(EP[i].t);
+    U.uT.value[i] = T[i]; U.uFl.value[i] = FLK[i];
+  }
+  U.uFT.value = world.tView; U.uFTP.value = world.tExt;
+  for (let j = 0; j < 4; j++) {
+    const nx = activeNexus[j];
+    if (nx) { U.uNC.value[j].copy(nx.c); U.uNA.value[j].copy(nx.a); U.uNR.value[j].set(nx.R, nx.r * nx.grow); }
+    else U.uNR.value[j].set(0, 0);
   }
   renderer.render(scene, ortho);
   drawMemoryField();
@@ -745,18 +943,17 @@ function drawDial() {
 }
 function drawLevels() {
   sdf(obs.q); const here = sdf.lvl;
-  qInv.copy(obs.quat).conjugate();
   let html = '';
   for (let i = NL - 1; i >= 0; i--) {
-    const N = obs.n - 2 + i, k = mod(N, CYCLE), dd = DIRS[k];
-    mv.set(dd[0], dd[1], dd[2]).applyQuaternion(qInv);
-    const ang = Math.atan2(-mv.y, mv.x) * 180 / Math.PI, len = Math.hypot(mv.x, mv.y);
+    const N = obs.n - 2 + i, L = lev(N), k = mod(N, CYCLE);
     const size = (TAU / FL[i]) / obs.S;
-    const still = world.inMem;
+    const held = obs.fix && obs.fix.kind === 'hole' && obs.fix.N === N;
+    const tag = held ? ' · held' : i === here ? ' · here' : '';
+    const om = world.inMem ? 0 : L.omega;
     html += `<i style="background:${PAL[k]};opacity:${i === NL - 1 ? (0.3 + 0.7 * bandW()).toFixed(2) : 1}"></i>`
-      + `<span class="${i === here ? 'here' : ''}">scale ${N}${i === here ? ' · here' : ''}</span>`
+      + `<span class="${tag ? 'here' : ''}">scale ${N}${tag}</span>`
       + `<span>${size >= 100 ? size.toFixed(0) : size.toFixed(1)} bodies</span>`
-      + `<svg width="22" height="14" viewBox="-11 -7 22 14"><g transform="rotate(${ang.toFixed(0)})"><line x1="${(-8 * len).toFixed(1)}" y1="0" x2="${(8 * len).toFixed(1)}" y2="0" stroke="${still ? '#747a8f' : PAL[k]}" stroke-width="1.6"/><path d="M${(8 * len).toFixed(1)} 0 l-3.5 -2.5 v5 z" fill="${still ? '#747a8f' : PAL[k]}"/></g></svg>`;
+      + `<span style="color:${L.att > 0.3 ? '#b9a7ff' : 'inherit'}" title="turns per minute; violet while you are looking at it">${om >= 0 ? '↻' : '↺'} ${(Math.abs(om) * 60 / TAU).toFixed(2)}/min</span>`;
   }
   $('levels').innerHTML = html;
 }
@@ -764,8 +961,10 @@ function updateHUD() {
   $('r-size').textContent = `${obs.S.toFixed(3)} u at depth ${obs.n}`;
   $('r-speed').textContent = `${obs.speed.toFixed(1)} bodies/s`;
   $('r-perc').textContent = perceived.toFixed(2);
-  sdf(obs.q); $('r-in').textContent = `scale ${obs.n - 2 + sdf.lvl}`;
-  $('r-ride').textContent = obs.ride ? (world.inMem ? 'nothing moves here' : 'your tunnel') : 'none';
+  sdf(obs.q); $('r-in').textContent = sdf.lvl === 6 ? 'the nexus' : `scale ${obs.n - 2 + sdf.lvl}`;
+  $('r-ride').textContent = obs.fix ? (obs.fix.kind === 'nexus' ? 'the nexus' : `a hole of scale ${obs.fix.N}`) : 'nothing';
+  const A = anchor();
+  $('r-nexus').textContent = A ? `${Math.max(0, -nexH(A, obs.q) / obs.S).toFixed(1)} bodies${A.grow < 1 ? ' · forming' : ''}` : '–';
   $('r-sigma').textContent = sigma().toFixed(2);
   $('r-depth').textContent = `${obs.n} (${obs.stack.length} pores in)`;
   $('r-step').textContent = `${mod(obs.n, CYCLE)} of ${CYCLE}`;
@@ -788,7 +987,8 @@ function boot() {
   const rng = (() => { let a = 7; return () => { a = (a * 16807) % 2147483647; return a / 2147483647; }; })();
   for (let i = 0; i < 600; i++) {
     const q = new THREE.Vector3(rng() * P, rng() * P, rng() * P);
-    if (!(gyr(q.x * FL[0] + PH[0].x, q.y * FL[0] + PH[0].y, q.z * FL[0] + PH[0].z) < T[0] - 0.5)) continue;
+    levelX(0, q, EV, xb);
+    if (!(gyr(xb[0], xb[1], xb[2]) < T[0] - 0.5)) continue;
     const d = sdf(q);
     if (d > bd && sdf.lvl === 2) { bd = d; best = q; }
   }
@@ -800,12 +1000,14 @@ function boot() {
   obs.quat.setFromUnitVectors(new THREE.Vector3(0, 0, -1), PDIR[bi]);
   q0inv.copy(obs.quat).conjugate();
   obs.lastQ.copy(obs.q);
-  logEvent('You begin in a tunnel of scale 2. Its walls are full of smaller tunnels.');
+  makeNexus(1);
+  updateField();
+  logEvent('You begin in a tunnel of scale 0. Ahead, the nexus: a great still ring that everything orbits.');
 }
 boot();
 resize();
 setPill();
-window.__torus = { obs, world, sdf, U };
+window.__torus = { obs, world, sdf, U, nexus, levels, toggleFix };
 requestAnimationFrame(frame);
 })();
 </script>
