@@ -6,18 +6,10 @@ What i develop in Claude
 A navigable domain of relational geometry built from *Relational Geometry: Holes, Memory and the Internal Observer*.
 Open `relational-geometry/index.html` in a browser (it loads Three.js r128 from cdnjs).
 
-How the spec maps to what you fly through:
+The world is the inside of a sponge, ray-marched as a union of gyroid tunnel networks at six nested scales (λ = 3). Every tunnel wall is perforated by the tunnels of the next scale, and those walls by the next. Each hole is the mouth of a tunnel that continues on, not a puncture in a sheet.
 
-| Spec | In the field |
-|---|---|
-| D1 scale is a cycle | Dive through a ring's central hole to go down one scale step. Fly out past the shell to go up one. After 5 steps σ wraps around and you re-enter at the centre. |
-| D2 horned torus, windings α = φ+θ, β = φ−θ | The world shell is a horned torus (R = r) whose core is the ε point. Its pores drift in two layers along opposite windings. |
-| D3 porosity and nesting | Every hole (vortex ring) holds a small porous horned torus: the next scale step. |
-| D4 relations are the medium | Weighted edges link each hole to its nearest neighbours. Weight comes from co-revolution (low shear) and from being traversed. |
-| D5 observer = (F_prev, F_now) | The memory field panel draws each hole at its remembered position and at its present one. Perceived motion is only the difference between the two. |
-| D6 moves | Keys 1–4 make 120° turns about the tetrahedral axes. G is tracked as a spinor: g³ = −1, g⁶ = 1. Roll couples to pore aperture. |
-| D7 eversion through the core | X applies sphere inversion through the core, which turns the horned torus into a cylinder. Each crossing maps (α, β, σ) to (β, −α, −σ). |
-| D8 closure and forgetting | Traversed relations strengthen. Untraversed ones decay at γ back toward their potential, not to zero. The recurrence plot uses tolerance τ. |
-| D9 self-coherence S | Returning to a scale compares relational signatures with S = \|⟨ψ\|Rψ⟩\|² / (⟨ψ\|ψ⟩⟨Rψ\|Rψ⟩). |
-
-Identities are stabilized flows. A ring is internally sustained (amber) or externally sustained (teal). A ring that stops varying calcifies (slate) and its pores close. A ring that loses its support dissolves and re-articulates where strong relations meet.
+- **Hyperbolic travel.** Your size follows your distance to the walls, and your speed is measured in body lengths. As you approach a wall you shrink until its pores become passages. Going through one renormalizes the coordinates by λ: the scale sheds its coarsest layer and grows a finer one. Every 5 steps σ turns over (D1).
+- **Motion across scale.** Each scale of tunnel drifts at its own rate and in its own direction. The relative drift between scales is the motion you perceive. Press F to ride the drift of the tunnel you are in.
+- **Eversion (X)** passes through your own centre from motion into memory. The field slows to stillness and turns violet. Inside, the still field shows only where the present no longer matches what you remember, and those places glow. When you come back out, the change you missed plays out all at once, and S compares memory with the present.
+- **Observer = (F_prev, F_now).** Probe rays measure the surrounding walls in body lengths. The everted memory field and the recurrence plot are drawn from those measurements.
+- **Frame.** Keys 1–4 make 120° tetrahedral turns, and G is tracked as a spinor (g³ = −1, g⁶ = 1). Roll widens or narrows the pores.
