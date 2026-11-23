@@ -1,0 +1,1166 @@
+<title>Torus Porous</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,500;1,300;1,400&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one full-bleed field you fly through; instruments float at the edges like an observer's peripheral memory. */
+:root {
+  --ground: #05060b;
+  --panel: rgba(11, 13, 24, 0.80);
+  --rule: #252942;
+  --fg: #dde0ee;
+  --dim: #8b90ac;
+  --amber: #e8b25a;   /* α winding · internally sustained identity */
+  --teal: #5cc8c0;    /* β winding · externally sustained identity */
+  --violet: #b9a7ff;  /* observer · memory */
+  --slate: #747a8f;   /* calcified */
+  --f-display: "Spectral", "Iowan Old Style", Georgia, serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+body { background: var(--ground); color: var(--fg); font-family: var(--f-body); font-size: 13px; overflow: hidden; }
+#scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+#scene:active { cursor: grabbing; }
+#flash { position: fixed; inset: 0; pointer-events: none; opacity: 0;
+  background: radial-gradient(circle at 50% 50%, #fff 0%, var(--violet) 18%, rgba(40,30,80,.9) 55%, var(--ground) 100%); }
+
+.title { position: fixed; top: calc(14px + env(safe-area-inset-top, 0px)); left: max(16px, env(safe-area-inset-left, 0px));
+  pointer-events: none; max-width: 40ch; }
+.title h1 { margin: 0; font-family: var(--f-display); font-weight: 300; font-style: italic; font-size: 30px; letter-spacing: .01em; line-height: 1.05; }
+.title p { margin: 6px 0 0; color: var(--dim); font-size: 12px; line-height: 1.45; }
+.title b { color: var(--fg); font-weight: 500; }
+
+.panel { position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); right: max(12px, env(safe-area-inset-right, 0px));
+  bottom: calc(64px + env(safe-area-inset-bottom, 0px)); width: 292px; overflow-y: auto; overscroll-behavior: contain;
+  background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; backdrop-filter: blur(8px);
+  display: flex; flex-direction: column; gap: 14px; padding: 14px; scrollbar-width: thin; }
+.panel h2 { margin: 0 0 6px; font-family: var(--f-display); font-weight: 500; font-size: 15px; letter-spacing: .01em; }
+.panel h2 small { font-family: var(--f-mono); font-size: 10px; color: var(--dim); font-weight: 400; margin-left: 6px; letter-spacing: .04em; }
+.panel .cap { color: var(--dim); font-size: 11px; line-height: 1.45; margin: 6px 0 0; }
+.panel canvas { width: 100%; display: block; border-radius: 6px; }
+.sec { display: flex; flex-direction: column; }
+.sec + .sec { border-top: 1px solid var(--rule); padding-top: 12px; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; font-family: var(--f-mono); font-size: 11px; font-variant-numeric: tabular-nums; }
+.kv dt { color: var(--dim); }
+.kv dd { margin: 0; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chips { display: flex; gap: 6px; flex-wrap: wrap; font-family: var(--f-mono); font-size: 11px; }
+.chip { display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px; border-radius: 999px; border: 1px solid var(--rule); }
+.chip i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.bar { height: 5px; border-radius: 3px; background: var(--rule); overflow: hidden; }
+.bar > span { display: block; height: 100%; width: 0; }
+.bars { display: grid; grid-template-columns: 54px 1fr; gap: 5px 8px; align-items: center; font-family: var(--f-mono); font-size: 10px; color: var(--dim); }
+.ctrl { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; align-items: center; font-family: var(--f-mono); font-size: 11px; color: var(--dim); }
+.ctrl input { grid-column: 1 / -1; width: 100%; accent-color: var(--violet); }
+.ctrl output { color: var(--fg); }
+#log { font-family: var(--f-mono); font-size: 10.5px; line-height: 1.5; color: var(--dim); display: flex; flex-direction: column; gap: 3px; min-height: 6em; }
+#log div:first-child { color: var(--fg); }
+.dial { display: flex; gap: 12px; align-items: center; }
+.dial svg { flex: none; }
+.word { font-family: var(--f-mono); font-size: 11px; color: var(--violet); word-break: break-all; min-height: 1.4em; }
+
+.dock { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; align-items: center;
+  padding: 10px max(16px, env(safe-area-inset-right, 0px)) calc(10px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  pointer-events: none; }
+.dock > * { pointer-events: auto; }
+.dock .grp { display: flex; gap: 4px; padding: 4px; background: var(--panel); border: 1px solid var(--rule); border-radius: 9px; backdrop-filter: blur(8px); }
+button { font: 500 12px/1 var(--f-mono); color: var(--fg); background: transparent; border: 1px solid transparent; border-radius: 6px;
+  padding: 7px 9px; cursor: pointer; user-select: none; -webkit-user-select: none; touch-action: none; }
+button:hover { background: rgba(185,167,255,.10); }
+button:focus-visible { outline: 2px solid var(--violet); outline-offset: 1px; }
+button[aria-pressed="true"] { border-color: var(--violet); color: var(--violet); background: rgba(185,167,255,.08); }
+button kbd { font: inherit; color: var(--dim); margin-left: 4px; font-size: 10px; }
+.touch-only { display: none; }
+@media (pointer: coarse) { .touch-only { display: flex; } button kbd { display: none; } }
+
+.intro { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+  width: min(440px, calc(100% - 340px)); min-width: 280px; background: var(--panel); border: 1px solid var(--rule); border-radius: 10px;
+  backdrop-filter: blur(8px); padding: 16px 18px; line-height: 1.55; font-size: 12.5px; }
+.intro h2 { margin: 0 0 6px; font-family: var(--f-display); font-weight: 400; font-style: italic; font-size: 19px; text-wrap: balance; }
+.intro p { margin: 0 0 8px; color: #c3c7da; }
+.intro ul { margin: 8px 0 10px; padding-left: 0; list-style: none; display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; font-size: 11.5px; }
+.intro ul li { display: contents; }
+.intro ul kbd { font-family: var(--f-mono); color: var(--violet); font-size: 11px; white-space: nowrap; }
+.intro ul span { color: var(--dim); }
+.intro .row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.intro .row button { border-color: var(--violet); color: var(--violet); white-space: nowrap; flex: none; }
+.intro .legend { font-size: 11px; color: var(--dim); }
+
+#toast { position: fixed; left: 50%; top: calc(18px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); font-family: var(--f-display);
+  font-style: italic; font-size: 17px; color: var(--fg); text-shadow: 0 0 18px rgba(0,0,0,.9); pointer-events: none; opacity: 0;
+  transition: opacity .6s; text-align: center; max-width: min(560px, calc(100% - 32px)); }
+#crosshair { position: fixed; left: 50%; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; pointer-events: none; opacity: .45; }
+
+.panel-toggle { display: none; }
+@media (max-width: 820px) {
+  .panel { top: auto; left: max(10px, env(safe-area-inset-left, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); width: auto;
+    bottom: calc(118px + env(safe-area-inset-bottom, 0px)); max-height: 52vh; }
+  .panel.collapsed { display: none; }
+  .panel-toggle { display: inline-block; }
+  .intro { width: auto; right: max(16px, env(safe-area-inset-right, 0px)); min-width: 0; bottom: calc(118px + env(safe-area-inset-bottom, 0px)); }
+  .title h1 { font-size: 24px; }
+  .title p { display: none; }
+  .intro { bottom: calc(158px + env(safe-area-inset-bottom, 0px)); max-height: calc(100% - 230px); overflow-y: auto; }
+  .intro ul.keys { display: none; }
+  .touch-only { display: flex; }
+  .intro .touch-hint { display: block; }
+  .panel { bottom: calc(158px + env(safe-area-inset-bottom, 0px)); }
+  button { padding: 7px 7px; }
+  button kbd { display: none; }
+}
+.touch-hint { display: none; color: var(--dim); font-size: 11.5px; margin: 0 0 10px; }
+@media (prefers-reduced-motion: reduce) { #toast { transition: none; } }
+</style>
+
+<canvas id="scene" aria-label="Navigable field of nested porous tori"></canvas>
+<div id="flash"></div>
+<svg id="crosshair" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="#b9a7ff" stroke-width="1"/><circle cx="7" cy="7" r="0.8" fill="#b9a7ff"/></svg>
+
+<header class="title">
+  <h1>Torus Porous</h1>
+  <p>A domain of holes. Every hole holds a porous torus; every porous torus sits inside a hole. <b>Variance is the invariant.</b></p>
+</header>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<aside class="panel collapsed" id="panel" aria-label="Instruments">
+  <section class="sec">
+    <h2>Field of memory <small>EVERTED CENTRE</small></h2>
+    <canvas id="memfield" width="520" height="520"></canvas>
+    <p class="cap">You are the blind centre. Near relations press against the rim and far ones converge inward. Threads run from each remembered position (F<sub>prev</sub>) to the present (F<sub>now</sub>). Those threads are the only motion you perceive.</p>
+  </section>
+  <section class="sec">
+    <dl class="kv">
+      <dt>external speed</dt><dd id="r-speed">0.0 u/s</dd>
+      <dt>perceived change</dt><dd id="r-perc">0.00</dd>
+      <dt>riding</dt><dd id="r-ride">none</dd>
+      <dt>nearest identity</dt><dd id="r-near">–</dd>
+      <dt>its self-coherence S</dt><dd id="r-nearS">–</dd>
+    </dl>
+  </section>
+  <section class="sec">
+    <h2>Recurrence <small>PRESENT vs MEMORY</small></h2>
+    <canvas id="recur" width="180" height="180" style="image-rendering: pixelated;"></canvas>
+    <p class="cap">Each dot marks two moments whose relations matched within τ. Nothing exactly recurs; familiarity does.</p>
+    <div class="ctrl" style="margin-top:8px"><label for="tau">familiarity threshold τ</label><output id="tau-o">0.040</output><input id="tau" type="range" min="0.005" max="0.15" step="0.005" value="0.04"></div>
+  </section>
+  <section class="sec">
+    <h2>Scale cycle <small>σ ∈ S¹</small></h2>
+    <div class="dial">
+      <svg id="dial" width="74" height="74" viewBox="-37 -37 74 74" aria-hidden="true"></svg>
+      <dl class="kv" style="flex:1">
+        <dt>scale step</dt><dd id="r-sigma">0</dd>
+        <dt>windings</dt><dd id="r-wind">(α, β, σ)</dd>
+        <dt>eversions</dt><dd id="r-ev">0 (mod 4)</dd>
+        <dt>pore aperture</dt><dd id="r-ap">×1.00</dd>
+      </dl>
+    </div>
+  </section>
+  <section class="sec">
+    <h2>Frame holonomy <small>G = g₁g₂…gₙ</small></h2>
+    <dl class="kv">
+      <dt>G (spinor)</dt><dd id="r-G">+1.000 +0.000i +0.000j +0.000k</dd>
+      <dt>state</dt><dd id="r-Gs">at origin of memory</dd>
+    </dl>
+    <div class="word" id="r-word" style="margin-top:6px"></div>
+    <p class="cap">Three 120° turns about one axis restore the view, yet G = −1: the underside. Six turns return.</p>
+  </section>
+  <section class="sec">
+    <h2>Identities <small>STABILIZED FLOWS</small></h2>
+    <div class="chips" id="census"></div>
+    <div class="bars" style="margin-top:10px">
+      <span>written</span><div class="bar"><span id="b-in" style="background:var(--violet)"></span></div>
+      <span>forgotten</span><div class="bar"><span id="b-out" style="background:var(--slate)"></span></div>
+      <span>memory</span><div class="bar"><span id="b-mem" style="background:linear-gradient(90deg,var(--teal),var(--amber))"></span></div>
+    </div>
+    <p class="cap">Relations you travel along are written into memory. Untravelled ones decay back to potential at rate γ, not to nothing.</p>
+    <div class="ctrl" style="margin-top:8px"><label for="gamma">forgetting rate γ</label><output id="gamma-o">0.060</output><input id="gamma" type="range" min="0.005" max="0.3" step="0.005" value="0.06"></div>
+    <div class="ctrl" style="margin-top:6px"><label for="span">memory span</label><output id="span-o">1.5 s</output><input id="span" type="range" min="0.2" max="6" step="0.1" value="1.5"></div>
+  </section>
+  <section class="sec">
+    <h2>Events</h2>
+    <div id="log"></div>
+  </section>
+</aside>
+
+<div class="intro" id="intro">
+  <h2>You are the hole at the centre.</h2>
+  <p>Each ring drifting in this field is a hole: a vortex held together by shearing relations. <span style="color:var(--amber)">Amber</span> rings sustain themselves from within. <span style="color:var(--teal)">Teal</span> rings last only while their relations feed them. If one stops changing it calcifies (<span style="color:var(--slate)">slate</span>), its pores close, and forgetting re-articulates it.</p>
+  <p>Fly through the threads between holes to write memory into them. Fly through a ring's central hole to dive one scale step down. After five steps the scale cycle turns over and you come back in at the centre.</p>
+  <p class="touch-hint">Drag to look. Hold ▲ go to move. Use the buttons below for turns, roll, eversion and riding a flow.</p>
+  <ul class="keys">
+    <li><kbd>drag</kbd><span>look (the frame travels with you)</span></li>
+    <li><kbd>W A S D · Space C</kbd><span>move · Shift for speed · wheel sets pace</span></li>
+    <li><kbd>Q / E</kbd><span>roll, which also opens and closes the pores</span></li>
+    <li><kbd>1 2 3 4</kbd><span>120° turns about the four tetrahedral axes</span></li>
+    <li><kbd>X</kbd><span>evert through the ε core: (α, β, σ) → (β, −α, −σ)</span></li>
+    <li><kbd>F</kbd><span>ride the nearest flow and watch perceived motion vanish</span></li>
+    <li><kbd>M · H</kbd><span>memory threads · this card</span></li>
+  </ul>
+  <div class="row"><span class="legend">Based on <i>Relational Geometry: Holes, Memory and the Internal Observer</i>, D1–D10.</span><button id="enter">Enter the field</button></div>
+</div>
+
+<nav class="dock" aria-label="Moves">
+  <div class="grp touch-only"><button id="t-fwd" aria-label="Move forward">▲ go</button><button id="t-back" aria-label="Move back">▼</button></div>
+  <div class="grp" role="group" aria-label="Tetrahedral turns">
+    <button data-turn="0" title="120° about axis 1">g₁<kbd>1</kbd></button><button data-turn="1" title="120° about axis 2">g₂<kbd>2</kbd></button><button data-turn="2" title="120° about axis 3">g₃<kbd>3</kbd></button><button data-turn="3" title="120° about axis 4">g₄<kbd>4</kbd></button>
+  </div>
+  <div class="grp"><button id="roll-l" title="Roll left: pores contract">⟲<kbd>Q</kbd></button><button id="roll-r" title="Roll right: pores expand">⟳<kbd>E</kbd></button></div>
+  <div class="grp"><button id="b-evert" aria-pressed="false">evert<kbd>X</kbd></button><button id="b-ride" aria-pressed="false">ride flow<kbd>F</kbd></button><button id="b-threads" aria-pressed="true">threads<kbd>M</kbd></button></div>
+  <div class="grp"><button id="b-help">help<kbd>H</kbd></button><button id="b-panel" class="panel-toggle" aria-controls="panel" aria-expanded="false">instruments</button></div>
+</nav>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+'use strict';
+const TAU = Math.PI * 2;
+const A = 40;              // horned torus: major radius = tube radius = A (core point at origin)
+const K2 = 2 * A * A;      // inversion radius²: everts the horned torus into a cylinder of radius A
+const N = 36;              // holes per scale
+const CYCLE = 5;           // scale steps in one turn of σ
+const SEG = 8;             // subdivisions per relation so they curve under eversion
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const COL = {
+  internal: new THREE.Color('#e8b25a'), external: new THREE.Color('#5cc8c0'),
+  calcified: new THREE.Color('#747a8f'), dissolving: new THREE.Color('#b9a7ff'), violet: new THREE.Color('#b9a7ff')
+};
+const SCALES = [
+  { body: '#171a30', rimA: '#e8b25a', rimB: '#5cc8c0', rate: 1.0,  sizeLo: 0.9, sizeHi: 5.5, name: 'scale 0' },
+  { body: '#1c1630', rimA: '#f0a46a', rimB: '#7fb6e8', rate: 1.35, sizeLo: 0.8, sizeHi: 4.5, name: 'scale 1' },
+  { body: '#12202a', rimA: '#d9c46a', rimB: '#62d4b0', rate: 0.7,  sizeLo: 1.1, sizeHi: 6.5, name: 'scale 2' },
+  { body: '#201a26', rimA: '#e89a7a', rimB: '#a59ae8', rate: 1.15, sizeLo: 0.9, sizeHi: 5.0, name: 'scale 3' },
+  { body: '#161c22', rimA: '#e8c27a', rimB: '#5cb8d8', rate: 0.9,  sizeLo: 1.0, sizeHi: 6.0, name: 'scale 4' },
+];
+
+// ---------- renderer ----------
+const canvas = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.setClearColor(0x05060b, 1);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(72, 1, 0.1, 9000);
+const root = new THREE.Group();
+scene.add(root);
+
+const U = {
+  uTime: { value: 0 }, uEvert: { value: 0 }, uK2: { value: K2 }, uHoleScale: { value: 1 },
+  uFog: { value: new THREE.Color(0x05060b) }, uFogD: { value: 0.011 },
+  uDirA: { value: new THREE.Vector2(0.05, 0.05) }, uDirB: { value: new THREE.Vector2(0.04, -0.04) },
+};
+
+const EVERT = `
+uniform float uEvert; uniform float uK2;
+vec3 evertP(vec3 p){ float d2 = max(dot(p,p), 0.5); return mix(p, p * (uK2 / d2), uEvert); }
+vec3 evertN(vec3 p, vec3 n){ vec3 h = normalize(p + 1e-5); vec3 r = n - 2.0 * dot(n, h) * h; return normalize(mix(n, r, uEvert)); }
+`;
+const POROUS_V = EVERT + `
+varying vec2 vUv; varying vec3 vN; varying vec3 vW;
+void main(){
+  vUv = uv;
+  vec3 wp = (modelMatrix * vec4(position, 1.0)).xyz;
+  vec3 n = normalize(mat3(modelMatrix) * normal);
+  vN = evertN(wp, n);
+  vW = evertP(wp);
+  gl_Position = projectionMatrix * viewMatrix * vec4(vW, 1.0);
+}`;
+const POROUS_F = `
+uniform float uTime, uHoleScale, uPoreMul, uSeed, uOpacity, uFogD, uGlow;
+uniform vec2 uCellsA, uCellsB, uDirA, uDirB;
+uniform vec3 uBody, uRimA, uRimB, uFog;
+varying vec2 vUv; varying vec3 vN; varying vec3 vW;
+float hash(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7)) + uSeed * 17.13) * 43758.5453); }
+float pores(vec2 uv, vec2 cells, vec2 drift, float tw, float sc){
+  vec2 p = uv * cells + drift * uTime;
+  vec2 ip = floor(p); vec2 fp = fract(p);
+  float best = 9.0;
+  for (int j = -1; j <= 1; j++) { for (int i = -1; i <= 1; i++) {
+    vec2 g = vec2(float(i), float(j));
+    vec2 id = mod(ip + g, cells);
+    float h1 = hash(id), h2 = hash(id + 19.19), h3 = hash(id + 47.47);
+    vec2 c = g + 0.5 + 0.26 * vec2(sin(uTime * (0.15 + 0.5 * h1) * tw + h1 * 6.283), cos(uTime * (0.12 + 0.45 * h2) * tw + h2 * 6.283));
+    float r = (0.10 + 0.30 * h3 * h3) * sc * (0.85 + 0.15 * sin(uTime * 0.6 * tw + h3 * 12.0));
+    r *= step(0.2, h3);
+    best = min(best, length(fp - c) - r);
+  }}
+  return best;
+}
+void main(){
+  float sc = uHoleScale * uPoreMul;
+  float dA = pores(vUv, uCellsA, uDirA, 1.0, sc);
+  float dB = pores(fract(vUv + vec2(0.37, 0.21)), uCellsB, uDirB, 1.35, sc * 0.8);
+  if (dA < 0.0 || dB < 0.0) discard;
+  vec3 V = normalize(cameraPosition - vW);
+  float ndv = abs(dot(normalize(vN), V));
+  float fres = pow(1.0 - ndv, 2.2);
+  vec3 col = uBody * (0.35 + 0.65 * ndv) + uBody * fres * 1.2;
+  col += uRimA * exp(-dA * 26.0) * 1.15 * uGlow + uRimB * exp(-dB * 26.0) * 1.0 * uGlow;
+  float dist = length(cameraPosition - vW);
+  float fog = 1.0 - exp(-uFogD * uFogD * dist * dist);
+  gl_FragColor = vec4(mix(col, uFog, fog), uOpacity);
+}`;
+const LINE_V = EVERT + `
+attribute float aAlpha; attribute vec3 aColor;
+varying float vA; varying vec3 vC; varying float vD;
+void main(){
+  vec3 p = evertP((modelMatrix * vec4(position, 1.0)).xyz);
+  vA = aAlpha; vC = aColor; vD = length(cameraPosition - p);
+  gl_Position = projectionMatrix * viewMatrix * vec4(p, 1.0);
+}`;
+const LINE_F = `
+uniform float uFogD; varying float vA; varying vec3 vC; varying float vD;
+void main(){ float f = exp(-uFogD * uFogD * vD * vD * 0.6); gl_FragColor = vec4(vC * vA * f, 1.0); }`;
+const GLOW_V = EVERT + `
+varying float vD; varying vec3 vN; varying vec3 vW;
+void main(){
+  vec3 wp = (modelMatrix * vec4(position, 1.0)).xyz;
+  vW = evertP(wp); vN = normalize(mat3(modelMatrix) * normal); vD = length(cameraPosition - vW);
+  gl_Position = projectionMatrix * viewMatrix * vec4(vW, 1.0);
+}`;
+const GLOW_F = `
+uniform vec3 uColor; uniform float uFogD; uniform float uPulse; varying float vD; varying vec3 vN; varying vec3 vW;
+void main(){ float f = exp(-uFogD * uFogD * vD * vD * 0.5); vec3 V = normalize(cameraPosition - vW);
+  float c = pow(abs(dot(normalize(vN), V)), 1.5); gl_FragColor = vec4(uColor * (0.4 + c) * uPulse * f, 1.0); }`;
+const STAR_V = EVERT + `
+attribute float aSize; varying float vB;
+void main(){ vec3 p = evertP((modelMatrix * vec4(position, 1.0)).xyz); vB = aSize;
+  gl_PointSize = aSize; gl_Position = projectionMatrix * viewMatrix * vec4(p, 1.0); }`;
+const STAR_F = `varying float vB; void main(){ vec2 c = gl_PointCoord - 0.5; float a = smoothstep(0.5, 0.0, length(c)); gl_FragColor = vec4(vec3(0.75, 0.74, 0.95) * a * 0.8, 1.0); }`;
+
+function porousMat({ body, rimA, rimB, cellsA, cellsB, seed, opacity = 1, glow = 1 }) {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: U.uTime, uEvert: U.uEvert, uK2: U.uK2, uHoleScale: U.uHoleScale, uFog: U.uFog, uFogD: U.uFogD,
+      uDirA: U.uDirA, uDirB: U.uDirB,
+      uPoreMul: { value: 1 }, uSeed: { value: seed }, uOpacity: { value: opacity }, uGlow: { value: glow },
+      uCellsA: { value: new THREE.Vector2(cellsA[0], cellsA[1]) }, uCellsB: { value: new THREE.Vector2(cellsB[0], cellsB[1]) },
+      uBody: { value: new THREE.Color(body) }, uRimA: { value: new THREE.Color(rimA) }, uRimB: { value: new THREE.Color(rimB) },
+    },
+    vertexShader: POROUS_V, fragmentShader: POROUS_F, side: THREE.DoubleSide,
+    transparent: opacity < 1, depthWrite: opacity >= 1,
+  });
+}
+function glowMat(color) {
+  return new THREE.ShaderMaterial({
+    uniforms: { uEvert: U.uEvert, uK2: U.uK2, uFogD: U.uFogD, uColor: { value: new THREE.Color(color) }, uPulse: { value: 1 } },
+    vertexShader: GLOW_V, fragmentShader: GLOW_F, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
+  });
+}
+function lineMat() {
+  return new THREE.ShaderMaterial({
+    uniforms: { uEvert: U.uEvert, uK2: U.uK2, uFogD: U.uFogD },
+    vertexShader: LINE_V, fragmentShader: LINE_F, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false,
+  });
+}
+
+// shared geometry
+const ringGeo = new THREE.TorusGeometry(1, 0.38, 20, 44);
+const childGeo = new THREE.TorusGeometry(0.25, 0.25, 16, 30);   // horned: the next scale waiting in the hole
+const coreGeo = new THREE.SphereGeometry(0.06, 10, 8);
+const shellGeo = new THREE.TorusGeometry(A, A, 110, 220);
+const parentGeo = new THREE.TorusGeometry(300, 110, 40, 90);
+
+// ---------- static furniture (stars, parent hole, ε core) ----------
+function makeStars() {
+  const n = 1800, pos = new Float32Array(n * 3), size = new Float32Array(n);
+  for (let i = 0; i < n; i++) {
+    const u = Math.random() * 2 - 1, t = Math.random() * TAU, r = 700 + Math.random() * 900, s = Math.sqrt(1 - u * u);
+    pos.set([r * s * Math.cos(t), r * s * Math.sin(t), r * u], i * 3);
+    size[i] = (0.8 + Math.random() * 1.8) * renderer.getPixelRatio();
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('aSize', new THREE.BufferAttribute(size, 1));
+  const m = new THREE.ShaderMaterial({ uniforms: { uEvert: U.uEvert, uK2: U.uK2 }, vertexShader: STAR_V, fragmentShader: STAR_F,
+    transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+  const p = new THREE.Points(g, m); p.frustumCulled = false; return p;
+}
+const stars = makeStars();
+root.add(stars);
+const coreMat = glowMat('#d9ceff');
+const epsCore = new THREE.Mesh(new THREE.SphereGeometry(0.9, 18, 12), coreMat);
+root.add(epsCore);
+
+// ---------- RNG ----------
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const lerp = (a, b, t) => a + (b - a) * t;
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const sgn = (rng) => (rng() < 0.5 ? -1 : 1);
+
+// ---------- world (one scale step) ----------
+let identityCounter = 0;
+function newHole(rng, sp, idx) {
+  const s = Math.exp(lerp(Math.log(sp.sizeLo), Math.log(sp.sizeHi), Math.pow(rng(), 1.7)));
+  const k = Math.pow(2.5 / s, 0.4) * sp.rate;
+  return {
+    idx, id: ++identityCounter, gen: 0, s,
+    rho: 5 + rng() * 26, phi: rng() * TAU, theta: rng() * TAU,
+    wphi: sgn(rng) * (0.015 + rng() * 0.05) * k, wtheta: sgn(rng) * (0.04 + rng() * 0.17) * k,
+    kind: rng() < 0.33 ? 'internal' : 'external', e: 0.75 + rng() * 0.35,
+    rig: rng() * 0.6, hiT: 0, calcT: 0, dissT: 0, feed: 0.3, feedPrev: 0.3, varEMA: 0.05, deg: 0,
+    pos: new THREE.Vector3(), prev: new THREE.Vector3(), vel: new THREE.Vector3(), q: new THREE.Quaternion(), tumble: rng() * TAU,
+  };
+}
+function torusPos(h, out) {
+  const c = A + h.rho * Math.cos(h.theta);
+  return out.set(c * Math.cos(h.phi), c * Math.sin(h.phi), h.rho * Math.sin(h.theta));
+}
+const worlds = new Array(CYCLE).fill(null);
+function createWorld(k) {
+  const sp = SCALES[k], rng = mulberry32(1009 + k * 7919);
+  const holes = []; for (let i = 0; i < N; i++) holes.push(newHole(rng, sp, i));
+  for (const h of holes) { torusPos(h, h.pos); h.prev.copy(h.pos); }
+  return { k, holes, edges: new Map(), active: new Set(), lastT: null, sig: null, visits: 0 };
+}
+
+// ---------- state ----------
+const state = {
+  t: 0, sigma: 0, world: null, meshes: [], shell: null, parent: null, childMat: null,
+  evT: 0, evTarget: 0, evCount: 0, wind: { a: [1, 'α'], b: [1, 'β'], s: 1 },
+  trans: null, knnT: 0, threads: true, gamma: 0.06, span: 1.5, tau: 0.04,
+  inflow: 0, outflow: 0, memMass: 0, events: [],
+};
+const obs = {
+  pos: new THREE.Vector3(A * 0.62, 0, 0),
+  quat: new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2),
+  vel: new THREE.Vector3(), rollAcc: 0, ride: null, turn: null, turnQueue: [], word: [], pace: 1, lastPos: new THREE.Vector3(), speed: 0,
+};
+const q0inv = obs.quat.clone().conjugate();
+
+// ---------- building a scale ----------
+const hueBody = (c, f) => new THREE.Color(c).multiplyScalar(f);
+function buildScale(k) {
+  // tear down
+  for (const m of state.meshes) { root.remove(m.g); m.ring.material.dispose(); }
+  state.meshes = [];
+  if (state.shell) { root.remove(state.shell); state.shell.material.dispose(); }
+  if (state.parent) { root.remove(state.parent); state.parent.material.dispose(); }
+  if (state.childMat) state.childMat.dispose();
+
+  const sp = SCALES[k];
+  state.shell = new THREE.Mesh(shellGeo, porousMat({ body: sp.body, rimA: sp.rimA, rimB: sp.rimB, cellsA: [18, 13], cellsB: [26, 19], seed: 3.1 + k }));
+  root.add(state.shell);
+  state.parent = new THREE.Mesh(parentGeo, porousMat({ body: hueBody(sp.body, 0.7), rimA: sp.rimA, rimB: sp.rimB, cellsA: [14, 7], cellsB: [20, 9], seed: 9.7 + k, glow: 0.5 }));
+  root.add(state.parent);
+  const nextSp = SCALES[(k + 1) % CYCLE];
+  state.childMat = porousMat({ body: hueBody(nextSp.body, 1.6), rimA: nextSp.rimA, rimB: nextSp.rimB, cellsA: [7, 6], cellsB: [9, 7], seed: 5.5 + k, glow: 0.9 });
+
+  for (const h of state.world.holes) state.meshes.push(makeHoleMesh(h, sp));
+}
+function makeHoleMesh(h, sp) {
+  const g = new THREE.Group();
+  const ring = new THREE.Mesh(ringGeo, porousMat({ body: '#223', rimA: sp.rimA, rimB: sp.rimB, cellsA: [12, 5], cellsB: [16, 6], seed: h.id * 0.37 }));
+  const child = new THREE.Mesh(childGeo, state.childMat);
+  const core = new THREE.Mesh(coreGeo, coreMat);
+  g.add(ring, child, core);
+  root.add(g);
+  return { g, ring, child, core };
+}
+
+function signature(holes) {
+  const bins = new Float64Array(24);
+  for (let i = 0; i < holes.length; i++) for (let j = i + 1; j < holes.length; j++) {
+    const d = holes[i].pos.distanceTo(holes[j].pos);
+    bins[Math.min(23, Math.floor(d / (2.4 * A) * 24))]++;
+  }
+  return bins;
+}
+function selfOverlap(a, b) { // S = |<ψ|Rψ>|² / (<ψ|ψ><Rψ|Rψ>)
+  let ab = 0, aa = 0, bb = 0; for (let i = 0; i < a.length; i++) { ab += a[i] * b[i]; aa += a[i] * a[i]; bb += b[i] * b[i]; }
+  return aa && bb ? (ab * ab) / (aa * bb) : 0;
+}
+
+function enterScale(k, how) {
+  if (state.world) { state.world.lastT = state.t; state.world.sig = signature(state.world.holes); }
+  let w = worlds[k], msg = '';
+  if (!w) { w = worlds[k] = createWorld(k); msg = `Scale ${k}: first visit.`; }
+  else {
+    const el = state.t - w.lastT;
+    for (const h of w.holes) { h.phi += h.wphi * el; h.theta += h.wtheta * el; torusPos(h, h.pos); h.prev.copy(h.pos); }
+    const f = Math.exp(-state.gamma * el);
+    for (const e of w.edges.values()) e.w = e.w0 + (e.w - e.w0) * f;
+    const S = selfOverlap(w.sig, signature(w.holes));
+    const rec = S > 0.9;
+    msg = `Returned to scale ${k} after ${el.toFixed(0)} s. S = ${S.toFixed(3)}: ${rec ? 'recognized. Everything moved, yet the relations feel familiar.' : 'not recognized. Too much has changed.'}`;
+  }
+  w.visits++;
+  state.world = w;
+  buildScale(k);
+  snaps.length = 0;
+  obs.ride = null; setPressed('b-ride', false);
+  logEvent(msg);
+  if (how) toast(how);
+}
+
+// ---------- events / toast ----------
+function logEvent(s) {
+  state.events.unshift(`${fmtT(state.t)}  ${s}`);
+  state.events.length = Math.min(state.events.length, 7);
+  document.getElementById('log').innerHTML = state.events.map(e => `<div>${e.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</div>`).join('');
+}
+const fmtT = (t) => { const m = Math.floor(t / 60), s = Math.floor(t % 60); return `${m}:${String(s).padStart(2, '0')}`; };
+let toastTimer = 0;
+function toast(s) { const el = document.getElementById('toast'); el.textContent = s; el.style.opacity = 1; clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.style.opacity = 0; }, 3600); }
+
+// ---------- input ----------
+const keys = new Set();
+const X = new THREE.Vector3(1, 0, 0), Y = new THREE.Vector3(0, 1, 0), Z = new THREE.Vector3(0, 0, 1);
+const TET = [new THREE.Vector3(1, 1, 1), new THREE.Vector3(1, -1, -1), new THREE.Vector3(-1, 1, -1), new THREE.Vector3(-1, -1, 1)].map(v => v.normalize());
+const tmpQ = new THREE.Quaternion();
+function rotLocal(axis, ang) { tmpQ.setFromAxisAngle(axis, ang); obs.quat.multiply(tmpQ); const l = Math.hypot(obs.quat.x, obs.quat.y, obs.quat.z, obs.quat.w); obs.quat.set(obs.quat.x / l, obs.quat.y / l, obs.quat.z / l, obs.quat.w / l); }
+function queueTurn(i) { obs.turnQueue.push(i); }
+
+addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;
+  const k = e.key.toLowerCase();
+  keys.add(k);
+  if (e.shiftKey) keys.add('shift');
+  if (['1', '2', '3', '4'].includes(k)) queueTurn(+k - 1);
+  if (k === 'x') toggleEvert();
+  if (k === 'f') toggleRide();
+  if (k === 'm') toggleThreads();
+  if (k === 'h') toggleHelp();
+  if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();
+});
+addEventListener('keyup', (e) => { keys.delete(e.key.toLowerCase()); if (!e.shiftKey) keys.delete('shift'); });
+addEventListener('blur', () => keys.clear());
+
+let drag = null;
+canvas.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, id: e.pointerId }; canvas.setPointerCapture(e.pointerId); });
+canvas.addEventListener('pointermove', (e) => {
+  if (!drag || drag.id !== e.pointerId) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
+  rotLocal(Y, -dx * 0.0032); rotLocal(X, -dy * 0.0032);
+});
+const endDrag = () => { drag = null; };
+canvas.addEventListener('pointerup', endDrag); canvas.addEventListener('pointercancel', endDrag);
+canvas.addEventListener('wheel', (e) => { e.preventDefault(); obs.pace = clamp(obs.pace * Math.exp(-e.deltaY * 0.0012), 0.2, 6); toast(`pace ×${obs.pace.toFixed(2)}`); }, { passive: false });
+
+const held = { fwd: false, back: false, rl: false, rr: false };
+function holdBtn(id, key) {
+  const b = document.getElementById(id);
+  const on = (e) => { e.preventDefault(); held[key] = true; }, off = () => { held[key] = false; };
+  b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointerleave', off); b.addEventListener('pointercancel', off);
+}
+holdBtn('t-fwd', 'fwd'); holdBtn('t-back', 'back'); holdBtn('roll-l', 'rl'); holdBtn('roll-r', 'rr');
+document.querySelectorAll('[data-turn]').forEach(b => b.addEventListener('click', () => queueTurn(+b.dataset.turn)));
+document.getElementById('b-evert').addEventListener('click', toggleEvert);
+document.getElementById('b-ride').addEventListener('click', toggleRide);
+document.getElementById('b-threads').addEventListener('click', toggleThreads);
+document.getElementById('b-help').addEventListener('click', toggleHelp);
+document.getElementById('enter').addEventListener('click', toggleHelp);
+const panelEl = document.getElementById('panel');
+document.getElementById('b-panel').addEventListener('click', () => {
+  const c = panelEl.classList.toggle('collapsed');
+  document.getElementById('b-panel').setAttribute('aria-expanded', String(!c));
+});
+if (matchMedia('(min-width: 821px)').matches) panelEl.classList.remove('collapsed');
+
+function setPressed(id, v) { document.getElementById(id).setAttribute('aria-pressed', String(v)); }
+function toggleHelp() { const el = document.getElementById('intro'); el.hidden = !el.hidden; }
+function toggleThreads() { state.threads = !state.threads; setPressed('b-threads', state.threads); }
+function toggleEvert() {
+  if (state.trans) return;
+  if (state.evT > 0 && state.evT < 1) return;
+  state.evTarget = state.evTarget ? 0 : 1;
+  obs.vel.set(0, 0, 0);
+  setPressed('b-evert', !!state.evTarget);
+  toast(state.evTarget ? 'Everting through the ε core: the outside world folds into the central hole.' : 'Everting back. The return arrives changed.');
+}
+function toggleRide() {
+  if (obs.ride) { obs.ride = null; setPressed('b-ride', false); toast('Released from the flow.'); return; }
+  const h = nearestHole(); if (!h) return;
+  obs.ride = { idx: h.idx, id: h.id };
+  setPressed('b-ride', true);
+  toast(`Riding identity #${h.id}. Watch its thread vanish: you share its motion.`);
+}
+function bindRange(id, outId, fmt, set) {
+  const el = document.getElementById(id), out = document.getElementById(outId);
+  const f = () => { set(+el.value); out.textContent = fmt(+el.value); };
+  el.addEventListener('input', f); f();
+}
+bindRange('tau', 'tau-o', v => v.toFixed(3), v => { state.tau = v; state.tauDirty = true; });
+bindRange('gamma', 'gamma-o', v => v.toFixed(3), v => { state.gamma = v; });
+bindRange('span', 'span-o', v => `${v.toFixed(1)} s`, v => { state.span = v; });
+
+// ---------- eversion helpers (JS mirror of the shader) ----------
+function evertJS(p, t, out) {
+  const d2 = Math.max(p.lengthSq(), 0.5), f = K2 / d2;
+  return out.set(lerp(p.x, p.x * f, t), lerp(p.y, p.y * f, t), lerp(p.z, p.z * f, t));
+}
+
+// ---------- holes ----------
+function nearestHole() {
+  let best = null, bd = Infinity;
+  for (const h of state.world.holes) { if (h.kind === 'dissolving') continue; const d = h.pos.distanceTo(obs.pos); if (d < bd) { bd = d; best = h; } }
+  return best;
+}
+function displayScale(h) {
+  let f = 0.55 + 0.45 * Math.min(h.e, 1.6);
+  if (h.kind === 'dissolving') f *= Math.max(0, 1 - h.dissT / 2.2);
+  return h.s * f;
+}
+const v1 = new THREE.Vector3(), v2 = new THREE.Vector3(), v3 = new THREE.Vector3();
+function updateHolePositions(dt) {
+  for (const h of state.world.holes) {
+    h.prev.copy(h.pos);
+    h.phi += h.wphi * dt; h.theta += h.wtheta * dt;
+    torusPos(h, h.pos);
+    if (dt > 0) h.vel.subVectors(h.pos, h.prev).divideScalar(dt);
+    // a vortex ring travels along its own axis
+    const len = h.vel.length();
+    if (len > 1e-4) { tmpQ.setFromUnitVectors(Z, v1.copy(h.vel).divideScalar(len)); h.q.slerp(tmpQ, 1 - Math.exp(-dt * 3)); }
+    h.tumble += dt * (0.6 + 1.2 / h.s);
+  }
+}
+function edgeKey(i, j) { return i < j ? i * 64 + j : j * 64 + i; }
+function rebuildRelations() {
+  const H = state.world.holes, act = new Set();
+  for (const h of H) h.deg = 0;
+  for (let i = 0; i < H.length; i++) {
+    const a = H[i]; if (a.kind === 'calcified' || a.kind === 'dissolving') continue;
+    const ds = [];
+    for (let j = 0; j < H.length; j++) { if (j === i) continue; const b = H[j]; if (b.kind === 'calcified' || b.kind === 'dissolving') continue; ds.push([a.pos.distanceToSquared(b.pos), j]); }
+    ds.sort((x, y) => x[0] - y[0]);
+    for (let n = 0; n < Math.min(3, ds.length); n++) act.add(edgeKey(i, ds[n][1]));
+  }
+  for (const key of act) {
+    const i = Math.floor(key / 64), j = key % 64;
+    let e = state.world.edges.get(key);
+    const shear = clamp(H[i].vel.distanceTo(H[j].vel) / 7, 0, 1);
+    const w0 = 0.01 + 0.09 * (1 - shear);
+    if (!e) { e = { i, j, w: w0, w0, shear, hot: 0 }; state.world.edges.set(key, e); }
+    e.shear = shear; e.w0 = w0;
+    H[i].deg++; H[j].deg++;
+  }
+  state.world.active = act;
+}
+function segDist(p, a, b) {
+  v1.subVectors(b, a); v2.subVectors(p, a);
+  const t = clamp(v2.dot(v1) / Math.max(v1.lengthSq(), 1e-6), 0, 1);
+  return v3.copy(a).addScaledVector(v1, t).distanceTo(p);
+}
+function updateRelations(dt) {
+  const H = state.world.holes, g = state.gamma;
+  let inflow = 0, outflow = 0, mass = 0;
+  for (const h of H) { h.feedPrev = h.feed; h.feed = 0; }
+  const decay = 1 - Math.exp(-g * dt);
+  for (const [key, e] of state.world.edges) {
+    const isAct = state.world.active.has(key);
+    if (isAct && !state.trans) {
+      const d = segDist(obs.pos, H[e.i].pos, H[e.j].pos);
+      if (d < 3.2) { const add = 0.9 * dt * (1 - d / 3.2); e.w += add; inflow += add; e.hot = 1; }
+      e.w += 0.003 * (1 - e.shear) * dt;   // co-revolving relations take hold
+    }
+    const dw = (e.w - e.w0) * decay * (isAct ? 1 : 1.5);
+    e.w -= dw; if (dw > 0) outflow += dw;
+    e.hot = Math.max(0, e.hot - dt * 0.8);
+    mass += Math.max(0, e.w - e.w0);
+    if (isAct) { H[e.i].feed += e.w; H[e.j].feed += e.w; }
+  }
+  const k = 1 - Math.exp(-dt * 1.5);
+  state.inflow = lerp(state.inflow, inflow / Math.max(dt, 1e-3), k);
+  state.outflow = lerp(state.outflow, outflow / Math.max(dt, 1e-3), k);
+  state.memMass = mass;
+}
+function updateIdentities(dt) {
+  const H = state.world.holes;
+  for (const h of H) {
+    const noise = (Math.random() - 0.5) * 0.25 * Math.sqrt(dt);
+    const dv = Math.abs(h.feed - h.feedPrev) / Math.max(dt, 1e-3);
+    h.varEMA = lerp(h.varEMA, dv, 1 - Math.exp(-dt / 3));
+    switch (h.kind) {
+      case 'internal':
+        h.e += (0.35 * (1 - h.e) + 0.12 * h.feed - 0.03) * dt + noise * 0.5;
+        h.rig = clamp(h.rig + dt * (0.03 - 0.25 * h.varEMA), 0, 1.2);
+        if (h.rig >= 1) { h.kind = 'calcified'; h.calcT = 0; logEvent(`#${h.id} calcified. Zero tolerance for change: its pores closed and nothing new can attach.`); }
+        break;
+      case 'calcified':
+        h.calcT += dt;
+        if (h.calcT > 7) { h.kind = 'external'; h.e = 0.7; h.rig = 0; h.hiT = 0; logEvent(`Forgetting re-articulated #${h.id}. It is open to relations again.`); }
+        break;
+      case 'external':
+        h.e += 0.2 * (1.6 * h.feed - h.e) * dt + noise;
+        h.hiT = h.e > 1.05 ? h.hiT + dt : Math.max(0, h.hiT - dt);
+        if (h.hiT > 5) { h.kind = 'internal'; h.rig = 0; h.varEMA = 0.08; logEvent(`#${h.id} became self-sustaining. Its relations co-revolved long enough to take hold.`); }
+        else if (h.e < 0.22) { h.kind = 'dissolving'; h.dissT = 0; logEvent(`#${h.id} is dissolving. Its relations no longer hold it.`); }
+        break;
+      case 'dissolving':
+        h.dissT += dt;
+        if (h.dissT > 2.2) rearticulate(h);
+        break;
+    }
+    h.e = clamp(h.e, 0, 2);
+  }
+}
+function rearticulate(h) {
+  const W = state.world, H = W.holes;
+  // its energy is re-expressed where two strong relations meet
+  let best = null;
+  for (const key of W.active) { const e = W.edges.get(key); if (e && e.i !== h.idx && e.j !== h.idx && (!best || e.w > best.w)) best = e; }
+  for (const [key, e] of W.edges) if (e.i === h.idx || e.j === h.idx) W.edges.delete(key);
+  const old = h.id;
+  const rng = Math.random;
+  const nh = newHole(rng, SCALES[W.k], h.idx);
+  if (best) {
+    const a = H[best.i], b = H[best.j];
+    v1.addVectors(a.pos, b.pos).multiplyScalar(0.5);
+    nh.phi = Math.atan2(v1.y, v1.x);
+    const c = Math.hypot(v1.x, v1.y) - A;
+    nh.theta = Math.atan2(v1.z, c); nh.rho = clamp(Math.hypot(c, v1.z), 4, 31);
+    nh.wphi = (a.wphi + b.wphi) / 2 + (rng() - 0.5) * 0.01; nh.wtheta = (a.wtheta + b.wtheta) / 2 + (rng() - 0.5) * 0.03;
+  }
+  nh.s *= 0.7; nh.kind = 'external'; nh.e = 0.65; nh.gen = h.gen + 1;
+  torusPos(nh, nh.pos); nh.prev.copy(nh.pos);
+  H[h.idx] = nh;
+  logEvent(`#${old} re-articulated as #${nh.id}${best ? ` between #${H[best.i].id} and #${H[best.j].id}` : ''}. Death as a change of form.`);
+}
+
+// ---------- memory: the observer as (F_prev, F_now) ----------
+const snaps = [];
+let snapT = 0;
+function takeSnap() {
+  const H = state.world.holes, hp = new Float32Array(N * 3), hg = new Int32Array(N);
+  for (let i = 0; i < N; i++) { hp[i * 3] = H[i].pos.x; hp[i * 3 + 1] = H[i].pos.y; hp[i * 3 + 2] = H[i].pos.z; hg[i] = H[i].id; }
+  snaps.push({ t: state.t, o: obs.pos.clone(), q: obs.quat.clone(), hp, hg });
+  while (snaps.length && state.t - snaps[0].t > 7) snaps.shift();
+}
+function prevFrame() {
+  const target = state.t - state.span;
+  let best = null;
+  for (const s of snaps) { if (s.t <= target) best = s; else break; }
+  return best || snaps[0] || null;
+}
+const relNow = new Float32Array(N * 3), relPrev = new Float32Array(N * 3), relOk = new Uint8Array(N);
+let perceived = 0;
+function computeRelations() {
+  const H = state.world.holes, F = prevFrame();
+  const qi = obs.quat.clone().conjugate(), qpi = F ? F.q.clone().conjugate() : null;
+  let sum = 0, cnt = 0;
+  for (let i = 0; i < N; i++) {
+    v1.subVectors(H[i].pos, obs.pos).applyQuaternion(qi);
+    relNow[i * 3] = v1.x; relNow[i * 3 + 1] = v1.y; relNow[i * 3 + 2] = v1.z;
+    relOk[i] = 0;
+    if (F && F.hg[i] === H[i].id) {
+      v2.set(F.hp[i * 3], F.hp[i * 3 + 1], F.hp[i * 3 + 2]).sub(F.o).applyQuaternion(qpi);
+      relPrev[i * 3] = v2.x; relPrev[i * 3 + 1] = v2.y; relPrev[i * 3 + 2] = v2.z;
+      relOk[i] = 1;
+      const d = v1.length();
+      if (d < 40) { sum += v1.distanceTo(v2) / Math.max(state.t - F.t, 0.05); cnt++; }
+    }
+  }
+  perceived = lerp(perceived, cnt ? sum / cnt : 0, 0.15);
+}
+
+// ---------- recurrence plot ----------
+const RN = 180;
+const recur = { vecs: [], dirty: true, t: 0, marks: [] };
+const recCanvas = document.getElementById('recur'), recCtx = recCanvas.getContext('2d');
+const recImg = recCtx.createImageData(RN, RN);
+function sampleRecurrence() {
+  const H = state.world.holes, v = new Float32Array(N), L = Math.log(1 + 3 * A);
+  for (let i = 0; i < N; i++) v[i] = Math.log(1 + H[i].pos.distanceTo(obs.pos)) / L;
+  recur.vecs.push(v); if (recur.vecs.length > RN) recur.vecs.shift();
+  recur.dirty = true;
+}
+function drawRecurrence() {
+  if (!recur.dirty && !state.tauDirty) return; recur.dirty = false; state.tauDirty = false;
+  const V = recur.vecs, n = V.length, d = recImg.data, tau2 = state.tau * state.tau;
+  d.fill(0);
+  for (let p = 0; p < RN * RN; p++) { d[p * 4] = 10; d[p * 4 + 1] = 11; d[p * 4 + 2] = 22; d[p * 4 + 3] = 255; }
+  const off = RN - n;
+  for (let i = 0; i < n; i++) for (let j = 0; j <= i; j++) {
+    let s = 0; const a = V[i], b = V[j];
+    for (let k = 0; k < N; k++) { const x = a[k] - b[k]; s += x * x; }
+    s /= N;
+    if (s < tau2) {
+      const f = 1 - Math.sqrt(s / tau2);
+      const r = 120 + 90 * f, g = 100 + 70 * f, bl = 200 + 55 * f;
+      for (const [x, y] of [[i, j], [j, i]]) { const p = ((off + y) * RN + off + x) * 4; d[p] = r; d[p + 1] = g; d[p + 2] = bl; }
+    }
+  }
+  recCtx.putImageData(recImg, 0, 0);
+}
+
+// ---------- memory field (everted view) ----------
+const mf = document.getElementById('memfield'), mctx = mf.getContext('2d');
+function kindColor(h) { return h.kind === 'internal' ? '#e8b25a' : h.kind === 'external' ? '#5cc8c0' : h.kind === 'calcified' ? '#747a8f' : '#b9a7ff'; }
+function diskMap(x, y, z, R) {
+  const d = Math.hypot(x, y, z), k = 30, r = R * k / (k + d);
+  const b = Math.atan2(y, x);
+  return [Math.cos(b) * r, -Math.sin(b) * r, z < 0, d];
+}
+function drawMemoryField() {
+  const W = mf.width, R = W * 0.46, c = W / 2;
+  mctx.setTransform(1, 0, 0, 1, 0, 0);
+  mctx.clearRect(0, 0, W, W);
+  const g = mctx.createRadialGradient(c, c, 0, c, c, R);
+  g.addColorStop(0, '#04040a'); g.addColorStop(0.7, '#0d0f1e'); g.addColorStop(1, '#1a1830');
+  mctx.fillStyle = g; mctx.beginPath(); mctx.arc(c, c, R, 0, TAU); mctx.fill();
+  mctx.strokeStyle = 'rgba(185,167,255,.35)'; mctx.lineWidth = 1.5; mctx.stroke();
+  mctx.strokeStyle = 'rgba(139,144,172,.18)'; mctx.lineWidth = 1;
+  mctx.font = '17px "IBM Plex Mono", monospace'; mctx.fillStyle = 'rgba(139,144,172,.6)';
+  for (const d of [10, 40, 160]) { const r = R * 30 / (30 + d); mctx.beginPath(); mctx.arc(c, c, r, 0, TAU); mctx.stroke(); mctx.fillText(`${d}`, c + r * 0.71 + 4, c - r * 0.71); }
+  mctx.save(); mctx.translate(c, c);
+  const H = state.world.holes;
+  for (let i = 0; i < N; i++) {
+    const h = H[i];
+    const [px, py, front, d] = diskMap(relNow[i * 3], relNow[i * 3 + 1], relNow[i * 3 + 2], R);
+    if (relOk[i] && state.threads) {
+      const [gx, gy] = diskMap(relPrev[i * 3], relPrev[i * 3 + 1], relPrev[i * 3 + 2], R);
+      const grad = mctx.createLinearGradient(gx, gy, px, py);
+      grad.addColorStop(0, 'rgba(185,167,255,0)'); grad.addColorStop(1, front ? 'rgba(185,167,255,.85)' : 'rgba(185,167,255,.35)');
+      mctx.strokeStyle = grad; mctx.lineWidth = 2; mctx.beginPath(); mctx.moveTo(gx, gy); mctx.lineTo(px, py); mctx.stroke();
+      mctx.strokeStyle = 'rgba(185,167,255,.35)'; mctx.lineWidth = 1; mctx.beginPath(); mctx.arc(gx, gy, 3, 0, TAU); mctx.stroke();
+    }
+    const size = clamp(displayScale(h) * 40 / (8 + d), 2.5, 16);
+    mctx.globalAlpha = front ? 1 : 0.38;
+    mctx.fillStyle = kindColor(h);
+    mctx.beginPath(); mctx.arc(px, py, size, 0, TAU); mctx.fill();
+    if (obs.ride && obs.ride.id === h.id) { mctx.strokeStyle = '#fff'; mctx.lineWidth = 2; mctx.beginPath(); mctx.arc(px, py, size + 4, 0, TAU); mctx.stroke(); }
+    mctx.globalAlpha = 1;
+  }
+  // the blind spot
+  mctx.fillStyle = '#000'; mctx.beginPath(); mctx.arc(0, 0, 9, 0, TAU); mctx.fill();
+  mctx.strokeStyle = 'rgba(185,167,255,.8)'; mctx.lineWidth = 1.5; mctx.beginPath(); mctx.arc(0, 0, 9, 0, TAU); mctx.stroke();
+  mctx.restore();
+}
+
+// ---------- relation + thread buffers ----------
+const MAXE = 160;
+function makeLineBuf(maxVerts) {
+  const g = new THREE.BufferGeometry();
+  const pos = new Float32Array(maxVerts * 3), al = new Float32Array(maxVerts), col = new Float32Array(maxVerts * 3);
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
+  g.setAttribute('aAlpha', new THREE.BufferAttribute(al, 1).setUsage(THREE.DynamicDrawUsage));
+  g.setAttribute('aColor', new THREE.BufferAttribute(col, 3).setUsage(THREE.DynamicDrawUsage));
+  const l = new THREE.LineSegments(g, lineMat()); l.frustumCulled = false; root.add(l);
+  return { l, pos, al, col, g };
+}
+const relBuf = makeLineBuf(MAXE * SEG * 2);
+const thrBuf = makeLineBuf(N * 2 * 2);
+const cA = new THREE.Color(), cB = new THREE.Color(), cT = new THREE.Color();
+function holeColor(h, out) { return out.copy(COL[h.kind] || COL.external); }
+function writeRelations() {
+  const H = state.world.holes; let n = 0;
+  for (const key of state.world.active) {
+    const e = state.world.edges.get(key); if (!e || n >= MAXE) continue;
+    const a = H[e.i].pos, b = H[e.j].pos;
+    holeColor(H[e.i], cA); holeColor(H[e.j], cB);
+    const al = 0.05 + 0.85 * Math.min(1, (e.w - 0.01) * 1.6);
+    for (let s = 0; s < SEG; s++) for (let m = 0; m < 2; m++) {
+      const t = (s + m) / SEG, vi = (n * SEG + s) * 2 + m;
+      relBuf.pos[vi * 3] = lerp(a.x, b.x, t); relBuf.pos[vi * 3 + 1] = lerp(a.y, b.y, t); relBuf.pos[vi * 3 + 2] = lerp(a.z, b.z, t);
+      cT.copy(cA).lerp(cB, t).lerp(COL.violet, e.hot * 0.8);
+      relBuf.col[vi * 3] = cT.r; relBuf.col[vi * 3 + 1] = cT.g; relBuf.col[vi * 3 + 2] = cT.b;
+      relBuf.al[vi] = al * (0.55 + 0.45 * Math.sin(t * Math.PI)) + e.hot * 0.4;
+    }
+    n++;
+  }
+  relBuf.g.setDrawRange(0, n * SEG * 2);
+  for (const k of ['position', 'aAlpha', 'aColor']) relBuf.g.attributes[k].needsUpdate = true;
+}
+function writeThreads() {
+  let n = 0;
+  if (state.threads) {
+    const H = state.world.holes;
+    for (let i = 0; i < N; i++) {
+      if (!relOk[i]) continue;
+      // ghost: where memory says the hole is, carried in the present frame
+      v1.set(relPrev[i * 3], relPrev[i * 3 + 1], relPrev[i * 3 + 2]).applyQuaternion(obs.quat).add(obs.pos);
+      const b = H[i].pos;
+      if (v1.distanceTo(b) < 0.02) continue;
+      for (let m = 0; m < 2; m++) {
+        const p = m ? b : v1, vi = n * 2 + m;
+        thrBuf.pos[vi * 3] = p.x; thrBuf.pos[vi * 3 + 1] = p.y; thrBuf.pos[vi * 3 + 2] = p.z;
+        thrBuf.col[vi * 3] = COL.violet.r; thrBuf.col[vi * 3 + 1] = COL.violet.g; thrBuf.col[vi * 3 + 2] = COL.violet.b;
+        thrBuf.al[vi] = m ? 0.9 : 0.0;
+      }
+      n++;
+    }
+  }
+  thrBuf.g.setDrawRange(0, n * 2);
+  for (const k of ['position', 'aAlpha', 'aColor']) thrBuf.g.attributes[k].needsUpdate = true;
+}
+function writeHoleMeshes(dt) {
+  const H = state.world.holes, hs = U.uHoleScale.value;
+  for (let i = 0; i < N; i++) {
+    const h = H[i], m = state.meshes[i];
+    if (m.id !== h.id) { // identity was re-articulated: rebuild its ring
+      m.id = h.id; m.ring.material.uniforms.uSeed.value = h.id * 0.37;
+    }
+    m.g.position.copy(h.pos); m.g.quaternion.copy(h.q);
+    const sc = displayScale(h) * (0.75 + 0.25 * hs);
+    m.g.scale.setScalar(Math.max(sc, 1e-3));
+    m.child.rotation.set(h.tumble * 0.7, h.tumble, 0);
+    const u = m.ring.material.uniforms;
+    holeColor(h, cA);
+    u.uBody.value.copy(cA).multiplyScalar(h.kind === 'calcified' ? 0.32 : 0.22);
+    u.uRimA.value.copy(cA).multiplyScalar(1.1);
+    u.uRimB.value.copy(cA).lerp(COL.violet, 0.5);
+    const targetPore = h.kind === 'calcified' ? 0.12 : h.kind === 'dissolving' ? 1 + h.dissT : h.kind === 'internal' ? 0.85 : 1.15;
+    u.uPoreMul.value = lerp(u.uPoreMul.value, targetPore, 1 - Math.exp(-dt * 2));
+  }
+}
+
+// ---------- tetrahedral turns, roll and scale coupling ----------
+const SUB = '₁₂₃₄';
+function updateTurns(dt) {
+  if (!obs.turn && obs.turnQueue.length) {
+    const i = obs.turnQueue.shift();
+    obs.turn = { i, rem: TAU / 3 };
+    obs.word.push('g' + SUB[i]); if (obs.word.length > 18) obs.word.shift();
+  }
+  if (obs.turn) {
+    const step = Math.min(obs.turn.rem, (TAU / 3) / 0.45 * dt);
+    rotLocal(TET[obs.turn.i], step); obs.turn.rem -= step;
+    if (obs.turn.rem <= 1e-6) obs.turn = null;
+  }
+}
+
+// ---------- main loop ----------
+const clock = new THREE.Clock();
+let recSampleT = 0, hudT = 0;
+const camDisp = new THREE.Vector3();
+
+function resize() {
+  const w = window.innerWidth, h = window.innerHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+
+function frame() {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  state.t += dt; U.uTime.value = state.t;
+
+  // rotation input
+  const rot = 1.4 * dt;
+  if (keys.has('arrowleft')) rotLocal(Y, rot);
+  if (keys.has('arrowright')) rotLocal(Y, -rot);
+  if (keys.has('arrowup')) rotLocal(X, rot);
+  if (keys.has('arrowdown')) rotLocal(X, -rot);
+  let roll = 0;
+  if (keys.has('q') || held.rl) roll += 1;
+  if (keys.has('e') || held.rr) roll -= 1;
+  if (roll) { rotLocal(Z, roll * 1.2 * dt); obs.rollAcc -= roll * 1.2 * dt; }
+  updateTurns(dt);
+  // roll couples to scale: a full roll is a full breath of the pores
+  U.uHoleScale.value = Math.exp(state.wind.s * 0.55 * Math.sin(obs.rollAcc * 0.5));
+
+  // the world flows
+  updateHolePositions(dt);
+
+  // movement (frozen while everting or crossing scale)
+  const evAnimating = state.evT > 0 && state.evT < 1;
+  if (!state.trans && !evAnimating) {
+    const inp = v2.set(0, 0, 0);
+    if (keys.has('w') || held.fwd) inp.z -= 1;
+    if (keys.has('s') || held.back) inp.z += 1;
+    if (keys.has('a')) inp.x -= 1;
+    if (keys.has('d')) inp.x += 1;
+    if (keys.has(' ')) inp.y += 1;
+    if (keys.has('c')) inp.y -= 1;
+    if (inp.lengthSq() > 0) inp.normalize();
+    const sp = 9 * obs.pace * (keys.has('shift') ? 3 : 1);
+    inp.applyQuaternion(obs.quat).multiplyScalar(sp);
+    obs.vel.lerp(inp, 1 - Math.exp(-dt * 5));
+    obs.lastPos.copy(obs.pos);
+    if (state.evT >= 1) { evertJS(obs.pos, 1, camDisp).addScaledVector(obs.vel, dt); evertJS(camDisp, 1, obs.pos); }
+    else obs.pos.addScaledVector(obs.vel, dt);
+    if (obs.ride) {
+      const h = state.world.holes.find(x => x.id === obs.ride.id);
+      if (h) obs.pos.add(v1.subVectors(h.pos, h.prev));
+      else { obs.ride = null; setPressed('b-ride', false); toast('The identity you rode dissolved. You are released.'); }
+    }
+    obs.speed = lerp(obs.speed, obs.pos.distanceTo(obs.lastPos) / Math.max(dt, 1e-3), 0.2);
+    if (state.evT === 0) checkCrossings();
+  }
+
+  // relations, identities
+  state.knnT -= dt; if (state.knnT <= 0) { rebuildRelations(); state.knnT = 0.75; }
+  updateRelations(dt);
+  updateIdentities(dt);
+
+  // memory
+  snapT -= dt; if (snapT <= 0) { takeSnap(); snapT = 1 / 20; }
+  computeRelations();
+  recSampleT -= dt; if (recSampleT <= 0) { sampleRecurrence(); recSampleT = 0.25; }
+
+  // eversion
+  if (state.evT !== state.evTarget) {
+    const before = state.evT;
+    state.evT = clamp(state.evT + Math.sign(state.evTarget - state.evT) * dt / (reduceMotion ? 0.8 : 2.6), 0, 1);
+    if (state.evT === state.evTarget && before !== state.evT) completeEversion();
+  }
+  const es = state.evT * state.evT * (3 - 2 * state.evT);
+  U.uEvert.value = es;
+  U.uFogD.value = lerp(0.011, 0.0026, es);
+  if (evAnimating) faceCore(dt);
+
+  // transitions between scales
+  if (state.trans) stepTransition(dt);
+
+  // visuals
+  writeHoleMeshes(dt);
+  writeRelations();
+  writeThreads();
+  coreMat.uniforms.uPulse.value = 0.7 + 0.3 * Math.sin(state.t * 2.1);
+  evertJS(obs.pos, es, camera.position);
+  camera.quaternion.copy(obs.quat);
+  renderer.render(scene, camera);
+
+  drawMemoryField();
+  drawRecurrence();
+  hudT -= dt; if (hudT <= 0) { updateHUD(); hudT = 0.2; }
+  requestAnimationFrame(frame);
+}
+
+// while everting, the frame turns toward the core: the outside is folding into it
+const lookM = new THREE.Matrix4(), lookQ = new THREE.Quaternion(), upV = new THREE.Vector3();
+function faceCore(dt) {
+  evertJS(obs.pos, U.uEvert.value, camDisp);
+  upV.set(0, 1, 0).applyQuaternion(obs.quat);
+  lookM.lookAt(camDisp, v3.set(0, 0, 0), upV);
+  lookQ.setFromRotationMatrix(lookM);
+  if (lookQ.dot(obs.quat) < 0) lookQ.set(-lookQ.x, -lookQ.y, -lookQ.z, -lookQ.w);
+  obs.quat.slerp(lookQ, 1 - Math.exp(-dt * 1.6));
+}
+function completeEversion() {
+  state.evCount = (state.evCount + 1) % 4;
+  const w = state.wind; // (α, β, σ) ↦ (β, −α, −σ)
+  const na = [w.b[0], w.b[1]], nb = [-w.a[0], w.a[1]];
+  w.a = na; w.b = nb; w.s = -w.s;
+  const vec = (n) => (n === 'α' ? [1, 1] : [1, -1]);
+  const da = vec(w.a[1]), db = vec(w.b[1]);
+  U.uDirA.value.set(da[0] * w.a[0] * 0.05, da[1] * w.a[0] * 0.05);
+  U.uDirB.value.set(db[0] * w.b[0] * 0.04, db[1] * w.b[0] * 0.04);
+  const notes = ['Four eversions: the windings have returned.', 'Windings swapped with sign, scale inverted.', 'Twice everted: both windings reversed. The underside.', 'Three eversions: one more returns.'];
+  logEvent(`Eversion ${state.evCount === 0 ? 4 : state.evCount}. ${notes[state.evCount]}`);
+  obs.vel.set(0, 0, 0);
+}
+
+// crossing a ring's central hole = diving one scale step; leaving the shell = surfacing
+const prevLocal = new Map();
+function checkCrossings() {
+  const H = state.world.holes;
+  const qi = new THREE.Quaternion();
+  for (let i = 0; i < N; i++) {
+    const h = H[i]; if (h.kind === 'dissolving') continue;
+    const sc = displayScale(h) * (0.75 + 0.25 * U.uHoleScale.value);
+    qi.copy(h.q).conjugate();
+    const loc = v1.subVectors(obs.pos, h.pos).applyQuaternion(qi).divideScalar(sc);
+    const key = h.id, prevZ = prevLocal.get(key);
+    prevLocal.set(key, loc.z);
+    if (prevZ !== undefined && Math.sign(prevZ) !== Math.sign(loc.z) && Math.hypot(loc.x, loc.y) < 0.6 && Math.abs(loc.z - prevZ) < 1.5) {
+      prevLocal.clear();
+      state.trans = { kind: 'dive', u: 0, c: h.pos.clone(), f: (2 * A) / (0.5 * sc), id: h.id };
+      obs.vel.set(0, 0, 0);
+      return;
+    }
+  }
+  if (obs.pos.length() > 3.2 * A) {
+    prevLocal.clear();
+    state.trans = { kind: 'ascend', u: 0, c: new THREE.Vector3(), f: 0.04 };
+    obs.vel.set(0, 0, 0);
+  }
+}
+const flash = document.getElementById('flash');
+function stepTransition(dt) {
+  const T = state.trans, dur = 1.3;
+  T.u = Math.min(1, T.u + dt / dur);
+  if (!T.done) {
+    const e = T.u * T.u;
+    const k = Math.pow(T.f, e);
+    root.scale.setScalar(k);
+    root.position.copy(T.c).multiplyScalar(1 - k);
+    flash.style.opacity = reduceMotion ? 0 : String(clamp((T.u - 0.55) / 0.45, 0, 1));
+    if (T.u >= 1) {
+      root.scale.setScalar(1); root.position.set(0, 0, 0);
+      const from = state.world.k;
+      if (T.kind === 'dive') {
+        state.sigma += 1;
+        const k2 = ((state.sigma % CYCLE) + CYCLE) % CYCLE;
+        const turned = k2 === 0;
+        enterScale(k2, turned ? 'The scale cycle turned over. You came back in at the centre.' : `Through #${T.id} into scale ${k2}. Every hole holds the next torus.`);
+        obs.pos.set(A * 0.3, 0, 0);
+        if (turned) logEvent('σ completed a cycle. There is no innermost level; there is no outermost.');
+      } else {
+        state.sigma -= 1;
+        const k2 = ((state.sigma % CYCLE) + CYCLE) % CYCLE;
+        enterScale(k2, `Surfaced into scale ${k2}. The world you left is a hole here.`);
+        updateHolePositions(0);
+        let big = state.world.holes[0];
+        for (const h of state.world.holes) if (h.s > big.s && h.kind !== 'dissolving') big = h;
+        v1.set(0, 0, 1).applyQuaternion(big.q);
+        obs.pos.copy(big.pos).addScaledVector(v1, displayScale(big) * 3.5);
+        logEvent(`Scale ${from} is inside #${big.id}, in front of you.`);
+      }
+      obs.lastPos.copy(obs.pos);
+      T.done = true; T.u = 0;
+    }
+  } else {
+    flash.style.opacity = reduceMotion ? 0 : String(1 - T.u);
+    if (T.u >= 1) { state.trans = null; flash.style.opacity = 0; }
+  }
+}
+
+// ---------- HUD ----------
+const $ = (id) => document.getElementById(id);
+const dialEl = $('dial');
+function drawDial() {
+  const k = ((state.sigma % CYCLE) + CYCLE) % CYCLE, r = 27;
+  let s = `<circle r="${r}" fill="none" stroke="#252942" stroke-width="2"/>`;
+  for (let i = 0; i < CYCLE; i++) {
+    const a = i / CYCLE * TAU - Math.PI / 2;
+    s += `<circle cx="${(Math.cos(a) * r).toFixed(1)}" cy="${(Math.sin(a) * r).toFixed(1)}" r="${i === k ? 5 : 2.5}" fill="${i === k ? '#b9a7ff' : '#8b90ac'}"/>`;
+  }
+  s += `<circle r="3" fill="#000" stroke="#b9a7ff" stroke-width="1"/><text y="16" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="8" fill="#8b90ac">${state.wind.s > 0 ? '↻' : '↺'}</text>`;
+  dialEl.innerHTML = s;
+}
+function fmtW(w) { return (w[0] < 0 ? '−' : '') + w[1]; }
+const f3 = (x) => (x >= 0 ? '+' : '−') + Math.abs(x).toFixed(3);
+function updateHUD() {
+  $('r-speed').textContent = `${obs.speed.toFixed(1)} u/s`;
+  $('r-perc').textContent = perceived.toFixed(2);
+  const rideH = obs.ride && state.world.holes.find(h => h.id === obs.ride.id);
+  $('r-ride').textContent = rideH ? `#${rideH.id}` : 'none';
+  const nh = nearestHole();
+  if (nh) {
+    const label = { internal: 'internal', external: 'external', calcified: 'calcified', dissolving: 'dissolving' }[nh.kind];
+    $('r-near').textContent = `#${nh.id} · ${label}`;
+    const S = nh.kind === 'calcified' ? 1 : 1 - Math.exp(-2.2 * nh.e);
+    $('r-nearS').textContent = nh.kind === 'calcified' ? '1.000 · rigid' : `${S.toFixed(3)} · ${nh.deg} rel.`;
+  }
+  $('r-sigma').textContent = `${state.sigma} (step ${((state.sigma % CYCLE) + CYCLE) % CYCLE} of ${CYCLE})`;
+  $('r-wind').textContent = `(${fmtW(state.wind.a)}, ${fmtW(state.wind.b)}, ${state.wind.s > 0 ? '' : '−'}σ)`;
+  $('r-ev').textContent = `${state.evCount} (mod 4)`;
+  $('r-ap').textContent = `×${U.uHoleScale.value.toFixed(2)}`;
+  const G = q0inv.clone().multiply(obs.quat);
+  $('r-G').textContent = `${f3(G.w)} ${f3(G.x)}i ${f3(G.y)}j ${f3(G.z)}k`;
+  let st = 'in transit';
+  if (Math.abs(G.w) > 0.9995) st = G.w > 0 ? 'G = +1, returned' : 'G = −1, the underside';
+  else if (obs.word.length === 0) st = 'drifting';
+  $('r-Gs').textContent = st;
+  $('r-word').textContent = obs.word.join(' ');
+  const counts = { internal: 0, external: 0, calcified: 0, dissolving: 0 };
+  for (const h of state.world.holes) counts[h.kind]++;
+  $('census').innerHTML = [['internal', '#e8b25a'], ['external', '#5cc8c0'], ['calcified', '#747a8f'], ['dissolving', '#b9a7ff']]
+    .map(([k, c]) => `<span class="chip"><i style="background:${c}"></i>${k} ${counts[k]}</span>`).join('');
+  $('b-in').style.width = `${clamp(state.inflow / 1.2, 0, 1) * 100}%`;
+  $('b-out').style.width = `${clamp(state.outflow / 0.3, 0, 1) * 100}%`;
+  $('b-mem').style.width = `${clamp(state.memMass / 8, 0, 1) * 100}%`;
+  drawDial();
+}
+
+// ---------- boot ----------
+enterScale(0);
+updateHolePositions(0);
+rebuildRelations();
+logEvent('You begin inside the tube of a horned torus, near its ε core.');
+window.__torus = { state, obs, sim(sec, dt = 0.05) { // headless fast-forward of the field dynamics
+  for (let t = 0; t < sec; t += dt) { state.t += dt; updateHolePositions(dt); state.knnT -= dt; if (state.knnT <= 0) { rebuildRelations(); state.knnT = 0.75; } updateRelations(dt); updateIdentities(dt); }
+} };
+requestAnimationFrame(frame);
+})();
+</script>
