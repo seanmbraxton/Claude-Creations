@@ -1,0 +1,682 @@
+<title>ε-Horn Torus Observer</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* Layout: instrument bench. Status strip, then the three linked views (torus, flat square, count timeline),
+   then controls and diagnostics; ε and δ live in a dock pinned to the bottom edge so they stay under the thumb. */
+:root{
+  --bg:#f3f5f8; --panel:#ffffff; --ink:#17202b; --muted:#5a6676; --line:#d9dee6; --grid:#e8ecf1;
+  --path:#2459c4; --delta:#c27c00; --count:#13875a; --block:#cf3b30; --truth:#7346d1; --surf:#7f93ad;
+  --chip:#eef1f6;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --grid:#1f262f;
+  --path:#6f9fff; --delta:#f0b033; --count:#3fcf8e; --block:#ff6a5c; --truth:#a98bff; --surf:#7d90aa;
+  --chip:#1e252e; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --grid:#1f262f;
+  --path:#6f9fff; --delta:#f0b033; --count:#3fcf8e; --block:#ff6a5c; --truth:#a98bff; --surf:#7d90aa;
+  --chip:#1e252e; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:20px calc(150px + env(safe-area-inset-bottom,0px))}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance;letter-spacing:.005em}
+h1{font-size:clamp(1.7rem,4.5vw,2.4rem);line-height:1.1}
+h2{font-size:1.05rem}
+h3{font-size:.95rem}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--muted);max-width:68ch;margin-top:6px}
+.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* status */
+.status{display:grid;grid-template-columns:minmax(0,1.3fr) repeat(4,minmax(0,1fr));gap:10px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-width:0}
+.tile .k{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.tile .v{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:1.45rem;font-weight:500;line-height:1.2}
+.tile .s{font-size:.78rem;color:var(--muted)}
+.clsTile{display:flex;flex-direction:column;gap:6px}
+.pill{align-self:flex-start;font-family:var(--f-mono);font-size:.8rem;font-weight:500;padding:3px 10px;border-radius:99px;border:1.5px solid currentColor}
+.pill[data-c="locked"]{color:var(--count)} .pill[data-c="quasi"]{color:var(--path)}
+.pill[data-c="aliased"]{color:var(--block)} .pill[data-c="irregular"]{color:var(--truth)}
+.pill[data-c="none"]{color:var(--muted)} .pill[data-c="saturated"]{color:var(--delta)}
+@media (max-width:820px){.status{grid-template-columns:repeat(2,minmax(0,1fr))}.clsTile{grid-column:1/-1}}
+
+/* views */
+.viz{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;margin:0;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card.wide{grid-column:1/-1}
+.cardhead{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.cardhead .tag{font-family:var(--f-mono);font-size:.78rem;color:var(--muted)}
+canvas{display:block;width:100%;border-radius:6px}
+#c3{aspect-ratio:1/1;touch-action:none;cursor:grab;background:var(--bg)}
+#c3:active{cursor:grabbing}
+#cf{aspect-ratio:1/1;background:var(--bg)}
+#ct{height:210px;touch-action:pan-y;cursor:ew-resize;background:var(--bg)}
+figcaption{font-size:.84rem;color:var(--muted);max-width:70ch}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.78rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:12px;height:12px;border-radius:3px;display:inline-block;flex:none}
+.sw.ring{border-radius:50%;background:transparent;border:2px solid}
+.hint{font-size:.75rem;color:var(--muted)}
+@media (max-width:820px){.viz{grid-template-columns:minmax(0,1fr)}}
+
+/* controls */
+.panels{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:820px){.panels{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.ctl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center}
+.ctl label{font-size:.86rem}
+.ctl output{font-family:var(--f-mono);font-size:.82rem;font-variant-numeric:tabular-nums;color:var(--ink)}
+.ctl input[type=range]{grid-column:1/-1;width:100%}
+.ctl .note{grid-column:1/-1;font-size:.75rem;color:var(--muted)}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+button,select{font:inherit;font-size:.82rem;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer}
+button:hover,select:hover{border-color:var(--muted)}
+button[aria-pressed="true"]{border-color:var(--path);color:var(--path)}
+:focus-visible{outline:2px solid var(--path);outline-offset:2px}
+.check{display:flex;align-items:center;gap:8px;font-size:.86rem}
+input[type=range]{accent-color:var(--path);height:26px}
+input[type=checkbox]{accent-color:var(--path);width:18px;height:18px}
+.sel{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;font-size:.86rem}
+
+/* diagnostics */
+.diag{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 24px;font-size:.84rem}
+@media (max-width:820px){.diag{grid-template-columns:minmax(0,1fr)}}
+.diag dt{color:var(--muted)}
+.diag dd{margin:0 0 8px;font-family:var(--f-mono);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.warn{color:var(--block)} .ok{color:var(--count)}
+.notes{font-size:.88rem;color:var(--muted);max-width:75ch;display:flex;flex-direction:column;gap:8px}
+.notes ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:4px}
+.notes b{color:var(--ink);font-weight:600}
+
+/* dock */
+.dock{position:fixed;left:0;right:0;bottom:0;z-index:20;background:color-mix(in srgb,var(--panel) 94%,transparent);
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-top:1px solid var(--line);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-top:8px;padding-bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+.dockin{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:4px 18px;align-items:center}
+.dock .ctl label{font-family:var(--f-mono);font-size:.9rem}
+.epsTicks{grid-column:1/-1;display:flex;justify-content:space-between;font-size:.68rem;color:var(--muted);font-family:var(--f-mono);margin-top:-4px}
+#play{min-width:76px;padding:9px 12px;font-weight:500}
+@media (max-width:640px){.dockin{grid-template-columns:minmax(0,1fr) auto}.dockin .ctl{grid-column:1/2}#play{grid-row:1/3;grid-column:2}}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">counting · memory · winding</div>
+    <h1>ε-Horn Torus Observer</h1>
+    <p class="lede">A path winds around the torus with winding ratio ω. An observer inside it takes frames and remembers the first one. It registers a count each time a frame comes back into the δ-neighborhood of that memory, counting only on re-entry. Each poloidal pass through the portal counts only if it lands in one of the k open windows, and their width is set by ε.</p>
+  </header>
+
+  <section class="status" aria-live="polite">
+    <div class="tile clsTile"><div class="k">What the observer experiences</div><span class="pill" id="cls" data-c="locked">locked</span><p class="s" id="clsText"></p></div>
+    <div class="tile"><div class="k">Observer counts</div><div class="v" id="tObs">0</div><div class="s" id="tObsS"></div></div>
+    <div class="tile"><div class="k">True returns</div><div class="v" id="tTrue">0</div><div class="s">exact flow, both angles</div></div>
+    <div class="tile"><div class="k">Missed · false</div><div class="v" id="tMiss">0 · 0</div><div class="s">observer vs truth</div></div>
+    <div class="tile"><div class="k">Portal passes counted</div><div class="v" id="tPass">0/0</div><div class="s" id="tPassS"></div></div>
+  </section>
+
+  <section class="viz">
+    <figure class="card">
+      <div class="cardhead"><h2>Torus</h2><span class="tag" id="shapeTag"></span></div>
+      <canvas id="c3" aria-label="3D torus with winding path, portal windows and δ-neighborhood"></canvas>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--path)"></i>last 3 turns (older paths faded)</span>
+        <span><i class="sw" style="background:var(--delta)"></i>δ-neighborhood</span>
+        <span><i class="sw" style="background:var(--count)"></i>open window · counted</span>
+        <span><i class="sw" style="background:var(--block)"></i>blocked pass</span>
+      </div>
+      <figcaption>The tube radius is r = 1 − ε, so ε is the radius of the hole. With ε &gt; 0 you get a ring, at ε = 0 the hole closes to the horn point, and with ε &lt; 0 you get a self-intersecting spindle. The portal windows sit on the inner equator. Drag to rotate.</figcaption>
+    </figure>
+    <figure class="card">
+      <div class="cardhead"><h2>Flat projection</h2><span class="tag">θ → , φ ↑ (turns)</span></div>
+      <canvas id="cf" aria-label="Unrolled torus square with δ-region, frames and counts"></canvas>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--delta);opacity:.55"></i>δ-region (observer's metric)</span>
+        <span><i class="sw ring" style="border-color:var(--truth)"></i>true region / missed return</span>
+        <span><i class="sw" style="background:var(--count)"></i>count registered</span>
+        <span><i class="sw" style="background:var(--block)"></i>false count</span>
+      </div>
+      <figcaption>This is the same path unrolled onto the square. The dashed line at φ = ½ is the portal, and its open windows are drawn thick. The shaded patch is everything the observer can't tell apart from its remembered start. Dots inside it are frames that landed there.</figcaption>
+    </figure>
+    <figure class="card wide">
+      <div class="cardhead"><h2>What is being counted</h2><span class="tag" id="tlTag"></span></div>
+      <canvas id="ct" aria-label="Distance to memory over time with counts"></canvas>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--path)"></i>distance to memory</span>
+        <span><i class="sw" style="background:var(--delta)"></i>δ threshold</span>
+        <span><i class="sw" style="background:var(--truth);opacity:.35"></i>true visits</span>
+        <span><i class="sw" style="background:var(--count)"></i>observer count</span>
+        <span><i class="sw ring" style="border-color:var(--truth)"></i>missed</span>
+        <span><i class="sw" style="background:var(--block)"></i>false count / blocked pass</span>
+      </div>
+      <figcaption>The curve is the distance from now to memory, clipped to 4δ. The observer only sees it at frames. A count fires when a frame drops below δ after being outside. The violet spans are true returns of the exact flow, so a span with no green mark under it is one the observer stepped over. Tap or drag to scrub through time.</figcaption>
+    </figure>
+  </section>
+
+  <section class="panels">
+    <div class="panel">
+      <h3>Winding and gate</h3>
+      <div class="ctl"><label for="omega">winding ratio ω (poloidal per toroidal)</label><output id="omegaO"></output>
+        <input type="range" id="omega" min="0.01" max="0.99" step="0.0005">
+        <div class="row" style="grid-column:1/-1;margin-top:4px">
+          <button data-om="gold">φ⁻¹ ≈ 0.618</button><button data-om="sqrt2">√2 − 1</button>
+          <button data-om="1/3">1/3</button><button data-om="2/5">2/5</button><button data-om="1/2">1/2</button><button data-om="3/4">3/4</button>
+        </div>
+      </div>
+      <div class="ctl"><label for="k">windows per toroidal turn k</label><output id="kO"></output><input type="range" id="k" min="1" max="8" step="1"></div>
+      <div class="ctl"><label for="cw">window width w = c<sub>w</sub>·|ε|</label><output id="cwO"></output><input type="range" id="cw" min="0" max="1" step="0.01"></div>
+      <label class="check"><input type="checkbox" id="lock"> Window pulls passes toward its center (mode locking)</label>
+      <div class="ctl"><label for="cK">locking K = c<sub>K</sub>·|ε|</label><output id="cKO"></output><input type="range" id="cK" min="0" max="4" step="0.05"></div>
+      <div class="sel"><label for="flip">Eversion flip when ε &lt; 0</label>
+        <select id="flip"><option value="off">off</option><option value="kick">reverse pull each pass</option><option value="reflect">mirror θ each pass</option></select></div>
+      <div class="row"><button id="align">Align first pass to a window</button></div>
+    </div>
+    <div class="panel">
+      <h3>Observer</h3>
+      <div class="sel"><label for="metric">What the observer projects onto</label>
+        <select id="metric"><option value="flat">both angles (flat)</option><option value="emb">3D distance on surface</option><option value="theta">toroidal angle only</option></select></div>
+      <label class="check"><input type="checkbox" id="decouple"> Set the frame interval separately from δ</label>
+      <div class="ctl"><label for="dt">frame interval Δt (toroidal turns)</label><output id="dtO"></output><input type="range" id="dt" min="0" max="1000" step="1">
+        <span class="note" id="dtNote">Coupled now: Δt = δ / |v|, so a frame step covers a distance g = δ.</span></div>
+      <div class="ctl"><label for="drift">memory drift after each count</label><output id="driftO"></output><input type="range" id="drift" min="0" max="0.5" step="0.01">
+        <span class="note">After each count the remembered state moves this far toward what was just seen.</span></div>
+      <div class="ctl"><label for="th0">start θ₀</label><output id="th0O"></output><input type="range" id="th0" min="0" max="1" step="0.005"></div>
+      <div class="ctl"><label for="ph0">start φ₀ (½ = at the portal)</label><output id="ph0O"></output><input type="range" id="ph0" min="0" max="1" step="0.005"></div>
+      <div class="ctl"><label for="T">run length (toroidal turns)</label><output id="TO"></output><input type="range" id="T" min="0" max="1000" step="1"></div>
+      <div class="row"><button id="resetView">Reset torus view</button><button id="resetAll">Reset all</button></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h3>Diagnostics</h3>
+    <dl class="diag" id="diag"></dl>
+  </section>
+
+  <section class="notes">
+    <h3 style="color:var(--ink)">Modeling choices in this viewer</h3>
+    <ul>
+      <li><b>Geometry.</b> R = 1 and r = 1 − ε, so ε is the hole radius.</li>
+      <li><b>Flow.</b> Between passes the path is a straight line on the flat torus with velocity (1, ω). A pass is the poloidal angle crossing φ = ½, the inner equator, which at ε = 0 is the single horn point.</li>
+      <li><b>Gate.</b> There are k windows at θ = j/k, each of width w = c<sub>w</sub>|ε|. A blocked pass still goes through. It just doesn't add to the portal count. At ε = 0 only exact hits count.</li>
+      <li><b>Locking.</b> At each pass, θ ← θ − (K/2πk)·sin(2πkθ) with K = c<sub>K</sub>|ε|. That turns the pass map into a k-fold circle map.</li>
+      <li><b>Eversion flip</b> (ε &lt; 0 only, experimental). Either the pull reverses sign at each pass, or θ is mirrored to −θ at each pass.</li>
+      <li><b>Truth.</b> The exact flow is sampled at 12–24× the frame rate. A true return is an entry into the flat δ-disk around the actual start in both angles. So the observer can be wrong in two ways: by missing returns, or by counting false ones when its projection or memory differs from the true state.</li>
+    </ul>
+  </section>
+</div>
+
+<div class="dock">
+  <div class="dockin">
+    <div class="ctl"><label for="eps">ε <span id="epsShape" style="color:var(--muted);font-family:var(--f-body);font-size:.8rem"></span></label><output id="epsO"></output>
+      <input type="range" id="eps" min="-0.5" max="0.5" step="0.005" list="epsMarks">
+      <div class="epsTicks"><span>spindle</span><span>horn · 0</span><span>ring</span></div></div>
+    <div class="ctl"><label for="delta">δ = g (grain)</label><output id="deltaO"></output><input type="range" id="delta" min="0" max="1000" step="1"></div>
+    <button id="play" aria-pressed="false">▶ Play</button>
+  </div>
+  <datalist id="epsMarks"><option value="0"></option></datalist>
+</div>
+
+<script>
+(function(){
+"use strict";
+const TAU=Math.PI*2, GOLD=(Math.sqrt(5)-1)/2, SQ2=Math.SQRT2-1;
+const MAXF=20000;
+const DEFAULTS={eps:0.25,delta:0.03,omega:GOLD,k:3,cw:0.4,lock:true,cK:1.0,flip:"off",metric:"flat",decouple:false,dt:0.05,drift:0,th0:0.05,ph0:0.25,T:40};
+const P=Object.assign({},DEFAULTS);
+const $=id=>document.getElementById(id);
+
+/* ---------------- geometry ---------------- */
+const cd=a=>a-Math.round(a);                  // circular difference, in turns
+const fr=a=>a-Math.floor(a);
+function metricFn(kind,eps){
+  if(kind==="flat") return (t1,p1,t2,p2)=>Math.hypot(cd(t1-t2),cd(p1-p2));
+  if(kind==="theta") return (t1,p1,t2,p2)=>Math.abs(cd(t1-t2));
+  const R=1,r=1-eps,sc=1/(TAU*r);              // 3D chord, scaled so poloidal arcs read in turns
+  return (t1,p1,t2,p2)=>{const a1=TAU*t1,b1=TAU*p1,a2=TAU*t2,b2=TAU*p2;
+    const r1=R+r*Math.cos(b1),r2=R+r*Math.cos(b2);
+    return Math.hypot(r1*Math.cos(a1)-r2*Math.cos(a2),r1*Math.sin(a1)-r2*Math.sin(a2),r*(Math.sin(b1)-Math.sin(b2)))*sc;};
+}
+
+/* ---------------- dynamics ---------------- */
+function buildFlow(p,T){
+  const eps=p.eps,k=p.k,w=p.cw*Math.abs(eps),K=p.lock?p.cK*Math.abs(eps):0;
+  const segT=[0],segTh=[p.th0],passes=[];
+  const first=fr(0.5-p.ph0)/p.omega;
+  let sign=1;
+  for(let n=0;;n++){
+    const tn=first+n/p.omega; if(tn>T) break;
+    const thB=segTh[segTh.length-1]+(tn-segT[segT.length-1]);
+    const x=thB*k, off=Math.abs(x-Math.round(x))/k;
+    const open=off<=w/2+1e-9;
+    let thA=thB;
+    if(K>0){const s=(p.flip==="kick"&&eps<0)?sign:1; thA=thB-s*K/(TAU*k)*Math.sin(TAU*k*thB);}
+    if(p.flip==="kick"&&eps<0) sign=-sign;
+    if(p.flip==="reflect"&&eps<0) thA=-thA;
+    passes.push({t:tn,th:thB,open});
+    segT.push(tn); segTh.push(thA);
+  }
+  return {segT,segTh,passes,w,K};
+}
+function sampler(flow,p){
+  let i=0; const {segT,segTh}=flow;
+  return (t,o)=>{while(i+1<segT.length&&segT[i+1]<=t) i++; o[0]=segTh[i]+(t-segT[i]); o[1]=p.ph0+p.omega*t; return o;};
+}
+
+/* ---------------- observer + truth ---------------- */
+function simulate(p){
+  const v=Math.hypot(1,p.omega);
+  const dt=p.decouple?p.dt:p.delta/v;
+  let N=Math.floor(p.T/dt), capped=false;
+  if(N>MAXF){N=MAXF;capped=true;}
+  if(N<2) N=2;
+  const Teff=N*dt;
+  const flow=buildFlow(p,Teff);
+  const sub=Math.max(12,Math.min(24,Math.floor(400000/N)));
+  const dObs=metricFn(p.metric,p.eps), dTru=metricFn("flat",p.eps);
+  const fth=new Float64Array(N+1), fph=new Float64Array(N+1), fd=new Float32Array(N+1), fin=new Uint8Array(N+1);
+  const memTh=new Float64Array(N+1), memPh=new Float64Array(N+1);
+  const L=N*sub+1, fineD=new Float32Array(L);
+  const entries=[], visits=[];
+  let mTh=p.th0,mPh=p.ph0, obsIn=true, truIn=true, vs=null, vsPos=null;
+  const smp=sampler(flow,p), s=[0,0], h=dt/sub, d=p.delta;
+  for(let i=0;i<=N;i++){
+    const jmax=i<N?sub:1;
+    for(let j=0;j<jmax;j++){
+      const t=i*dt+j*h; smp(t,s);
+      if(j===0){
+        fth[i]=s[0]; fph[i]=s[1];
+        let dd=dObs(s[0],s[1],mTh,mPh); const inside=dd<d;
+        if(i>0&&inside&&!obsIn){
+          entries.push(i);
+          if(p.drift>0){mTh+=p.drift*cd(s[0]-mTh); mPh+=p.drift*cd(s[1]-mPh); dd=dObs(s[0],s[1],mTh,mPh);}
+        }
+        obsIn=inside; fd[i]=dd; fin[i]=inside?1:0; memTh[i]=mTh; memPh[i]=mPh;
+      }
+      fineD[i*sub+j]=dObs(s[0],s[1],mTh,mPh);
+      const tin=dTru(s[0],s[1],p.th0,p.ph0)<d;
+      if(tin&&!truIn){vs=t; vsPos=[s[0],s[1]];}
+      if(!tin&&truIn&&vs!==null){visits.push({tin:vs,tout:t,pos:vsPos,caught:false}); vs=null;}
+      truIn=tin;
+    }
+  }
+  if(vs!==null) visits.push({tin:vs,tout:Teff,pos:vsPos,caught:false});
+  // match observer entries to true visits
+  const eOk=[]; let vi=0;
+  for(const i of entries){
+    const t=i*dt; while(vi<visits.length&&visits[vi].tout<t-1e-12) vi++;
+    const ok=vi<visits.length&&visits[vi].tin<=t+h&&t<=visits[vi].tout+1e-12;
+    eOk.push(ok); if(ok) visits[vi].caught=true;
+  }
+  // path for drawing (exact flow)
+  const M=Math.min(8000,Math.max(800,Math.round(Teff*120)));
+  const pth=new Float64Array(M+1), pph=new Float64Array(M+1), pbreak=new Uint8Array(M+1);
+  const smp2=sampler(flow,p), hp=Teff/M;
+  for(let m=0;m<=M;m++){smp2(m*hp,s); pth[m]=s[0]; pph[m]=s[1];
+    if(m>0&&Math.abs(cd(pth[m]-pth[m-1]-hp))>0.06) pbreak[m]=1;}
+  return {p:Object.assign({},p),v,dt,N,Teff,capped,sub,flow,fth,fph,fd,fin,memTh,memPh,fineD,entries,eOk,visits,pth,pph,pbreak,M,inFrac:fin.reduce((a,b)=>a+b,0)/(N+1)};
+}
+
+/* ---------------- classification ---------------- */
+function clusters(vals,tol){
+  const a=vals.slice().sort((x,y)=>x-y), out=[];
+  for(const x of a){const c=out[out.length-1]; if(c&&x-c.last<=tol){c.n++;c.sum+=x;c.last=x;} else out.push({n:1,sum:x,last:x});}
+  return out.map(c=>({v:c.sum/c.n,n:c.n}));
+}
+function returnTimes(times){const r=[];let prev=0;for(const t of times){r.push(t-prev);prev=t;}return r;}
+function classify(S){
+  const nObs=S.entries.length, nTru=S.visits.length, nFalse=S.eOk.filter(x=>!x).length;
+  const obsRT=returnTimes(S.entries.map(i=>i*S.dt)), truRT=returnTimes(S.visits.map(v=>v.tin));
+  const tolT=2*S.p.delta/S.v;
+  const cObs=clusters(obsRT,tolT+1.5*S.dt), cTru=clusters(truRT,tolT);
+  let c;
+  if(S.inFrac>0.5) c="saturated";
+  else if(nObs===0&&nTru===0) c="none";
+  else if(nObs!==nTru||nFalse>0) c="aliased";
+  else c=cObs.length<=1?"locked":cObs.length<=3?"quasi":"irregular";
+  return {c,nObs,nTru,nFalse,nMiss:S.visits.filter(v=>!v.caught).length,obsRT,truRT,cObs,cTru};
+}
+const CLS_TEXT={locked:"One stable return time, and the count matches the exact flow.",
+  quasi:"Two or three alternating return times, and the count matches the exact flow.",
+  aliased:"The observer's count disagrees with the exact flow: it stepped over returns or counted false ones.",
+  irregular:"Many different return times, from chaos or transients.",
+  none:"No return was found in this run.",
+  saturated:"The neighborhood is so large that most frames sit inside it."};
+
+/* ---------------- number helpers ---------------- */
+function convergents(x,maxQ){const out=[];let h0=1,h1=0,k0=0,k1=1,y=x;
+  for(let i=0;i<14;i++){const a=Math.floor(y);const h=a*h0+h1,k=a*k0+k1;if(k>maxQ)break;out.push([h,k]);h1=h0;h0=h;k1=k0;k0=k;const f=y-a;if(f<1e-9)break;y=1/f;}return out;}
+function asRational(x){for(let q=1;q<=24;q++){const pp=Math.round(x*q);if(Math.abs(pp/q-x)<1e-6)return [pp,q];}return null;}
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+const f3=x=>(Math.round(x*1000)/1000).toString();
+const fx=(x,n)=>x.toFixed(n);
+
+/* ---------------- theme colors ---------------- */
+let C={};
+function readColors(){const cs=getComputedStyle(document.documentElement);
+  for(const n of ["bg","panel","ink","muted","line","grid","path","delta","count","block","truth","surf"]) C[n]=cs.getPropertyValue("--"+n).trim();}
+function rgb(hex){const h=hex.replace("#","");const n=parseInt(h.length===3?h.split("").map(c=>c+c).join(""):h,16);return [(n>>16)&255,(n>>8)&255,n&255];}
+const rgba=(hex,a)=>{const [r,g,b]=rgb(hex);return `rgba(${r},${g},${b},${a})`;};
+
+/* ---------------- canvas helpers ---------------- */
+function fit(cv){const r=cv.getBoundingClientRect(),dpr=Math.min(window.devicePixelRatio||1,2.5);
+  const W=Math.max(1,Math.round(r.width*dpr)),H=Math.max(1,Math.round(r.height*dpr));
+  if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H;}
+  const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);return {ctx,w:r.width,h:r.height};}
+
+/* ---------------- 3D view ---------------- */
+const view={yaw:-0.55,pitch:1.0};
+function draw3D(S,play){
+  const {ctx,w,h}=fit($("c3")); ctx.clearRect(0,0,w,h);
+  const p=S.p,R=1,r=1-p.eps,sc=Math.min(w,h)*0.40/(R+Math.abs(r)),cx=w/2,cy=h/2;
+  const cyw=Math.cos(view.yaw),syw=Math.sin(view.yaw),cp=Math.cos(view.pitch),sp=Math.sin(view.pitch);
+  const P3=(x,y,z,o)=>{const X=x*cyw-y*syw,Y=x*syw+y*cyw;o[0]=cx+X*sc;o[1]=cy-(Y*sp+z*cp)*sc;o[2]=Y*cp-z*sp;return o;};
+  const onT=(th,ph,o)=>{const a=TAU*th,b=TAU*ph,rho=R+r*Math.cos(b);return P3(rho*Math.cos(a),rho*Math.sin(a),r*Math.sin(b),o);};
+  const items=[];
+  // surface
+  const nu=48,nv=22,V=[];
+  for(let i=0;i<=nu;i++){V[i]=[];for(let j=0;j<=nv;j++){V[i][j]=onT(i/nu,j/nv,[0,0,0]);}}
+  const sr=rgb(C.surf),light=[-0.35,0.55,0.76];
+  for(let i=0;i<nu;i++)for(let j=0;j<nv;j++){
+    const a=V[i][j],b=V[i+1][j],c=V[i+1][j+1],d=V[i][j+1];
+    const e1=[c[0]-a[0],c[1]-a[1],c[2]-a[2]],e2=[d[0]-b[0],d[1]-b[1],d[2]-b[2]];
+    let nx=e1[1]*e2[2]-e1[2]*e2[1],ny=e1[2]*e2[0]-e1[0]*e2[2],nz=e1[0]*e2[1]-e1[1]*e2[0];
+    const nl=Math.hypot(nx,ny,nz)||1; const sh=0.45+0.55*Math.abs((nx*light[0]+ny*light[2]+nz*light[1])/nl);
+    const col=`rgba(${Math.round(sr[0]*sh)},${Math.round(sr[1]*sh)},${Math.round(sr[2]*sh)},0.34)`;
+    items.push({d:(a[2]+b[2]+c[2]+d[2])/4,f:()=>{ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.lineTo(c[0],c[1]);ctx.lineTo(d[0],d[1]);ctx.closePath();ctx.fillStyle=col;ctx.fill();}});
+  }
+  // symmetry axis
+  {const a=P3(0,0,-(Math.abs(r)+0.25),[0,0,0]),b=P3(0,0,Math.abs(r)+0.25,[0,0,0]);
+   items.push({d:-99,f:()=>{ctx.setLineDash([3,4]);ctx.strokeStyle=rgba(C.muted,0.5);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();ctx.setLineDash([]);}});}
+  // polyline helper on torus with depth chunks
+  const poly=(pts,style,width,chunk=6,alpha=1)=>{for(let s=0;s<pts.length-1;s+=chunk){const seg=pts.slice(s,Math.min(pts.length,s+chunk+1));
+    let dd=0;for(const q of seg)dd+=q[2];dd/=seg.length;
+    items.push({d:dd,f:()=>{ctx.globalAlpha=alpha;ctx.strokeStyle=style;ctx.lineWidth=width;ctx.lineJoin="round";ctx.lineCap="round";ctx.beginPath();let pen=false;
+      for(const q of seg){if(q[3]||!pen){ctx.moveTo(q[0],q[1]);pen=true;}else ctx.lineTo(q[0],q[1]);}ctx.stroke();ctx.globalAlpha=1;}});}};
+  // portal: inner equator and windows
+  {const pts=[];for(let m=0;m<=120;m++)pts.push(onT(m/120,0.5,[0,0,0,0]));poly(pts,rgba(C.ink,0.35),1,10);
+   const w=S.flow.w;
+   for(let j=0;j<p.k;j++){const c0=j/p.k;const wp=[];const n=Math.max(2,Math.ceil(w*200));
+     for(let m=0;m<=n;m++)wp.push(onT(c0-w/2+w*m/n,0.5,[0,0,0,0]));
+     if(w>0) poly(wp,C.count,4,4); else {const q=onT(c0,0.5,[0,0,0]);items.push({d:q[2]-0.01,f:()=>{ctx.fillStyle=C.count;ctx.beginPath();ctx.arc(q[0],q[1],3,0,TAU);ctx.fill();}});}}}
+  if(Math.abs(p.eps)<1e-9){const q=P3(0,0,0,[0,0,0]);items.push({d:q[2]-0.02,f:()=>{ctx.strokeStyle=C.ink;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(q[0],q[1],6,0,TAU);ctx.stroke();
+    ctx.fillStyle=C.ink;ctx.font="11px "+getComputedStyle(document.body).fontFamily;ctx.fillText("horn point",q[0]+9,q[1]-8);}});}
+  // path so far
+  const tNow=play.idx*S.dt, mNow=Math.min(S.M,Math.round(tNow/S.Teff*S.M));
+  const step=Math.max(1,Math.ceil(S.M/2600)), pts=[];
+  for(let m=0;m<=mNow;m+=step){const q=onT(S.pth[m],S.pph[m],[0,0,0,0]);let br=0;for(let u=Math.max(1,m-step+1);u<=m;u++)if(S.pbreak[u])br=1;q[3]=br;pts.push(q);}
+  if(mNow%step){const q=onT(S.pth[mNow],S.pph[mNow],[0,0,0,0]);pts.push(q);}
+  const recent=Math.max(0,pts.length-1-Math.round(3/S.Teff*S.M/step));
+  poly(pts.slice(0,recent+1),C.path,1,8,0.28);
+  poly(pts.slice(recent),C.path,2.4,5,1);
+  // passes so far
+  const pr=S.flow.passes; let shown=0;
+  for(let n=pr.length-1;n>=0&&shown<60;n--){if(pr[n].t>tNow)continue;shown++;const q=onT(pr[n].th,0.5,[0,0,0]);const col=pr[n].open?C.count:C.block;
+    items.push({d:q[2]-0.005,f:()=>{ctx.fillStyle=col;ctx.beginPath();ctx.arc(q[0],q[1],2.6,0,TAU);ctx.fill();}});}
+  // δ-neighborhood around memory
+  const mi=Math.min(play.idx,S.N), mt=S.memTh[mi], mp=S.memPh[mi], d=p.delta;
+  if(p.metric==="emb"){const q=onT(mt,mp,[0,0,0]);const rad=d*TAU*r*sc;
+    items.push({d:q[2]-0.03,f:()=>{ctx.fillStyle=rgba(C.delta,0.22);ctx.strokeStyle=C.delta;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(q[0],q[1],rad,0,TAU);ctx.fill();ctx.stroke();}});}
+  else if(p.metric==="theta"){for(const sgn of [-1,1]){const pts2=[];for(let m=0;m<=60;m++)pts2.push(onT(mt+sgn*Math.min(d,0.5),m/60,[0,0,0,0]));poly(pts2,C.delta,2.2,5);}}
+  else{const pts2=[];const rr=Math.min(d,0.49);for(let m=0;m<=64;m++){const a=TAU*m/64;pts2.push(onT(mt+rr*Math.cos(a),mp+rr*Math.sin(a),[0,0,0,0]));}
+    let dd=0;for(const q of pts2)dd+=q[2];dd/=pts2.length;
+    items.push({d:dd-0.3,f:()=>{ctx.fillStyle=rgba(C.delta,0.55);ctx.beginPath();pts2.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]));ctx.closePath();ctx.fill();}});
+    poly(pts2,C.delta,2.4,8);}
+  // counts registered so far
+  S.entries.forEach((i,n)=>{if(i>play.idx)return;const q=onT(S.fth[i],S.fph[i],[0,0,0]);const col=S.eOk[n]?C.count:C.block;
+    items.push({d:q[2]-0.04,f:()=>{ctx.fillStyle=col;ctx.strokeStyle=C.panel;ctx.lineWidth=1;ctx.beginPath();ctx.arc(q[0],q[1],3.6,0,TAU);ctx.fill();ctx.stroke();}});});
+  // start + now
+  {const q=onT(p.th0,p.ph0,[0,0,0]);items.push({d:q[2]-0.05,f:()=>{ctx.strokeStyle=C.ink;ctx.lineWidth=2;ctx.beginPath();ctx.arc(q[0],q[1],6,0,TAU);ctx.stroke();}});}
+  {const i=Math.min(play.idx,S.N);const q=onT(S.fth[i],S.fph[i],[0,0,0]);items.push({d:q[2]-0.06,f:()=>{ctx.fillStyle=C.path;ctx.strokeStyle=C.panel;ctx.lineWidth=2;ctx.beginPath();ctx.arc(q[0],q[1],5,0,TAU);ctx.fill();ctx.stroke();}});}
+  items.sort((a,b)=>b.d-a.d); for(const it of items) it.f();
+}
+// rotate by drag
+(function(){const cv=$("c3");let drag=null;
+  cv.addEventListener("pointerdown",e=>{drag={x:e.clientX,y:e.clientY,yaw:view.yaw,pitch:view.pitch};cv.setPointerCapture(e.pointerId);});
+  cv.addEventListener("pointermove",e=>{if(!drag)return;view.yaw=drag.yaw+(e.clientX-drag.x)*0.01;view.pitch=Math.max(0.05,Math.min(Math.PI-0.05,drag.pitch-(e.clientY-drag.y)*0.01));requestDraw();});
+  const end=()=>{drag=null;};cv.addEventListener("pointerup",end);cv.addEventListener("pointercancel",end);})();
+
+/* ---------------- flat view ---------------- */
+let regionCache={key:"",img:null};
+function regionImage(S,mt,mp){
+  const key=[S.p.metric,S.p.eps,S.p.delta,mt.toFixed(5),mp.toFixed(5),C.delta].join("|");
+  if(regionCache.key===key) return regionCache.img;
+  const G=180, oc=document.createElement("canvas"); oc.width=G; oc.height=G; const octx=oc.getContext("2d");
+  const im=octx.createImageData(G,G), m=metricFn(S.p.metric,S.p.eps), [r,g,b]=rgb(C.delta);
+  for(let y=0;y<G;y++)for(let x=0;x<G;x++){const th=(x+0.5)/G, ph=1-(y+0.5)/G; if(m(th,ph,mt,mp)<S.p.delta){const k=4*(y*G+x);im.data[k]=r;im.data[k+1]=g;im.data[k+2]=b;im.data[k+3]=105;}}
+  octx.putImageData(im,0,0); regionCache={key,img:oc}; return oc;
+}
+function drawFlat(S,play){
+  const {ctx,w,h}=fit($("cf")); ctx.clearRect(0,0,w,h);
+  const font=getComputedStyle(document.body).fontFamily;
+  const ml=36,mb=30,mt_=10,mr=10, side=Math.min(w-ml-mr,h-mb-mt_), x0=ml, y0=mt_;
+  const X=th=>x0+fr(th)*side, Y=ph=>y0+(1-fr(ph))*side;
+  const p=S.p;
+  ctx.fillStyle=C.panel; ctx.fillRect(x0,y0,side,side);
+  // window bands (locked to θ)
+  const w_=S.flow.w;
+  for(let j=0;j<p.k;j++){const c0=j/p.k;
+    ctx.fillStyle=rgba(C.count,0.07); if(w_>0){for(const sh of [-1,0,1]){const a=c0-w_/2+sh,b=c0+w_/2+sh;const xa=x0+Math.max(0,a)*side,xb=x0+Math.min(1,b)*side;if(xb>xa)ctx.fillRect(xa,y0,xb-xa,side);}}
+    ctx.strokeStyle=rgba(C.count,0.35);ctx.setLineDash([2,3]);ctx.beginPath();ctx.moveTo(X(c0),y0);ctx.lineTo(X(c0),y0+side);ctx.stroke();ctx.setLineDash([]);}
+  // grid
+  ctx.strokeStyle=C.grid;ctx.lineWidth=1;
+  for(let g=1;g<4;g++){ctx.beginPath();ctx.moveTo(x0+g*side/4,y0);ctx.lineTo(x0+g*side/4,y0+side);ctx.moveTo(x0,y0+g*side/4);ctx.lineTo(x0+side,y0+g*side/4);ctx.stroke();}
+  // δ region
+  const mi=Math.min(play.idx,S.N), mt=S.memTh[mi], mp=S.memPh[mi];
+  ctx.imageSmoothingEnabled=true; ctx.drawImage(regionImage(S,mt,mp),x0,y0,side,side);
+  // true region outline if it differs
+  if(p.metric!=="flat"||p.drift>0){ctx.strokeStyle=C.truth;ctx.lineWidth=1.5;ctx.setLineDash([4,3]);
+    for(const dx of [-1,0,1])for(const dy of [-1,0,1]){ctx.beginPath();ctx.arc(x0+(fr(p.th0)+dx)*side,y0+(1-fr(p.ph0)+dy)*side,p.delta*side,0,TAU);ctx.stroke();}ctx.setLineDash([]);}
+  ctx.save();ctx.beginPath();ctx.rect(x0,y0,side,side);ctx.clip();
+  // portal line
+  ctx.strokeStyle=rgba(C.ink,0.55);ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(x0,Y(0.5));ctx.lineTo(x0+side,Y(0.5));ctx.stroke();ctx.setLineDash([]);
+  ctx.strokeStyle=C.count;ctx.lineWidth=4;ctx.lineCap="butt";
+  for(let j=0;j<p.k;j++){const c0=j/p.k;if(w_>0){for(const sh of [-1,0,1]){const a=Math.max(0,c0-w_/2+sh),b=Math.min(1,c0+w_/2+sh);if(b>a){ctx.beginPath();ctx.moveTo(x0+a*side,Y(0.5));ctx.lineTo(x0+b*side,Y(0.5));ctx.stroke();}}}
+    else{ctx.fillStyle=C.count;ctx.beginPath();ctx.arc(X(c0),Y(0.5),3,0,TAU);ctx.fill();}}
+  // path
+  const tNow=play.idx*S.dt, mNow=Math.min(S.M,Math.round(tNow/S.Teff*S.M));
+  const mRec=Math.max(0,mNow-Math.round(3/S.Teff*S.M));
+  const seg=(m0,m1)=>{ctx.beginPath();for(let m=m0;m<=m1;m++){const xa=X(S.pth[m]),ya=Y(S.pph[m]);
+    if(m===m0||S.pbreak[m]||Math.abs(fr(S.pth[m])-fr(S.pth[m-1]))>0.5||Math.abs(fr(S.pph[m])-fr(S.pph[m-1]))>0.5)ctx.moveTo(xa,ya);else ctx.lineTo(xa,ya);}ctx.stroke();};
+  ctx.lineJoin="round";ctx.strokeStyle=rgba(C.path,0.3);ctx.lineWidth=1;seg(0,mRec);
+  ctx.strokeStyle=C.path;ctx.lineWidth=2;seg(mRec,mNow);
+  // frames
+  const few=S.N<=1500;
+  for(let i=0;i<=mi;i++){if(S.fin[i]){ctx.fillStyle=C.delta;ctx.beginPath();ctx.arc(X(S.fth[i]),Y(S.fph[i]),2.2,0,TAU);ctx.fill();}
+    else if(few){ctx.fillStyle=rgba(C.muted,0.55);ctx.fillRect(X(S.fth[i])-0.75,Y(S.fph[i])-0.75,1.5,1.5);}}
+  // passes on portal line
+  for(const ps of S.flow.passes){if(ps.t>tNow)break;const xx=X(ps.th),yy=Y(0.5);ctx.strokeStyle=ps.open?C.count:C.block;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(xx,yy-6);ctx.lineTo(xx,yy+6);ctx.stroke();}
+  // missed true returns
+  for(const v of S.visits){if(v.tin>tNow)break;if(!v.caught){ctx.strokeStyle=C.truth;ctx.lineWidth=1.8;ctx.beginPath();ctx.arc(X(v.pos[0]),Y(v.pos[1]),5,0,TAU);ctx.stroke();}}
+  // counts
+  S.entries.forEach((i,n)=>{if(i>mi)return;const xx=X(S.fth[i]),yy=Y(S.fph[i]);
+    if(S.eOk[n]){ctx.fillStyle=C.count;ctx.strokeStyle=C.panel;ctx.lineWidth=1;ctx.beginPath();ctx.arc(xx,yy,4,0,TAU);ctx.fill();ctx.stroke();}
+    else{ctx.strokeStyle=C.block;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(xx-4,yy-4);ctx.lineTo(xx+4,yy+4);ctx.moveTo(xx+4,yy-4);ctx.lineTo(xx-4,yy+4);ctx.stroke();}});
+  // start, memory, now
+  ctx.strokeStyle=C.ink;ctx.lineWidth=2;ctx.beginPath();ctx.arc(X(p.th0),Y(p.ph0),6,0,TAU);ctx.stroke();
+  if(p.drift>0){ctx.fillStyle=C.delta;ctx.beginPath();ctx.arc(X(mt),Y(mp),3.5,0,TAU);ctx.fill();}
+  ctx.fillStyle=C.path;ctx.strokeStyle=C.panel;ctx.lineWidth=2;ctx.beginPath();ctx.arc(X(S.fth[mi]),Y(S.fph[mi]),5,0,TAU);ctx.fill();ctx.stroke();
+  ctx.restore();
+  // frame + axes
+  ctx.strokeStyle=C.line;ctx.lineWidth=1;ctx.strokeRect(x0+0.5,y0+0.5,side-1,side-1);
+  ctx.fillStyle=C.muted;ctx.font="11px "+font;ctx.textAlign="center";ctx.textBaseline="top";
+  for(const g of [0,0.25,0.5,0.75,1])ctx.fillText(g===0.5?"½":g===0.25?"¼":g===0.75?"¾":String(g),x0+g*side,y0+side+5);
+  ctx.fillText("θ  toroidal",x0+side/2,y0+side+17);
+  ctx.textAlign="right";ctx.textBaseline="middle";
+  for(const g of [0,0.5,1])ctx.fillText(g===0.5?"½":String(g),x0-6,y0+(1-g)*side);
+  ctx.save();ctx.translate(11,y0+side*0.25);ctx.rotate(-Math.PI/2);ctx.textAlign="center";ctx.fillText("φ poloidal",0,0);ctx.restore();
+  ctx.textAlign="left";ctx.fillStyle=C.ink;ctx.font="10px "+font;ctx.fillText("portal",x0+4,Y(0.5)-9);
+}
+
+/* ---------------- timeline ---------------- */
+function drawTimeline(S,play){
+  const {ctx,w,h}=fit($("ct")); ctx.clearRect(0,0,w,h);
+  const font=getComputedStyle(document.body).fontFamily;
+  const ml=60,mr=10,x0=ml,W=w-ml-mr;
+  const yP=12, top=30, bot=h-66, yO=h-48, yT=h-32, yAx=h-16;
+  const X=t=>x0+t/S.Teff*W, d=S.p.delta, ymax=4*d, Yd=v=>bot-Math.min(v,ymax)/ymax*(bot-top);
+  ctx.fillStyle=C.panel;ctx.fillRect(x0,top,W,bot-top);
+  // true visits
+  ctx.fillStyle=rgba(C.truth,0.18);
+  for(const v of S.visits){const a=X(v.tin),b=Math.max(X(v.tout),a+1.2);ctx.fillRect(a,top,b-a,bot-top);}
+  // δ line
+  ctx.strokeStyle=C.delta;ctx.lineWidth=1.5;ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(x0,Yd(d));ctx.lineTo(x0+W,Yd(d));ctx.stroke();ctx.setLineDash([]);
+  // distance envelope
+  const L=S.fineD.length, cols=Math.max(1,Math.floor(W));
+  ctx.strokeStyle=C.path;ctx.lineWidth=1;ctx.beginPath();
+  for(let c=0;c<cols;c++){const a=Math.floor(c/cols*L),b=Math.max(a+1,Math.floor((c+1)/cols*L));let lo=1e9,hi=-1;
+    for(let i=a;i<b&&i<L;i++){const v=S.fineD[i];if(v<lo)lo=v;if(v>hi)hi=v;}
+    if(lo>ymax)continue;const xx=x0+c+0.5;ctx.moveTo(xx,Yd(hi));ctx.lineTo(xx,Yd(lo)+0.8);}
+  ctx.stroke();
+  // frames, when they can be told apart
+  if(W/S.N>=3){ctx.fillStyle=C.path;for(let i=0;i<=S.N;i++){if(S.fd[i]>ymax)continue;ctx.beginPath();ctx.arc(X(i*S.dt),Yd(S.fd[i]),1.8,0,TAU);ctx.fill();}}
+  else{ctx.fillStyle=C.delta;for(let i=0;i<=S.N;i++){if(!S.fin[i])continue;ctx.fillRect(X(i*S.dt)-0.75,Yd(S.fd[i])-0.75,1.5,1.5);}}
+  // lanes
+  ctx.font="10px "+font;ctx.fillStyle=C.muted;ctx.textAlign="right";ctx.textBaseline="middle";
+  ctx.fillText("portal",x0-6,yP);ctx.fillText("observer",x0-6,yO);ctx.fillText("truth",x0-6,yT);
+  ctx.fillText("δ",x0-6,Yd(d));ctx.fillText("4δ",x0-6,top+4);ctx.fillText("0",x0-6,bot);
+  for(const ps of S.flow.passes){const xx=X(ps.t);ctx.strokeStyle=ps.open?C.count:C.block;ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(xx,yP-6);ctx.lineTo(xx,yP+6);ctx.stroke();}
+  S.entries.forEach((i,n)=>{const xx=X(i*S.dt);
+    if(S.eOk[n]){ctx.fillStyle=C.count;ctx.beginPath();ctx.moveTo(xx,yO-6);ctx.lineTo(xx+4.5,yO+4);ctx.lineTo(xx-4.5,yO+4);ctx.closePath();ctx.fill();}
+    else{ctx.strokeStyle=C.block;ctx.lineWidth=1.8;ctx.beginPath();ctx.moveTo(xx-4,yO-4);ctx.lineTo(xx+4,yO+4);ctx.moveTo(xx+4,yO-4);ctx.lineTo(xx-4,yO+4);ctx.stroke();}});
+  for(const v of S.visits){const xx=X(v.tin);ctx.lineWidth=1.6;ctx.strokeStyle=C.truth;ctx.fillStyle=C.truth;ctx.beginPath();ctx.arc(xx,yT,3.6,0,TAU);v.caught?ctx.fill():ctx.stroke();}
+  // axis
+  ctx.strokeStyle=C.line;ctx.beginPath();ctx.moveTo(x0,yAx-8);ctx.lineTo(x0+W,yAx-8);ctx.stroke();
+  ctx.fillStyle=C.muted;ctx.textAlign="center";ctx.textBaseline="middle";
+  const nice=[1,2,5,10,20,25,50,100,200,500];let st=nice.find(s=>S.Teff/s<=8)||1000;
+  for(let t=0;t<=S.Teff+1e-9;t+=st){ctx.fillText(String(t),X(t),yAx+2);}
+  // playhead
+  const xp=X(Math.min(play.idx,S.N)*S.dt);ctx.strokeStyle=C.ink;ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(xp,4);ctx.lineTo(xp,yT+8);ctx.stroke();
+  timelineGeom={x0,W};
+}
+let timelineGeom={x0:60,W:300};
+(function(){const cv=$("ct");let down=false;
+  const set=e=>{const r=cv.getBoundingClientRect();const f=Math.max(0,Math.min(1,(e.clientX-r.left-timelineGeom.x0)/timelineGeom.W));if(!sim)return;play.idx=Math.round(f*sim.N);stopPlay();requestDraw();};
+  cv.addEventListener("pointerdown",e=>{down=true;set(e);});
+  cv.addEventListener("pointermove",e=>{if(down)set(e);});
+  const end=()=>{down=false;};cv.addEventListener("pointerup",end);cv.addEventListener("pointercancel",end);})();
+
+/* ---------------- readouts ---------------- */
+let cls=null;
+function shapeName(e){return Math.abs(e)<1e-9?"horn":e>0?"ring":"spindle";}
+function updateReadouts(S,play){
+  const tNow=play.idx*S.dt, nObsNow=S.entries.filter(i=>i<=play.idx).length, nTruNow=S.visits.filter(v=>v.tin<=tNow).length;
+  const passNow=S.flow.passes.filter(x=>x.t<=tNow), openNow=passNow.filter(x=>x.open).length;
+  $("tObs").textContent=nObsNow; $("tObsS").textContent=`of ${cls.nObs} in the full run`;
+  $("tTrue").textContent=nTruNow;
+  const missNow=S.visits.filter(v=>v.tin<=tNow&&!v.caught).length, falseNow=S.entries.filter((i,n)=>i<=play.idx&&!S.eOk[n]).length;
+  $("tMiss").textContent=`${missNow} · ${falseNow}`;
+  $("tPass").textContent=`${openNow}/${passNow.length}`;
+  // coherence: longest run of consecutive counted passes
+  let run=0,best=0;for(const ps of S.flow.passes){run=ps.open?run+1:0;if(run>best)best=run;}
+  $("tPassS").textContent=`longest open run ${best}`;
+  const pill=$("cls");pill.dataset.c=cls.c;pill.textContent=cls.c;$("clsText").textContent=CLS_TEXT[cls.c];
+  $("shapeTag").textContent=`${shapeName(S.p.eps)} · ε = ${fx(S.p.eps,3)} · k = ${S.p.k}`;
+  $("tlTag").textContent=`t = ${fx(tNow,2)} of ${fx(S.Teff,1)} toroidal turns · frame ${Math.min(play.idx,S.N)}/${S.N}`;
+}
+function updateDiag(S){
+  const p=S.p, w=S.flow.w, K=S.flow.K;
+  const fpt=1/S.dt, fpp=1/(p.omega*S.dt);
+  const nyq=Math.min(fpt,fpp);
+  const x=(1/p.omega)*p.k, drift=Math.abs(x-Math.round(x))/p.k;
+  let best=0,run=0;for(const ps of S.flow.passes){run=ps.open?run+1:0;if(run>best)best=run;}
+  const pred=drift<1e-9?(w>0||Math.abs(p.eps)<1e-9?"∞ (exact)":"0"):fx(w/drift,1);
+  const fmtC=cs=>cs.length?cs.slice().sort((a,b)=>b.n-a.n).slice(0,5).map(c=>`${fx(c.v,3)}×${c.n}`).join(", ")+(cs.length>5?` … (${cs.length} values)`:""):"none";
+  let gap="";
+  if(cls.cTru.length===3){const v=cls.cTru.map(c=>c.v).sort((a,b)=>a-b);const err=Math.abs(v[2]-v[0]-v[1]);gap=err<2*p.delta/S.v+1e-9?` <span class="ok">largest ≈ sum of other two (Δ ${fx(err,3)})</span>`:` <span class="warn">largest − sum = ${fx(v[2]-v[0]-v[1],3)}</span>`;}
+  else if(cls.cTru.length&&cls.cTru.length<3) gap=` <span class="ok">${cls.cTru.length} value${cls.cTru.length>1?"s":""}</span>`;
+  else if(cls.cTru.length>3) gap=` <span class="warn">${cls.cTru.length} values (expected ≤ 3 for a pure rotation)</span>`;
+  const kac=1/(2*p.delta*S.v);
+  const meanTru=cls.truRT.length?cls.truRT.reduce((a,b)=>a+b,0)/cls.truRT.length:NaN;
+  const conv=convergents(p.omega,2000).map(([a,b])=>`${a}/${b}`).join(", ");
+  const rat=asRational(p.omega);
+  let rule="ω is not a small-denominator rational";
+  if(rat){const [pp,tt]=rat;const g=gcd(pp,tt);const P_=pp/g,T_=tt/g;
+    rule=`ω = ${P_}/${T_}, so the winding is (t, p) = (${T_}, ${P_}). Passes advance θ by ${T_}/${P_} and land on multiples of 1/${P_}. At ε = 0 they all count only if ${P_} divides k = ${p.k}: <span class="${p.k%P_===0?"ok":"warn"}">${p.k%P_===0?"yes":"no"}</span> (start must be aligned to a window).`;}
+  const rows=[
+    ["Frame interval Δt · grain g",`${fx(S.dt,4)} turns · g = ${fx(S.dt*S.v,4)}${p.decouple&&S.dt*S.v>p.delta?' <span class="warn">g > δ: the path can jump the neighborhood</span>':""}`],
+    ["Frames per toroidal · per poloidal cycle",`${fx(fpt,1)} · ${fx(fpp,1)} ${nyq<2?'<span class="warn">below 2: Nyquist aliasing</span>':'<span class="ok">above Nyquist</span>'}`],
+    ["Window width w · locking K",`${fx(w,4)} turns · ${fx(K,3)}${p.flip!=="off"&&p.eps<0?" · flip: "+p.flip:""}`],
+    ["Coherence: longest run of open passes",`${best} measured · w / drift = ${pred} predicted (drift/pass ${fx(drift,4)})${K>0?" · locking on, so the prediction ignores the pull":""}`],
+    ["Observer return times (turns)",fmtC(cls.cObs)],
+    ["True return times (turns)",fmtC(cls.cTru)+gap],
+    ["Kac / flux: mean return = 1 / (2δ|v|)",`${fx(kac,2)} predicted · ${isNaN(meanTru)?"–":fx(meanTru,2)} measured${asRational(p.omega)?" (ω rational: not ergodic, Kac need not hold)":K>0?" (locking breaks uniform measure)":""}`],
+    ["Continued-fraction convergents of ω",conv],
+    ["ε = 0 selection rule",rule],
+  ];
+  if(S.capped) rows.unshift(["Note",`<span class="warn">Run shortened to ${fx(S.Teff,1)} turns (frame limit ${MAXF}).</span>`]);
+  $("diag").innerHTML=rows.map(([a,b])=>`<div><dt>${a}</dt><dd>${b}</dd></div>`).join("");
+}
+
+/* ---------------- controls ---------------- */
+const logMap=(lo,hi)=>({to:v=>Math.round(1000*Math.log(v/lo)/Math.log(hi/lo)),from:s=>lo*Math.pow(hi/lo,s/1000)});
+const LD=logMap(0.003,0.3), LT=logMap(0.002,3.2), LR=logMap(10,500);
+const binds=[
+  ["eps",v=>v,v=>+v,v=>(v>=0?"+":"")+fx(v,3)],
+  ["delta",LD.to,LD.from,v=>fx(v,4)],
+  ["omega",v=>v,v=>+v,v=>fx(v,4)],
+  ["k",v=>v,v=>+v,v=>String(v)],
+  ["cw",v=>v,v=>+v,v=>fx(v,2)],
+  ["cK",v=>v,v=>+v,v=>fx(v,2)],
+  ["dt",LT.to,LT.from,v=>fx(v,4)],
+  ["drift",v=>v,v=>+v,v=>fx(v,2)],
+  ["th0",v=>v,v=>+v,v=>fx(v,3)],
+  ["ph0",v=>v,v=>+v,v=>fx(v,3)],
+  ["T",LR.to,LR.from,v=>String(Math.round(v))],
+];
+function syncUI(){
+  for(const [id,to,,fmt] of binds){$(id).value=to(P[id]);$(id+"O").textContent=fmt(P[id]);}
+  $("lock").checked=P.lock;$("decouple").checked=P.decouple;$("flip").value=P.flip;$("metric").value=P.metric;
+  $("dt").disabled=!P.decouple;$("cK").disabled=!P.lock;
+  $("dtNote").textContent=P.decouple?"Separate now. Try Δt = 1 or 3 with ω = 1/3 to see the stroboscope.":"Coupled now: Δt = δ / |v|, so a frame step covers a distance g = δ.";
+  $("epsShape").textContent=shapeName(P.eps);
+  document.querySelectorAll("[data-om]").forEach(b=>b.setAttribute("aria-pressed",String(Math.abs(omPreset(b.dataset.om)-P.omega)<1e-9)));
+}
+function omPreset(k){return k==="gold"?GOLD:k==="sqrt2"?SQ2:(([a,b])=>a/b)(k.split("/").map(Number));}
+for(const [id,,from] of binds){$(id).addEventListener("input",e=>{let v=from(+e.target.value);if(id==="eps"&&Math.abs(v)<0.006)v=0;if(id==="T")v=Math.round(v);P[id]=v;onParams();});}
+$("lock").addEventListener("change",e=>{P.lock=e.target.checked;onParams();});
+$("decouple").addEventListener("change",e=>{P.decouple=e.target.checked;if(P.decouple)P.dt=P.delta/Math.hypot(1,P.omega);onParams();});
+$("flip").addEventListener("change",e=>{P.flip=e.target.value;onParams();});
+$("metric").addEventListener("change",e=>{P.metric=e.target.value;onParams();});
+document.querySelectorAll("[data-om]").forEach(b=>b.addEventListener("click",()=>{P.omega=omPreset(b.dataset.om);onParams();}));
+$("align").addEventListener("click",()=>{const t1=fr(0.5-P.ph0)/P.omega;P.th0=fr(-t1);onParams();});
+$("resetView").addEventListener("click",()=>{view.yaw=-0.55;view.pitch=1.0;requestDraw();});
+$("resetAll").addEventListener("click",()=>{Object.assign(P,DEFAULTS);view.yaw=-0.55;view.pitch=1.0;onParams();});
+
+/* ---------------- play loop ---------------- */
+const play={on:false,idx:0};
+let sim=null, simDirty=true, drawPending=false, lastTs=0;
+function onParams(){syncUI();simDirty=true;requestDraw();}
+function requestDraw(){if(drawPending)return;drawPending=true;requestAnimationFrame(frame);}
+function frame(ts){
+  drawPending=false;
+  if(simDirty){const atEnd=!sim||play.idx>=sim.N;const frac=sim?play.idx/sim.N:1;
+    sim=simulate(P);cls=classify(sim);simDirty=false;play.idx=(play.on||!atEnd)?Math.round(frac*sim.N):sim.N;updateDiag(sim);}
+  if(play.on){const dtms=lastTs?Math.min(50,ts-lastTs):16;lastTs=ts;play.idx=Math.min(sim.N,play.idx+Math.max(1,Math.round(sim.N*dtms/12000)));
+    if(play.idx>=sim.N)stopPlay();else requestDraw();}
+  draw3D(sim,play);drawFlat(sim,play);drawTimeline(sim,play);updateReadouts(sim,play);
+}
+function stopPlay(){play.on=false;lastTs=0;$("play").textContent="▶ Play";$("play").setAttribute("aria-pressed","false");}
+$("play").addEventListener("click",()=>{if(play.on){stopPlay();requestDraw();return;}
+  if(sim&&play.idx>=sim.N)play.idx=0;play.on=true;lastTs=0;$("play").textContent="❚❚ Pause";$("play").setAttribute("aria-pressed","true");requestDraw();});
+
+/* ---------------- theme + resize ---------------- */
+readColors();
+const mq=window.matchMedia("(prefers-color-scheme: dark)");
+const onTheme=()=>{readColors();regionCache.key="";requestDraw();};
+mq.addEventListener?mq.addEventListener("change",onTheme):mq.addListener(onTheme);
+new MutationObserver(onTheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+new ResizeObserver(()=>requestDraw()).observe(document.querySelector(".viz"));
+syncUI();requestDraw();
+})();
+</script>
