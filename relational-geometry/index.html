@@ -185,7 +185,8 @@ button kbd { font: inherit; color: var(--dim); margin-left: 4px; font-size: 10px
     <li><kbd>Q / E</kbd><span>roll, which also widens or narrows the pores</span></li>
     <li><kbd>1 2 3 4</kbd><span>120° turns about the four tetrahedral axes</span></li>
     <li><kbd>X</kbd><span>evert: from motion into still memory, and back</span></li>
-    <li><kbd>pointer</kbd><span>where you point is where you look: that region slows</span></li>
+    <li><kbd>pointer</kbd><span>where you point is where you look: that region slows and cools in colour</span></li>
+    <li><kbd>T</kbd><span>drift: still, slow or flow</span></li>
     <li><kbd>M · H</kbd><span>memory threads · this card</span></li>
   </ul>
   <p class="touch-hint">Drag to look. Hold ▲ go to move. The centre of the screen is where you look. Use the buttons below for turns, roll and eversion.</p>
@@ -199,6 +200,7 @@ button kbd { font: inherit; color: var(--dim); margin-left: 4px; font-size: 10px
   </div>
   <div class="grp"><button id="roll-l" title="Roll left: pores narrow">⟲<kbd>Q</kbd></button><button id="roll-r" title="Roll right: pores widen">⟳<kbd>E</kbd></button></div>
   <div class="grp"><button id="b-evert" aria-pressed="false">evert<kbd>X</kbd></button><button id="b-threads" aria-pressed="true">threads<kbd>M</kbd></button></div>
+  <div class="grp" role="group" aria-label="Drift speed"><button data-drift="0" aria-pressed="false">still</button><button data-drift="1" aria-pressed="true">slow</button><button data-drift="2" aria-pressed="false">flow<kbd>T</kbd></button></div>
   <div class="grp"><button id="b-help">help<kbd>H</kbd></button><button id="b-panel" class="panel-toggle" aria-controls="panel" aria-expanded="false">instruments</button></div>
 </nav>
 
@@ -310,7 +312,7 @@ void main(){
     if (d > pd && pd / max(pt, 1e-5) < m) { m = pd / max(pt, 1e-5); tc = pt; }
     if (d < 0.0012 * t + 0.002 * uS || t > maxT) break;
     pd = d; pt = t; steps += 1.0;
-    t += d * 0.72;
+    t += d * 0.62;
   }
   // grading for navigation: walls near you are pale and bright, depth falls away into dark,
   // so every hole reads as a dark opening framed by a lit rim, and rims are outlined in ink
@@ -326,6 +328,8 @@ void main(){
     col *= 1.0 - 0.5 * smoothstep(18.0, 110.0, steps);                    // crevices and pore throats darken
     col *= 0.93 + 0.07 * sign(sin(lvl * 1.7 + 0.5));                       // a faint shift between scales
     if (lvl > 5.5) col = mix(col, vec3(1.0, 0.80, 0.42), 0.45 * (1.0 - x)); // the nexus is gold
+    float held = gazeE(uQ + rd * t);
+    col = mix(col, col * vec3(0.72, 0.86, 1.18) + vec3(0.02, 0.03, 0.08), smoothstep(0.0, 0.5, held) * 0.8 * (1.0 - uMem));  // where you look, time is held back
   }
   float px = 1.25 / uRes.y;
   float edge = (1.0 - smoothstep(px * 0.7, px * 2.2, m)) * step(tc * 1.2 + 0.4 * uS, t);
@@ -412,14 +416,14 @@ let nexusCount = 0;
 function bandW() { return clamp(Math.log(S_HI / obs.S) / Math.log(LAM), 0, 1); }
 function aperture() { return Math.exp(0.5 * Math.sin(obs.rollAcc * 0.5)); }
 function updateField() {
-  const tb = clamp(0.78 - 0.3 * Math.log(aperture()) / 0.5, 0.45, 1.1);
+  const tb = clamp(0.66 - 0.3 * Math.log(aperture()) / 0.5, 0.4, 1.0);
   const w = bandW();
   for (let i = 0; i < NL; i++) {
     const L = lev(obs.n - 2 + i);
     // x slides continuously as you shrink, so a scale keeps its aperture when it changes index:
     // coarse tunnels are wide, finer pores are narrower, and the finest opens from nothing
     const x = i - w;
-    T[i] = x > 4 ? lerp(tb + 0.32, 1.75, x - 4) : lerp(tb - 0.28, tb + 0.32, clamp((x + 1) / 5, 0, 1));
+    T[i] = x > 4 ? lerp(tb + 0.12, 1.75, x - 4) : lerp(tb - 0.16, tb + 0.12, clamp((x + 1) / 5, 0, 1));
     FLK[i] = 0.42 * smooth(2.4, 5, x);   // small holes cannot hold themselves: they flicker in and out
     pack(EV[i], L.qV, L.tV); pack(EP[i], L.qP, L.tP);
   }
@@ -477,7 +481,7 @@ function integrate(dt, rateV) {
     const L = lev(obs.n - 2 + i), x = i - w;
     const base = 0.045 * Math.pow(3, 0.5 * (x - 2)) * L.sign;
     const fine = clamp((x - 1) / 4, 0, 1);
-    L.omega = base * (1 + 0.3 * fine);
+    L.omega = base * (1 + 0.3 * fine) * driftMul;
     axv.copy(A.a).applyQuaternion(L.tilt);
     rotStep(L.qP, L.tP, FL[i], axv, L.omega * dt, A.c);
     if (rateV > 0) rotStep(L.qV, L.tV, FL[i], axv, L.omega * dt * rateV, A.c);
@@ -549,17 +553,21 @@ for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) {
   TEXDIR.push(new THREE.Vector3(Math.cos(lat) * Math.cos(lon), Math.sin(lat), Math.cos(lat) * Math.sin(lon)));
 }
 const gaze = { ux: 0, uy: 0, dir: new THREE.Vector3(0, 0, -1), at: 0 };
-const IN_RATE = 0.3, OUT_RATE = 0.5;
+// D is how many seconds a direction's clock has fallen behind. Where you look, time runs at 15%,
+// so D grows; elsewhere D relaxes (time runs fast there until it catches up).
+let driftMul = 0.2;
+const DRIFTS = [['still', 0], ['slow', 0.2], ['flow', 1]];
+const HOLD = 0.85, RELAX = 2.5, DMAX = 12;
 const lagMax = new Array(NL).fill(0), lagAx = Array.from({ length: NL }, () => new THREE.Vector3());
 const av = new THREE.Vector3(), ap = new THREE.Vector3();
 function updateGaze(dt) {
   gaze.dir.set(gaze.ux * 1.25, gaze.uy * 1.25, -1).normalize().applyQuaternion(obs.quat);
-  const c0 = Math.cos(0.62), c1 = Math.cos(0.16);
+  const c0 = Math.cos(0.5), c1 = Math.cos(0.22);
   for (let k = 0; k < GW * GH; k++) {
     const w = smooth(c0, c1, TEXDIR[k].dot(gaze.dir));
-    let E = gazeE[k];
-    E += dt * (w * (1 - E) * IN_RATE - (1 - w) * E * OUT_RATE);
-    gazeE[k] = E; gazeData[k * 4] = E * 255;
+    let D = gazeE[k] * DMAX;
+    D = clamp(D + dt * (HOLD * w - (1 - w) * D / RELAX), 0, DMAX);
+    gazeE[k] = D / DMAX; gazeData[k * 4] = gazeE[k] * 255;
   }
   gazeTex.needsUpdate = true;
   gaze.at = gazeAtDir(gaze.dir);
@@ -570,8 +578,7 @@ function updateGaze(dt) {
   ap.subVectors(obs.q, A.c); const rAxis = Math.sqrt(Math.max(ap.lengthSq() - ap.dot(A.a) ** 2, 0));
   for (let i = 0; i < NL; i++) {
     const L = lev(obs.n - 2 + i);
-    const cap = 3 * (TAU / FL[i]) / Math.max(rAxis, obs.S);
-    lagMax[i] = world.inMem ? 0 : Math.sign(L.omega) * Math.min(0.75 * Math.abs(L.omega) / IN_RATE, cap);
+    lagMax[i] = world.inMem ? 0 : L.omega * DMAX;   // lag angle = ω · (seconds held back)
     lagAx[i].copy(A.a).applyQuaternion(L.tilt);
   }
 }
@@ -720,6 +727,7 @@ addEventListener('keydown', (e) => {
   keys.add(k); if (e.shiftKey) keys.add('shift');
   if (['1', '2', '3', '4'].includes(k)) obs.turnQueue.push(+k - 1);
   if (k === 'x') toggleEvert();
+  if (k === 't') setDrift((DRIFTS.findIndex(d => d[1] === driftMul) + 1) % DRIFTS.length);
   if (k === 'm') toggleThreads();
   if (k === 'h') toggleHelp();
   if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();
@@ -754,6 +762,12 @@ function holdBtn(id, key) {
 holdBtn('t-fwd', 'fwd'); holdBtn('t-back', 'back'); holdBtn('roll-l', 'rl'); holdBtn('roll-r', 'rr');
 document.querySelectorAll('[data-turn]').forEach(b => b.addEventListener('click', () => obs.turnQueue.push(+b.dataset.turn)));
 document.getElementById('b-evert').addEventListener('click', toggleEvert);
+function setDrift(k) {
+  driftMul = DRIFTS[k][1];
+  document.querySelectorAll('[data-drift]').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.drift === k)));
+  toast(k === 0 ? 'Drift stilled. Only your own motion changes the relations.' : k === 1 ? 'Slow drift.' : 'Full drift: the small holes race.');
+}
+document.querySelectorAll('[data-drift]').forEach(b => b.addEventListener('click', () => setDrift(+b.dataset.drift)));
 document.getElementById('b-threads').addEventListener('click', toggleThreads);
 document.getElementById('b-help').addEventListener('click', toggleHelp);
 document.getElementById('enter').addEventListener('click', toggleHelp);
@@ -986,7 +1000,7 @@ function updateHUD() {
   $('r-speed').textContent = `${obs.speed.toFixed(1)} bodies/s`;
   $('r-perc').textContent = perceived.toFixed(2);
   sdf(obs.q); $('r-in').textContent = sdf.lvl === 6 ? 'the nexus' : `scale ${obs.n - 2 + sdf.lvl}`;
-  $('r-ride').textContent = world.inMem ? 'still' : `×${(0.25 + 0.75 * gaze.at).toFixed(2)}${gaze.at < 0.6 ? ' · slowing' : ''}`;
+  $('r-ride').textContent = world.inMem ? 'still' : driftMul === 0 ? 'nothing drifts' : `×0.15 · held back ${(gaze.at * DMAX).toFixed(1)} s`;
   const A = anchor();
   $('r-nexus').textContent = A ? `${Math.max(0, -nexH(A, obs.q) / obs.S).toFixed(1)} bodies${A.grow < 1 ? ' · forming' : ''}` : '–';
   $('r-sigma').textContent = sigma().toFixed(2);
