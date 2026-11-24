@@ -91,7 +91,7 @@ button kbd { font: inherit; color: var(--dim); margin-left: 4px; font-size: 10px
 #toast { position: fixed; left: 50%; top: calc(18px + env(safe-area-inset-top, 0px)); transform: translateX(-50%); font-family: var(--f-display);
   font-style: italic; font-size: 17px; color: var(--fg); text-shadow: 0 0 18px rgba(0,0,0,.95); pointer-events: none; opacity: 0;
   transition: opacity .6s; text-align: center; max-width: min(560px, calc(100% - 32px)); }
-#crosshair { position: fixed; left: 50%; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; pointer-events: none; opacity: .45; }
+#crosshair { position: fixed; left: 50%; top: 50%; width: 44px; height: 44px; margin: -22px 0 0 -22px; pointer-events: none; opacity: .55; }
 
 .panel-toggle { display: none; }
 @media (max-width: 820px) {
@@ -113,7 +113,7 @@ button kbd { font: inherit; color: var(--dim); margin-left: 4px; font-size: 10px
 </style>
 
 <canvas id="scene" aria-label="Navigable sponge of tunnels within tunnels"></canvas>
-<svg id="crosshair" viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5" fill="none" stroke="#b9a7ff" stroke-width="1"/><circle cx="7" cy="7" r="0.8" fill="#b9a7ff"/></svg>
+<svg id="crosshair" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="19" fill="none" stroke="#ffffff" stroke-opacity=".5" stroke-width="1" stroke-dasharray="2 4"/><circle cx="22" cy="22" r="1.4" fill="#ffffff"/></svg>
 
 <header class="title">
   <h1>Torus Porous</h1>
@@ -134,7 +134,7 @@ button kbd { font: inherit; color: var(--dim); margin-left: 4px; font-size: 10px
       <dt>pace</dt><dd id="r-speed">0.0 bodies/s</dd>
       <dt>perceived change</dt><dd id="r-perc">0.00</dd>
       <dt>tunnel you are in</dt><dd id="r-in">–</dd>
-      <dt>gaze fixed on</dt><dd id="r-ride">nothing</dd>
+      <dt>time under your gaze</dt><dd id="r-ride">×1.00</dd>
       <dt>to the nexus</dt><dd id="r-nexus">–</dd>
     </dl>
   </section>
@@ -150,7 +150,7 @@ button kbd { font: inherit; color: var(--dim); margin-left: 4px; font-size: 10px
       </dl>
     </div>
     <div class="levels" id="levels"></div>
-    <p class="cap">Every scale orbits the nexus. The larger a scale, the slower it turns, and neighbouring scales turn in opposite directions. Scales you are looking at slow to a quarter speed. Small scales out of view speed up as much as 2.6 times.</p>
+    <p class="cap">Every scale orbits the nexus. The larger a scale, the slower it turns, and neighbouring scales turn in opposite directions. Where you look, every scale slows to about a quarter speed. When you look away, that region catches up faster than normal.</p>
   </section>
   <section class="sec">
     <h2>Recurrence <small>PRESENT vs MEMORY</small></h2>
@@ -177,7 +177,7 @@ button kbd { font: inherit; color: var(--dim); margin-left: 4px; font-size: 10px
 <div class="intro" id="intro">
   <h2>You are inside the sponge.</h2>
   <p>Every opening is the mouth of a tunnel, and every tunnel wall is riddled with smaller tunnels. Space here is hyperbolic: your size follows the room around you. Approach a wall and you shrink until its pores become passages. Go through one and you are a scale deeper. After five scales the cycle turns over and the pattern repeats in a new place.</p>
-  <p>Everything orbits the <b style="color:#f6e7c4;font-weight:500">nexus</b>, a large ring-shaped hole that holds still. The larger a hole, the more stable it is. Small holes drift fast, and the smallest flicker in and out of existence. Whatever you look at slows down, and what you look away from speeds up.</p>
+  <p>Everything orbits the <b style="color:#f6e7c4;font-weight:500">nexus</b>, a large ring-shaped hole that holds still. The larger a hole, the more stable it is. Small holes drift fast, and the smallest flicker in and out of existence. Wherever you look, the medium slows. When you look away it catches up, faster than before. The medium is elastic: holes stretch open around you as you pass through them.</p>
   <p><b style="color:var(--violet);font-weight:500">Evert</b> to pass through your own centre into memory, where the motion stops. Inside, the present shows only where it no longer matches what you remember. Come back out and the change you missed rushes in.</p>
   <ul class="keys">
     <li><kbd>drag</kbd><span>look (the frame travels with you)</span></li>
@@ -185,10 +185,10 @@ button kbd { font: inherit; color: var(--dim); margin-left: 4px; font-size: 10px
     <li><kbd>Q / E</kbd><span>roll, which also widens or narrows the pores</span></li>
     <li><kbd>1 2 3 4</kbd><span>120° turns about the four tetrahedral axes</span></li>
     <li><kbd>X</kbd><span>evert: from motion into still memory, and back</span></li>
-    <li><kbd>F</kbd><span>fix your gaze on the hole under the crosshair and move with it</span></li>
+    <li><kbd>pointer</kbd><span>where you point is where you look: that region slows</span></li>
     <li><kbd>M · H</kbd><span>memory threads · this card</span></li>
   </ul>
-  <p class="touch-hint">Drag to look. Hold ▲ go to move. Use the buttons below for turns, roll, eversion and fixing your gaze.</p>
+  <p class="touch-hint">Drag to look. Hold ▲ go to move. The centre of the screen is where you look. Use the buttons below for turns, roll and eversion.</p>
   <div class="row"><span class="legend">Based on <i>Relational Geometry: Holes, Memory and the Internal Observer</i>.</span><button id="enter">Enter the sponge</button></div>
 </div>
 
@@ -198,7 +198,7 @@ button kbd { font: inherit; color: var(--dim); margin-left: 4px; font-size: 10px
     <button data-turn="0" title="120° about axis 1">g₁<kbd>1</kbd></button><button data-turn="1" title="120° about axis 2">g₂<kbd>2</kbd></button><button data-turn="2" title="120° about axis 3">g₃<kbd>3</kbd></button><button data-turn="3" title="120° about axis 4">g₄<kbd>4</kbd></button>
   </div>
   <div class="grp"><button id="roll-l" title="Roll left: pores narrow">⟲<kbd>Q</kbd></button><button id="roll-r" title="Roll right: pores widen">⟳<kbd>E</kbd></button></div>
-  <div class="grp"><button id="b-evert" aria-pressed="false">evert<kbd>X</kbd></button><button id="b-ride" aria-pressed="false">fix gaze<kbd>F</kbd></button><button id="b-threads" aria-pressed="true">threads<kbd>M</kbd></button></div>
+  <div class="grp"><button id="b-evert" aria-pressed="false">evert<kbd>X</kbd></button><button id="b-threads" aria-pressed="true">threads<kbd>M</kbd></button></div>
   <div class="grp"><button id="b-help">help<kbd>H</kbd></button><button id="b-panel" class="panel-toggle" aria-controls="panel" aria-expanded="false">instruments</button></div>
 </nav>
 
@@ -237,6 +237,8 @@ const U = {
   uMP: { value: Array.from({ length: NL }, () => new THREE.Matrix3()) }, uTauP: { value: vec3s(NL) },
   uT: { value: new Array(NL).fill(1) }, uF: { value: FL.slice() }, uFl: { value: new Array(NL).fill(0) },
   uFT: { value: 0 }, uFTP: { value: 0 },
+  uLag: { value: null }, uLagMax: { value: new Array(NL).fill(0) }, uLagAx: { value: vec3s(NL) }, uAnc: { value: new THREE.Vector3() },
+  uWC: { value: new THREE.Vector3() }, uWB: { value: 0.01 },
   uNC: { value: vec3s(4) }, uNA: { value: vec3s(4) }, uNR: { value: Array.from({ length: 4 }, () => new THREE.Vector2()) },
   uS: { value: 0.1 }, uMem: { value: 0 }, uWarp: { value: 0 }, uRes: { value: new THREE.Vector2(1, 1) }, uTime: { value: 0 },
 };
@@ -246,7 +248,17 @@ uniform vec3 uQ; uniform mat3 uRot;
 uniform mat3 uM[6]; uniform vec3 uTau[6]; uniform mat3 uMP[6]; uniform vec3 uTauP[6];
 uniform float uT[6]; uniform float uF[6]; uniform float uFl[6]; uniform float uFT, uFTP;
 uniform vec3 uNC[4]; uniform vec3 uNA[4]; uniform vec2 uNR[4];
+uniform sampler2D uLag; uniform float uLagMax[6]; uniform vec3 uLagAx[6]; uniform vec3 uAnc;
+uniform vec3 uWC; uniform float uWB;
 uniform float uS, uMem, uWarp, uTime; uniform vec2 uRes;
+vec3 rotA(vec3 v, vec3 k, float a){ float c = cos(a), s = sin(a); return v * c + cross(k, v) * s + k * dot(k, v) * (1.0 - c); }
+// how long this direction has been looked at (0..1), stored on a sphere of directions around you
+float gazeE(vec3 q){
+  vec3 dd = normalize(q - uQ + vec3(1e-6));
+  return texture2D(uLag, vec2(atan(dd.z, dd.x) * 0.15915494 + 0.5, asin(clamp(dd.y, -1.0, 1.0)) * 0.31830989 + 0.5)).r;
+}
+// the medium is elastic: around the point just ahead of you it stretches open, hyperbolically
+vec3 warpQ(vec3 q){ vec3 v = q - uWC; float r2 = dot(v, v); return uWC + v * sqrt(r2 / (r2 + uWB * uWB)); }
 float gyr(vec3 p){ return dot(sin(p), cos(p.yzx)); }
 // a scale's tunnels, carried round the nexus by its own rotation; the smallest flicker open and shut
 float lvH(vec3 x, int i, float ft){
@@ -261,17 +273,22 @@ float nexH(vec3 q, int j){
   return uNR[j].y - length(vec2(rad - uNR[j].x, ax));
 }
 // empty space is the union of every scale's tunnels; solid is what no scale has hollowed out
-float map(vec3 q, out float lvl){
+float map(vec3 q0, out float lvl){
   float best = -1e9; lvl = 0.0;
+  float E = gazeE(q0);
+  vec3 q = warpQ(q0);
   for (int i = 0; i < 6; i++) {
-    float h = lvH(uF[i] * (uM[i] * q) + uTau[i], i, uFT);
+    // where you have been looking, this scale lags behind its orbit: it moved slower there
+    float lg = E * uLagMax[i];
+    vec3 qq = abs(lg) > 1e-4 ? uAnc + rotA(q - uAnc, uLagAx[i], lg) : q;
+    float h = lvH(uF[i] * (uM[i] * qq) + uTau[i], i, uFT);
     if (h > best) { best = h; lvl = float(i); }
   }
   for (int j = 0; j < 4; j++) if (uNR[j].y > 0.0) { float h = nexH(q, j); if (h > best) { best = h; lvl = 6.0; } }
   return best;
 }
-float mapP(vec3 q){
-  float best = -1e9;
+float mapP(vec3 q0){
+  float best = -1e9; vec3 q = warpQ(q0);
   for (int i = 0; i < 6; i++) best = max(best, lvH(uF[i] * (uMP[i] * q) + uTauP[i], i, uFTP));
   for (int j = 0; j < 4; j++) if (uNR[j].y > 0.0) best = max(best, nexH(q, j));
   return best;
@@ -286,24 +303,33 @@ void main(){
   vec3 rd = normalize(uRot * vec3(uvw * 1.25, -1.0));
   float t = 0.0, d = 1.0, lvl = 0.0;
   float maxT = 70.0 * uS;
+  float m = 1e9, tc = 0.0, pd = 1e9, pt = 0.0, steps = 0.0;
   for (int i = 0; i < 150; i++) {
     d = map(uQ + rd * t, lvl);
+    // a ray that grazed a surface and went on past it marks a silhouette: the rim of a hole
+    if (d > pd && pd / max(pt, 1e-5) < m) { m = pd / max(pt, 1e-5); tc = pt; }
     if (d < 0.0012 * t + 0.002 * uS || t > maxT) break;
-    t += d * 0.85;
+    pd = d; pt = t; steps += 1.0;
+    t += d * 0.72;
   }
-  // depth by contrast, not lighting: near field amber, far field violet.
-  // Distance is measured in body lengths on a log scale, so the ramp is the same at every scale.
-  // stops in body lengths: amber out to ~8, rose by ~20, violet by ~35, deeper violet at the horizon
+  // grading for navigation: walls near you are pale and bright, depth falls away into dark,
+  // so every hole reads as a dark opening framed by a lit rim, and rims are outlined in ink
+  float L = log(1.0 + maxT / uS);
   float a = log(1.0 + t / uS);
-  vec3 nearC = mix(vec3(1.00, 0.74, 0.32), vec3(0.94, 0.90, 1.00), uMem);  // present: amber · memory: pale lilac
-  vec3 midC  = mix(vec3(0.90, 0.40, 0.40), vec3(0.66, 0.56, 0.94), uMem);
-  vec3 farC  = mix(vec3(0.48, 0.32, 0.88), vec3(0.38, 0.28, 0.80), uMem);
-  vec3 voidC = mix(vec3(0.32, 0.20, 0.68), vec3(0.26, 0.18, 0.60), uMem);
-  vec3 col = mix(nearC, midC, smoothstep(1.6, 2.9, a));
-  col = mix(col, farC, smoothstep(2.7, 3.55, a));
-  col = mix(col, voidC, smoothstep(3.5, log(1.0 + maxT / uS), a));
-  float x = smoothstep(1.6, log(1.0 + maxT / uS), a);
-  if (lvl > 5.5 && t < maxT) col = mix(col, vec3(1.0, 0.94, 0.80), 0.32 * (1.0 - x));  // the nexus reads pale gold up close
+  float x = smoothstep(0.7, L, a);
+  vec3 nearC = mix(vec3(0.96, 0.90, 0.78), vec3(0.92, 0.90, 1.00), uMem);   // bone · memory: pale lilac
+  vec3 midC  = mix(vec3(0.28, 0.58, 0.62), vec3(0.50, 0.42, 0.82), uMem);   // sea-glass teal · violet
+  vec3 farC  = mix(vec3(0.015, 0.035, 0.08), vec3(0.05, 0.025, 0.12), uMem); // the depths
+  vec3 col = mix(nearC, midC, smoothstep(0.12, 0.55, x));
+  col = mix(col, farC, smoothstep(0.35, 0.95, x));
+  if (t < maxT) {
+    col *= 1.0 - 0.5 * smoothstep(18.0, 110.0, steps);                    // crevices and pore throats darken
+    col *= 0.93 + 0.07 * sign(sin(lvl * 1.7 + 0.5));                       // a faint shift between scales
+    if (lvl > 5.5) col = mix(col, vec3(1.0, 0.80, 0.42), 0.45 * (1.0 - x)); // the nexus is gold
+  }
+  float px = 1.25 / uRes.y;
+  float edge = (1.0 - smoothstep(px * 0.7, px * 2.2, m)) * step(tc * 1.2 + 0.4 * uS, t);
+  col = mix(col, vec3(0.01, 0.02, 0.05), edge * 0.9);
   // in memory the field is still; only where the present no longer agrees does amber break through
   if (uMem > 0.01 && t < maxT) {
     float dp = mapP(uQ + rd * t);
@@ -332,7 +358,7 @@ function gyr(x, y, z) { return Math.sin(x) * Math.cos(y) + Math.sin(y) * Math.co
 // ---------- observer ----------
 const obs = {
   q: new THREE.Vector3(), quat: new THREE.Quaternion(), vel: new THREE.Vector3(), S: 0.1, n: 0, stack: [],
-  rollAcc: 0, pace: 1, fix: null, turn: null, turnQueue: [], word: [], speed: 0, lastQ: new THREE.Vector3(),
+  rollAcc: 0, pace: 1, turn: null, turnQueue: [], word: [], speed: 0, lastQ: new THREE.Vector3(),
 };
 const world = { tExt: 0, tView: 0, tFreeze: 0, inMem: false, ev: null, memProbe: null };
 const q0inv = new THREE.Quaternion();
@@ -347,7 +373,7 @@ function makeLevel(N) {
   const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(o[0], o[1], o[2]));
   const t = new THREE.Vector3(o[0] * 2.3, o[1] * 1.7, o[2] * 2.9);
   const tilt = new THREE.Quaternion().setFromEuler(new THREE.Euler((o[1] - Math.PI) * 0.12, (o[2] - Math.PI) * 0.12, 0));
-  return { N, qP: q.clone(), tP: t.clone(), qV: q.clone(), tV: t.clone(), tilt, sign: mod(N, 2) ? 1 : -1, att: 0, omega: 0 };
+  return { N, qP: q.clone(), tP: t.clone(), qV: q.clone(), tV: t.clone(), tilt, sign: mod(N, 2) ? 1 : -1, omega: 0 };
 }
 function lev(N) { let L = levels.get(N); if (!L) { L = makeLevel(N); levels.set(N, L); } return L; }
 const EV = Array.from({ length: NL }, () => ({ e: new Float64Array(9), t: [0, 0, 0] }));
@@ -413,10 +439,19 @@ function levelH(i, q, E, ft) {
   if (FLK[i] > 0.001) th += FLK[i] * gyr(xb[0] * 0.41 + 0.9 * ft, xb[1] * 0.41 + 0.7 * ft, xb[2] * 0.41 + 1.1 * ft);
   return (gyr(xb[0], xb[1], xb[2]) - th) / (FL[i] * LIP);
 }
+const lagQ = new THREE.Vector3(), lagRot = new THREE.Quaternion(), lagD = new THREE.Vector3();
+function lagged(i, q, Eg) { // the same lag the shader applies, so you collide with what you see
+  const lg = Eg * lagMax[i];
+  if (Math.abs(lg) < 1e-4) return q;
+  const c = U.uAnc.value;
+  return lagQ.subVectors(q, c).applyQuaternion(lagRot.setFromAxisAngle(lagAx[i], lg)).add(c);
+}
 function sdf(q, which) {
   const E = which === 'P' ? EP : EV, ft = which === 'P' ? world.tExt : world.tView;
+  let Eg = 0;
+  if (which !== 'P') { lagD.subVectors(q, obs.q); const l = lagD.length(); if (l > 1e-9) Eg = gazeAtDir(lagD.divideScalar(l)); }
   let best = -1e9, lvl = 0;
-  for (let i = 0; i < NL; i++) { const h = levelH(i, q, E, ft); if (h > best) { best = h; lvl = i; } }
+  for (let i = 0; i < NL; i++) { const h = levelH(i, Eg ? lagged(i, q, Eg) : q, E, ft); if (h > best) { best = h; lvl = i; } }
   for (const nx of activeNexus) { const h = nexH(nx, q); if (h > best) { best = h; lvl = 6; } }
   sdf.lvl = lvl;
   return best;
@@ -442,7 +477,7 @@ function integrate(dt, rateV) {
     const L = lev(obs.n - 2 + i), x = i - w;
     const base = 0.045 * Math.pow(3, 0.5 * (x - 2)) * L.sign;
     const fine = clamp((x - 1) / 4, 0, 1);
-    L.omega = base * lerp(1 + 1.6 * fine, 0.25, L.att);   // attention slows what you look at; the unseen small race
+    L.omega = base * (1 + 0.3 * fine);
     axv.copy(A.a).applyQuaternion(L.tilt);
     rotStep(L.qP, L.tP, FL[i], axv, L.omega * dt, A.c);
     if (rateV > 0) rotStep(L.qV, L.tV, FL[i], axv, L.omega * dt * rateV, A.c);
@@ -498,40 +533,63 @@ function scaleEvent(dir) {
   }
 }
 
-// ---------- attention: what you look at slows ----------
-const ATT = [[0, 0]];
-for (let i = 0; i < 6; i++) ATT.push([Math.cos(i / 6 * TAU) * 0.09, Math.sin(i / 6 * TAU) * 0.09]);
+// ---------- gaze: wherever you look, the medium slows ----------
+// Exposure E (0..1) lives on a sphere of directions around you. Looking raises it; looking away lets it relax.
+// Each scale lags its orbit by E·lagMax there: while E climbs that region moves at about a quarter speed,
+// and when you look away the lag unwinds, so the region catches up faster than normal.
+const GW = 64, GH = 32;
+const gazeE = new Float32Array(GW * GH);
+const gazeData = new Uint8Array(GW * GH * 4);
+const gazeTex = new THREE.DataTexture(gazeData, GW, GH, THREE.RGBAFormat);
+gazeTex.magFilter = gazeTex.minFilter = THREE.LinearFilter;
+gazeTex.wrapS = THREE.RepeatWrapping; gazeTex.wrapT = THREE.ClampToEdgeWrapping; gazeTex.needsUpdate = true;
+const TEXDIR = [];
+for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) {
+  const lon = ((i + 0.5) / GW - 0.5) * TAU, lat = ((j + 0.5) / GH - 0.5) * Math.PI;
+  TEXDIR.push(new THREE.Vector3(Math.cos(lat) * Math.cos(lon), Math.sin(lat), Math.cos(lat) * Math.sin(lon)));
+}
+const gaze = { ux: 0, uy: 0, dir: new THREE.Vector3(0, 0, -1), at: 0 };
+const IN_RATE = 0.3, OUT_RATE = 0.5;
+const lagMax = new Array(NL).fill(0), lagAx = Array.from({ length: NL }, () => new THREE.Vector3());
 const av = new THREE.Vector3(), ap = new THREE.Vector3();
-function updateAttention(dt) {
-  const counts = new Array(NL).fill(0);
-  for (const [ax, ay] of ATT) {
-    av.set(ax, ay, -1).normalize().applyQuaternion(obs.quat);
-    let t = 0.05 * obs.S;
-    for (let s = 0; s < 36; s++) {
-      ap.copy(av).multiplyScalar(t).add(obs.q);
-      const d = sdf(ap);
-      if (d < 0.01 * obs.S) { if (sdf.lvl < NL) counts[sdf.lvl]++; break; }
-      if (t > 60 * obs.S) break;
-      t += d * 0.85;
-    }
+function updateGaze(dt) {
+  gaze.dir.set(gaze.ux * 1.25, gaze.uy * 1.25, -1).normalize().applyQuaternion(obs.quat);
+  const c0 = Math.cos(0.62), c1 = Math.cos(0.16);
+  for (let k = 0; k < GW * GH; k++) {
+    const w = smooth(c0, c1, TEXDIR[k].dot(gaze.dir));
+    let E = gazeE[k];
+    E += dt * (w * (1 - E) * IN_RATE - (1 - w) * E * OUT_RATE);
+    gazeE[k] = E; gazeData[k * 4] = E * 255;
   }
-  const k = 1 - Math.exp(-dt / 0.5);
+  gazeTex.needsUpdate = true;
+  gaze.at = gazeAtDir(gaze.dir);
+  // per-scale lag: enough that time runs at a quarter speed where you look, capped so the medium
+  // stretches by at most a few of that scale's own tunnels
+  const A = anchor(); if (!A) return;
+  U.uAnc.value.copy(A.c);
+  ap.subVectors(obs.q, A.c); const rAxis = Math.sqrt(Math.max(ap.lengthSq() - ap.dot(A.a) ** 2, 0));
   for (let i = 0; i < NL; i++) {
     const L = lev(obs.n - 2 + i);
-    const held = obs.fix && obs.fix.kind === 'hole' && obs.fix.N === L.N;
-    L.att = lerp(L.att, held ? 1 : Math.min(1, counts[i] / ATT.length * 1.6), k);
+    const cap = 3 * (TAU / FL[i]) / Math.max(rAxis, obs.S);
+    lagMax[i] = world.inMem ? 0 : Math.sign(L.omega) * Math.min(0.75 * Math.abs(L.omega) / IN_RATE, cap);
+    lagAx[i].copy(A.a).applyQuaternion(L.tilt);
   }
 }
-
-// ---------- fixing your gaze on a hole ----------
-const fixA = new THREE.Vector3(), fixB = new THREE.Vector3(), qi = new THREE.Quaternion();
-function fixPoint(out) {
-  const F = obs.fix; if (!F) return null;
-  if (F.kind === 'nexus') return out.copy(F.nx.c).addScaledVector(F.off, F.nx.R);
-  const i = F.N - (obs.n - 2);
-  if (i < 0 || i >= NL) return null;
-  const L = lev(F.N);
-  return out.copy(F.x0).sub(L.tV).divideScalar(FL[i]).applyQuaternion(qi.copy(L.qV).conjugate());
+function gazeAtDir(d) {
+  const lon = Math.atan2(d.z, d.x), lat = Math.asin(clamp(d.y, -1, 1));
+  const i = mod(Math.floor((lon / TAU + 0.5) * GW), GW), j = clamp(Math.floor((lat / Math.PI + 0.5) * GH), 0, GH - 1);
+  return gazeE[j * GW + i];
+}
+// the elastic bubble: centred just ahead of you along your motion, wider the faster you go
+const warp = { dir: new THREE.Vector3(0, 0, -1), b: 0.4 };
+function updateWarp(dt) {
+  const fwd = av.set(0, 0, -1).applyQuaternion(obs.quat);
+  const v = obs.vel.length();
+  const target = v > 1e-6 ? ap.copy(obs.vel).divideScalar(v) : fwd;
+  warp.dir.lerp(target, 1 - Math.exp(-dt * 4)).normalize();
+  warp.b = lerp(warp.b, 0.35 + 1.3 * clamp(obs.speed / 3, 0, 1), 1 - Math.exp(-dt * 3));
+  U.uWC.value.copy(obs.q).addScaledVector(warp.dir, 1.4 * obs.S);
+  U.uWB.value = warp.b * obs.S;
 }
 
 // ---------- probes: the observer's relations, measured from inside ----------
@@ -662,7 +720,6 @@ addEventListener('keydown', (e) => {
   keys.add(k); if (e.shiftKey) keys.add('shift');
   if (['1', '2', '3', '4'].includes(k)) obs.turnQueue.push(+k - 1);
   if (k === 'x') toggleEvert();
-  if (k === 'f') toggleFix();
   if (k === 'm') toggleThreads();
   if (k === 'h') toggleHelp();
   if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();
@@ -670,6 +727,15 @@ addEventListener('keydown', (e) => {
 addEventListener('keyup', (e) => { keys.delete(e.key.toLowerCase()); if (!e.shiftKey) keys.delete('shift'); });
 addEventListener('blur', () => keys.clear());
 let drag = null;
+// where the pointer rests is where you look; touch and an absent pointer mean the centre
+function setGaze(e) {
+  if (e.pointerType === 'touch') { gaze.ux = gaze.uy = 0; return; }
+  const h = window.innerHeight;
+  gaze.ux = (e.clientX - window.innerWidth / 2) / h; gaze.uy = (h / 2 - e.clientY) / h;
+  const ch = document.getElementById('crosshair'); ch.style.left = `${e.clientX}px`; ch.style.top = `${e.clientY}px`;
+}
+canvas.addEventListener('pointermove', (e) => { if (!drag) setGaze(e); });
+canvas.addEventListener('pointerleave', () => { gaze.ux = gaze.uy = 0; const ch = document.getElementById('crosshair'); ch.style.left = '50%'; ch.style.top = '50%'; });
 canvas.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY, id: e.pointerId }; canvas.setPointerCapture(e.pointerId); });
 canvas.addEventListener('pointermove', (e) => {
   if (!drag || drag.id !== e.pointerId) return;
@@ -688,7 +754,6 @@ function holdBtn(id, key) {
 holdBtn('t-fwd', 'fwd'); holdBtn('t-back', 'back'); holdBtn('roll-l', 'rl'); holdBtn('roll-r', 'rr');
 document.querySelectorAll('[data-turn]').forEach(b => b.addEventListener('click', () => obs.turnQueue.push(+b.dataset.turn)));
 document.getElementById('b-evert').addEventListener('click', toggleEvert);
-document.getElementById('b-ride').addEventListener('click', toggleFix);
 document.getElementById('b-threads').addEventListener('click', toggleThreads);
 document.getElementById('b-help').addEventListener('click', toggleHelp);
 document.getElementById('enter').addEventListener('click', toggleHelp);
@@ -709,33 +774,6 @@ bindRange('span', 'span-o', v => `${v.toFixed(1)} s`, v => { span = v; });
 function setPressed(id, v) { document.getElementById(id).setAttribute('aria-pressed', String(v)); }
 function toggleHelp() { const el = document.getElementById('intro'); el.hidden = !el.hidden; }
 function toggleThreads() { showThreads = !showThreads; setPressed('b-threads', showThreads); }
-function toggleFix() {
-  if (obs.fix) { obs.fix = null; setPressed('b-ride', false); toast('Gaze released. Your own frame again.'); return; }
-  av.set(0, 0, -1).applyQuaternion(obs.quat);
-  let t = 0.05 * obs.S, hit = false;
-  for (let s = 0; s < 80; s++) {
-    ap.copy(av).multiplyScalar(t).add(obs.q);
-    const d = sdf(ap);
-    if (d < 0.01 * obs.S) { hit = true; break; }
-    if (t > 60 * obs.S) break;
-    t += d * 0.85;
-  }
-  if (!hit) { toast('Nothing under the crosshair to hold. Look at a wall or a pore.'); return; }
-  const lvl = sdf.lvl;
-  if (lvl === 6) {
-    const nx = activeNexus.find(n => Math.abs(nexH(n, ap)) < 0.05 * obs.S) || anchor();
-    obs.fix = { kind: 'nexus', nx, off: ap.clone().sub(nx.c).divideScalar(nx.R) };
-    toast('Gaze fixed on the nexus. It holds still; everything turns around it.');
-  } else {
-    const N = obs.n - 2 + lvl, L = lev(N);
-    levelX(lvl, ap, EV, xb);
-    // keep the unreduced coordinate so the hold survives the field's own wrapping
-    const x0 = ap.clone().applyQuaternion(L.qV).multiplyScalar(FL[lvl]).add(L.tV);
-    obs.fix = { kind: 'hole', N, x0 };
-    toast(`Gaze fixed on a hole of scale ${N}. Now everything else moves in relation to it.`);
-  }
-  setPressed('b-ride', true);
-}
 function toggleEvert() {
   if (world.ev) return;
   if (!world.inMem) {
@@ -822,7 +860,7 @@ function gradient(q, out) {
   return out.normalize();
 }
 const lookM = new THREE.Matrix4(), lookQ = new THREE.Quaternion(), upV = new THREE.Vector3();
-let attT = 0, snapT = 0, hudT = 0, perfT = 0, perfAcc = 0, perfN = 0;
+let snapT = 0, hudT = 0, perfT = 0, perfAcc = 0, perfN = 0;
 const clock = new THREE.Clock();
 function frame() {
   const dt = Math.min(clock.getDelta(), 0.05);
@@ -844,16 +882,10 @@ function frame() {
   updateTurns(dt);
   updateField();
 
-  // the field turns round the nexus; a held gaze carries you with the hole you hold
-  const fa = fixPoint(fixA);
+  // the field turns round the nexus; where you look, it lags behind
   integrate(dt, rate);
+  updateGaze(dt);
   updateField();
-  const fb = fixPoint(fixB);
-  if (obs.fix && (!fb || (obs.fix.kind === 'hole' && obs.fix.N - (obs.n - 2) === NL - 1 && T[NL - 1] > 1.45))) {
-    obs.fix = null; setPressed('b-ride', false); toast('The hole you held slipped out of existence.');
-    logEvent('A held hole was too small to sustain itself and annihilated.');
-  }
-  attT -= dt; if (attT <= 0) { updateAttention(0.1); attT = 0.1; }
 
   // moving: speed is measured in your own body lengths
   const inp = mvv.set(0, 0, 0);
@@ -868,21 +900,11 @@ function frame() {
   obs.vel.lerp(inp, 1 - Math.exp(-dt * 5));
   obs.lastQ.copy(obs.q);
   obs.q.addScaledVector(obs.vel, dt);
-  if (obs.fix && fa && fb) {
-    obs.q.add(gv.subVectors(fb, fa));
-    // turn gently to keep the held hole at the centre of view
-    const look = gv.subVectors(fb, obs.q);
-    if (look.lengthSq() > 1e-8) {
-      lookM.lookAt(new THREE.Vector3(), look.multiplyScalar(-1), upV.set(0, 1, 0).applyQuaternion(obs.quat));
-      lookQ.setFromRotationMatrix(lookM);
-      if (lookQ.dot(obs.quat) < 0) lookQ.set(-lookQ.x, -lookQ.y, -lookQ.z, -lookQ.w);
-      obs.quat.slerp(lookQ, 1 - Math.exp(-dt * 2.5));
-    }
-  }
 
   // the hyperbolic metric: your size follows your distance to the walls
   let d = sdf(obs.q);
-  if (d < 0.3 * obs.S) { gradient(obs.q, gv); obs.q.addScaledVector(gv, 0.3 * obs.S - d); d = 0.3 * obs.S; }
+  // the medium is elastic, so you can squeeze closer to walls than your size before it pushes back
+  if (d < 0.15 * obs.S) { gradient(obs.q, gv); obs.q.addScaledVector(gv, 0.15 * obs.S - d); d = 0.15 * obs.S; }
   let target = Math.max(d * 0.5, 1e-6);
   const deep = canDeepen();
   if (!deep) target = Math.max(target, S_LO * 1.001);
@@ -904,6 +926,9 @@ function frame() {
     U.uT.value[i] = T[i]; U.uFl.value[i] = FLK[i];
   }
   U.uFT.value = world.tView; U.uFTP.value = world.tExt;
+  updateWarp(dt);
+  U.uLag.value = gazeTex;
+  for (let i = 0; i < NL; i++) { U.uLagMax.value[i] = world.inMem ? 0 : lagMax[i]; U.uLagAx.value[i].copy(lagAx[i]); }
   for (let j = 0; j < 4; j++) {
     const nx = activeNexus[j];
     if (nx) { U.uNC.value[j].copy(nx.c); U.uNA.value[j].copy(nx.a); U.uNR.value[j].set(nx.R, nx.r * nx.grow); }
@@ -947,13 +972,12 @@ function drawLevels() {
   for (let i = NL - 1; i >= 0; i--) {
     const N = obs.n - 2 + i, L = lev(N), k = mod(N, CYCLE);
     const size = (TAU / FL[i]) / obs.S;
-    const held = obs.fix && obs.fix.kind === 'hole' && obs.fix.N === N;
-    const tag = held ? ' · held' : i === here ? ' · here' : '';
+    const tag = i === here ? ' · here' : '';
     const om = world.inMem ? 0 : L.omega;
     html += `<i style="background:${PAL[k]};opacity:${i === NL - 1 ? (0.3 + 0.7 * bandW()).toFixed(2) : 1}"></i>`
       + `<span class="${tag ? 'here' : ''}">scale ${N}${tag}</span>`
       + `<span>${size >= 100 ? size.toFixed(0) : size.toFixed(1)} bodies</span>`
-      + `<span style="color:${L.att > 0.3 ? '#b9a7ff' : 'inherit'}" title="turns per minute; violet while you are looking at it">${om >= 0 ? '↻' : '↺'} ${(Math.abs(om) * 60 / TAU).toFixed(2)}/min</span>`;
+      + `<span title="turns per minute around the nexus">${om >= 0 ? '↻' : '↺'} ${(Math.abs(om) * 60 / TAU).toFixed(2)}/min</span>`;
   }
   $('levels').innerHTML = html;
 }
@@ -962,7 +986,7 @@ function updateHUD() {
   $('r-speed').textContent = `${obs.speed.toFixed(1)} bodies/s`;
   $('r-perc').textContent = perceived.toFixed(2);
   sdf(obs.q); $('r-in').textContent = sdf.lvl === 6 ? 'the nexus' : `scale ${obs.n - 2 + sdf.lvl}`;
-  $('r-ride').textContent = obs.fix ? (obs.fix.kind === 'nexus' ? 'the nexus' : `a hole of scale ${obs.fix.N}`) : 'nothing';
+  $('r-ride').textContent = world.inMem ? 'still' : `×${(0.25 + 0.75 * gaze.at).toFixed(2)}${gaze.at < 0.6 ? ' · slowing' : ''}`;
   const A = anchor();
   $('r-nexus').textContent = A ? `${Math.max(0, -nexH(A, obs.q) / obs.S).toFixed(1)} bodies${A.grow < 1 ? ' · forming' : ''}` : '–';
   $('r-sigma').textContent = sigma().toFixed(2);
@@ -1007,7 +1031,7 @@ function boot() {
 boot();
 resize();
 setPill();
-window.__torus = { obs, world, sdf, U, nexus, levels, toggleFix };
+window.__torus = { obs, world, sdf, U, nexus, levels, gaze, gazeE };
 requestAnimationFrame(frame);
 })();
 </script>
