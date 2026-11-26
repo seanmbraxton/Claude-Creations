@@ -59,7 +59,7 @@ tr.cur td{background:var(--chip)}
   <header>
     <div class="eyebrow">top-down view · charge sets the angle</div>
     <h1>Charge Compass</h1>
-    <p class="lede">Like a molecule seen from above: neutral overall, with partial charges around a center. Looking straight down a parent torus's axis, its children sit around the ring. The gap before each child is proportional to the size of its charge, and its color and swirl show the sign. If the view can be turned part of the way around and land exactly on itself, the children fold into equal, repeating groups. If it can't, the pattern is asymmetric.</p>
+    <p class="lede">Like a molecule seen from above. The charges are normalized so their sizes add to 1, and negative charges carry an imaginary term, which is what lets the page tell a left-handed arrangement from a right-handed one. The arrow is the overall complex moment. Looking straight down a parent torus's axis, its children sit around the ring. The gap before each child is proportional to the size of its charge, and its color and swirl show the sign. If the view can be turned part of the way around and land exactly on itself, the children fold into equal, repeating groups. If it can't, the pattern is asymmetric.</p>
   </header>
 
   <div class="grid">
@@ -75,7 +75,7 @@ tr.cur td{background:var(--chip)}
       <div class="row"><button id="prev">◂ Previous pattern</button><button id="next">Next pattern ▸</button><button id="sym">Next symmetric one</button></div>
       <p class="hint" id="pos"></p>
       <h2>Every balanced pattern, checked</h2>
-      <div class="tblwrap"><table><thead><tr><th>children</th><th>patterns</th><th>fold</th><th>asymmetric</th><th>polar</th></tr></thead><tbody id="tbl"></tbody></table></div>
+      <div class="tblwrap"><table><thead><tr><th>children</th><th>patterns</th><th>fold</th><th>polar</th><th>chiral</th><th>hand told</th></tr></thead><tbody id="tbl"></tbody></table></div>
       <p class="hint">Patterns are counted once per arrangement around the ring (turning the whole view doesn't make a new one). Prime numbers of children are in bold. Larger counts are limited to keep the page fast.</p>
     </div>
   </div>
@@ -93,8 +93,15 @@ const isPrime=n=>{if(n<2)return false;for(let d=2;d*d<=n;d++)if(n%d===0)return f
 const rot=(t,s)=>t.slice(s).concat(t.slice(0,s));
 const key=t=>t.join(",");
 function canon(t){let best=null;for(let s=0;s<t.length;s++){const r=key(rot(t,s));if(best===null||r<best)best=r;}return best;}
-function dipole(t){const tot=t.reduce((s,v)=>s+Math.abs(v),0);let ang=-Math.PI/2,x=0,y=0;
-  for(const v of t){ang+=TAU*Math.abs(v)/tot;x+=v*Math.cos(ang);y+=v*Math.sin(ang);}return [x,y];}
+/* Each child gets a share w = |charge| / (sum of |charges|) of the turn (normalized to 1) and
+   sits in the middle of its own arc. Positive charges stay real (+w); negative charges become
+   imaginary (−i·w). */
+function shares(t){const tot=t.reduce((s,v)=>s+Math.abs(v),0);let start=0;
+  return t.map(v=>{const w=Math.abs(v)/tot,th=TAU*(start+w/2);start+=w;return {v,w,th,re:v>0?w:0,im:v>0?0:-w};});}
+function dipole(t){let x=0,y=0;for(const c of shares(t)){const q=c.v>0?c.w:-c.w;x+=q*Math.cos(c.th);y+=q*Math.sin(c.th);}return [x,y];}
+function moments(t){let S=[0,0],M=[0,0];for(const c of shares(t)){
+    for(const [acc,sg] of [[S,1],[M,-1]]){const cs=Math.cos(sg*c.th),sn=Math.sin(sg*c.th);acc[0]+=c.re*cs-c.im*sn;acc[1]+=c.re*sn+c.im*cs;}}
+  return {S,M,hand:Math.hypot(...S)-Math.hypot(...M)};}
 function chiral(t){return canon(t.slice().reverse())!==canon(t);}
 function foldOrder(t){const n=t.length;for(let d=1;d<=n;d++)if(n%d===0&&key(rot(t,d))===key(t))return n/d;return 1;}
 function patterns(kk,vals,limit=400000){
@@ -105,14 +112,19 @@ function patterns(kk,vals,limit=400000){
   return {list:[...seen.values()],complete:steps<=limit};
 }
 const fmt=v=>{const d=ALPH[alphKey].den;const s=v>0?"+":"−",a=Math.abs(v);return d===1?s+a:s+a+"/"+d;};
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+function fmtNorm(v,t){const tot=t.reduce((s,x)=>s+Math.abs(x),0),a=Math.abs(v),g=gcd(a,tot),n=a/g,dd=tot/g;
+  const f=dd===1?String(n):(n===1?"":n)+"/"+dd;
+  return v>0?"+"+(dd===1?n:n+"/"+dd):"−"+(n===1?"i":n+"i")+(dd===1?"":"/"+dd);}
 
 function rebuild(){const r=patterns(k,ALPH[alphKey].vals);list=r.list.sort((a,b)=>foldOrder(b)-foldOrder(a)||key(a).localeCompare(key(b)));idx=Math.min(idx,list.length-1);idx=Math.max(idx,0);table();update();}
 function table(){
   const rows=[];const vals=ALPH[alphKey].vals;
-  for(let n=2;n<=9;n++){if(Math.pow(vals.length,n)>2.2e6){rows.push(`<tr><td>${n}</td><td colspan="4" style="text-align:left;color:var(--muted)">too many to list here</td></tr>`);continue;}
+  for(let n=2;n<=9;n++){if(Math.pow(vals.length,n)>2.2e6){rows.push(`<tr><td>${n}</td><td colspan="5" style="text-align:left;color:var(--muted)">too many to list here</td></tr>`);continue;}
     const r=patterns(n,vals,3e6);const sym=r.list.filter(t=>foldOrder(t)>1).length;
     const pol=r.list.filter(t=>Math.hypot(...dipole(t))>1e-9).length;
-    rows.push(`<tr class="${isPrime(n)?"prime":""} ${n===k?"cur":""}"><td>${n}${isPrime(n)?" (prime)":""}</td><td>${r.list.length}</td><td class="${sym?"fold":"ok"}">${sym}</td><td>${r.list.length-sym}</td><td>${pol}</td></tr>`);}
+    const chi=r.list.filter(chiral),told=chi.filter(t=>Math.abs(moments(t).hand)>1e-9).length;
+    rows.push(`<tr class="${isPrime(n)?"prime":""} ${n===k?"cur":""}"><td>${n}${isPrime(n)?" (prime)":""}</td><td>${r.list.length}</td><td class="${sym?"fold":"ok"}">${sym}</td><td>${pol}</td><td>${chi.length}</td><td>${told}</td></tr>`);}
   $("tbl").innerHTML=rows.join("");
 }
 function update(){
@@ -121,8 +133,10 @@ function update(){
   const t=list[idx],f=foldOrder(t);
   $("verdict").innerHTML=f>1?`<span class="yes">Folds ${f} ways:</span> turning the view by 1/${f} of a turn lands it on itself.`:`<span class="no">Asymmetric:</span> no partial turn lands the view on itself.`;
   const dp=dipole(t),dm=Math.hypot(...dp);
-  $("pat").innerHTML="Charges around the ring: "+t.map(fmt).join("  ")+
-    `<br>${dm>1e-9?"<b>Polar</b>: neutral overall, but the charge is lopsided (arrow).":"<b>Non-polar</b>: the lopsidedness cancels exactly."} ${chiral(t)?"<b>Chiral</b>: its mirror image is a different arrangement.":"Not chiral: it matches its mirror image."}`;
+  const mo=moments(t),h=mo.hand;
+  const hand=!chiral(t)?"Mirror-symmetric: no handedness.":(h>1e-9?`<b>Right-handed</b> (handedness +${h.toFixed(3)}).`:(h<-1e-9?`<b>Left-handed</b> (handedness ${h.toFixed(3)}).`:"Chiral, but this measure scores both hands the same."));
+  $("pat").innerHTML="Charges around the ring: "+t.map(fmt).join("  ")+"<br>Normalized, negatives imaginary: "+t.map(v=>fmtNorm(v,t)).join("  ")+
+    `<br>${dm>1e-9?"<b>Polar</b>: the real charge is lopsided.":"<b>Non-polar</b>: the real lopsidedness cancels."} ${hand}`;
   const nsym=list.filter(x=>foldOrder(x)>1).length;
   $("pos").textContent=`Pattern ${idx+1} of ${list.length} for ${k} children; ${nsym} of them fold.`;
   draw(t);
@@ -139,19 +153,20 @@ function draw(t){
   // fold axes
   if(f>1){ctx.strokeStyle=rgba(C.fold,0.5);ctx.setLineDash([5,5]);ctx.lineWidth=1.2;
     let start=-Math.PI/2;for(let j=0;j<f;j++){const a=start+TAU*j/f;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+R*1.25*Math.cos(a),cy+R*1.25*Math.sin(a));ctx.stroke();}ctx.setLineDash([]);}
-  // dipole arrow: the overall lopsidedness of the charge
-  {const [dx,dy]=dipole(t),dm=Math.hypot(dx,dy);if(dm>1e-9){const L=Math.min(R*0.5,R*0.12*dm+R*0.15),ux=dx/dm,uy=dy/dm,ex=cx+L*ux,ey=cy+L*uy;
+  // arrow: the complex moment (normalized charges, negatives imaginary). Screen angle = -90° + θ.
+  {const mo=moments(t),dx0=mo.S[0],dy0=mo.S[1],dm=Math.hypot(dx0,dy0);if(dm>1e-9){const a=Math.atan2(dy0,dx0)-Math.PI/2,ux=Math.cos(a),uy=Math.sin(a);
+    const L=R*Math.min(0.6,0.2+0.6*dm),ex=cx+L*ux,ey=cy+L*uy;
     ctx.strokeStyle=C.ink;ctx.fillStyle=C.ink;ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(ex,ey);ctx.stroke();
     ctx.beginPath();ctx.moveTo(ex+8*ux,ey+8*uy);ctx.lineTo(ex-6*uy,ey+6*ux);ctx.lineTo(ex+6*uy,ey-6*ux);ctx.closePath();ctx.fill();}}
   // children: gap before each child proportional to |charge|
-  let ang=-Math.PI/2;const font=getComputedStyle(document.body).fontFamily;
-  t.forEach((v,i)=>{ang+=TAU*Math.abs(v)/tot;const a=ang-TAU*Math.abs(v)/tot/2;   // centre the child in its arc
+  const font=getComputedStyle(document.body).fontFamily,sh=shares(t);
+  t.forEach((v,i)=>{const ang=-Math.PI/2+sh[i].th;   // each child centred in its own arc
     const col=v>0?C.plus:C.minus,x=cx+R*Math.cos(ang),y=cy+R*Math.sin(ang),rad=7+5*Math.abs(v);
     ctx.strokeStyle=rgba(col,0.85);ctx.lineWidth=2+Math.abs(v);ctx.beginPath();ctx.moveTo(cx+R*0.66*Math.cos(ang),cy+R*0.66*Math.sin(ang));ctx.lineTo(x,y);ctx.stroke();
     ctx.fillStyle=C.panel;ctx.strokeStyle=col;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(x,y,rad,0,TAU);ctx.fill();ctx.stroke();
     // swirl: counterclockwise for +, clockwise for −
     ctx.beginPath();for(let q=0;q<=24;q++){const an=(v>0?1:-1)*q/24*TAU*1.3,rr=1+q/24*(rad-3);const px=x+rr*Math.cos(an),py=y+rr*Math.sin(an);q?ctx.lineTo(px,py):ctx.moveTo(px,py);}ctx.lineWidth=1.4;ctx.stroke();
-    ctx.fillStyle=col;ctx.font="600 11px "+font;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(fmt(v),cx+R*1.22*Math.cos(ang),cy+R*1.22*Math.sin(ang));});
+    ctx.fillStyle=col;ctx.font="600 11px "+font;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(fmtNorm(v,t),cx+R*1.24*Math.cos(ang),cy+R*1.24*Math.sin(ang));});
 }
 $("k").addEventListener("input",e=>{k=+e.target.value;idx=0;rebuild();});
 $("alph").addEventListener("change",e=>{alphKey=e.target.value;idx=0;rebuild();});
