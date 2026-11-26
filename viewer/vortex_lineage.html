@@ -1,0 +1,194 @@
+<title>Vortex Lineage</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* Layout: the closed lineage of four horn tori leads; the bow slider, the generation stepper and the
+   angle readouts sit beside it. Same visual family as the other torus pages. */
+:root{
+  --bg:#f3f5f8; --panel:#ffffff; --ink:#17202b; --muted:#5a6676; --line:#d9dee6; --chip:#eef1f6;
+  --g0:#c27c00; --g1:#18895a; --g2:#7346d1; --g3:#2459c4; --flow:#cf3b30;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
+  --g0:#f0b033; --g1:#3fcf8e; --g2:#a98bff; --g3:#6f9fff; --flow:#ff6a5c; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
+  --g0:#f0b033; --g1:#3fcf8e; --g2:#a98bff; --g3:#6f9fff; --flow:#ff6a5c; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 28px}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.7rem,4.5vw,2.3rem);line-height:1.1}
+h2{font-size:1.05rem}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--muted);max-width:68ch;margin-top:6px}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+canvas{display:block;width:100%;aspect-ratio:1/1;border-radius:6px;background:var(--bg);touch-action:none;cursor:grab}
+.status{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tile{border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+.tile .k{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.tile .v{font-family:var(--f-mono);font-size:1.1rem;font-weight:500;font-variant-numeric:tabular-nums}
+.tile .s{font-size:.74rem;color:var(--muted)}
+.gen{font-size:1rem;font-weight:500}
+.row{display:flex;flex-wrap:wrap;gap:6px}
+button{font:inherit;font-size:.84rem;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer}
+button:hover{border-color:var(--muted)}
+:focus-visible{outline:2px solid var(--g3);outline-offset:2px}
+.ctl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center}
+.ctl label{font-size:.86rem}
+.ctl output{font-family:var(--f-mono);font-size:.82rem}
+.ctl input{grid-column:1/-1;width:100%;accent-color:var(--g3);height:26px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.78rem;color:var(--muted)}
+.sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+.hint{font-size:.78rem;color:var(--muted)}
+.notes{font-size:.9rem;max-width:75ch;display:flex;flex-direction:column;gap:8px}
+.notes ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:5px}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">vortex → spike → horn · four generations · back to the parent</div>
+    <h1>Vortex Lineage</h1>
+    <p class="lede">Each horn torus carries one vortex. Its spike curves out and ends in the horn point of the next torus, its child. After four generations the last spike lands in the parent's own horn point, so the parent is its own great-great-grandchild. The four tori sit at the corners of a tetrahedron, and the bow slider takes the spikes from straight edges to arcs bowed out onto a sphere.</p>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <canvas id="cv" aria-label="Four horn tori at the corners of a tetrahedron joined in a loop by curved spikes"></canvas>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--g0)"></i>parent</span><span><i class="sw" style="background:var(--g1)"></i>child</span>
+        <span><i class="sw" style="background:var(--g2)"></i>grandchild</span><span><i class="sw" style="background:var(--g3)"></i>great-grandchild</span>
+        <span><i class="sw" style="background:var(--flow)"></i>one unit of curl travelling the loop</span>
+      </div>
+      <p class="hint">Drag to turn it. Each spike is thick where it leaves its vortex and comes to a sharp point in the next torus's horn point. The two dashed edges are the tetrahedron edges the loop doesn't use.</p>
+    </div>
+    <div class="card">
+      <div class="ctl"><label for="bow">bow of the spikes (0 = straight edges, 1 = arcs on the sphere)</label><output id="bowO"></output><input type="range" id="bow" min="0" max="1" step="0.01"></div>
+      <div class="status">
+        <div class="tile"><div class="k">Corner angle</div><div class="v" id="corner"></div><div class="s">between a spike in and a spike out</div></div>
+        <div class="tile"><div class="k">Center angle</div><div class="v">109.47°</div><div class="s">between two corners, seen from the center</div></div>
+        <div class="tile"><div class="k">Spike bows out to</div><div class="v" id="bowR"></div><div class="s">of the sphere's radius</div></div>
+      </div>
+      <div class="gen" id="gen"></div>
+      <div class="row"><button id="step">Follow one spike</button><button id="play">Play</button><button id="reset">Back to the parent</button></div>
+      <p class="hint" id="balance"></p>
+    </div>
+  </div>
+
+  <section class="card notes">
+    <h2>What this shows</h2>
+    <ul>
+      <li><b>The lineage closes after four.</b> Parent, child, grandchild, great-grandchild, and then the fourth spike lands in the parent's horn point. Following one spike at a time, you are home after four.</li>
+      <li><b>Each torus stays balanced.</b> Every torus sends one unit of curl out through its vortex and receives one through its horn point, so its charges add to zero, as a torus requires. The curl is never created or lost; it travels around the loop.</li>
+      <li><b>The angles.</b> From the center, any two corners are 109.47° apart (the tetrahedral angle). Where a spike arrives and the next one leaves, the corner angle is 60° when the spikes are straight edges. When they bow out onto the sphere, it opens to 120°. That extra opening is what the sphere's positive curvature does.</li>
+      <li><b>The loop uses four of the tetrahedron's six edges.</b> It is a skew square, and the two edges it skips are dashed. Stepping once around it is a quarter turn combined with a mirror. That's the same four-step cycle found on the Four-Flag Tetrahedron and Curved Successions pages.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(function(){
+"use strict";
+const TAU=Math.PI*2,$=id=>document.getElementById(id);
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const s3=1/Math.sqrt(3);
+const V=[[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]].map(v=>v.map(x=>x*s3));
+const ORDER=[0,1,2,3];            // parent → child → grandchild → great-grandchild → parent
+const NAMES=["parent","child","grandchild","great-grandchild"];
+const RH=0.13;
+let bow=1,k=0,anim=null,auto=false,clock=0;
+const view={yaw:0.55,pitch:0.35};
+let C={};
+function readColors(){const cs=getComputedStyle(document.documentElement);for(const c of ["bg","panel","ink","muted","line","g0","g1","g2","g3","flow"])C[c]=cs.getPropertyValue("--"+c).trim();}
+const rgb=h=>{const v=parseInt(h.replace("#",""),16);return [(v>>16)&255,(v>>8)&255,v&255];};
+const rgba=(h,a)=>{const [r,g,b]=rgb(h);return `rgba(${r},${g},${b},${a})`;};
+const add=(a,b)=>a.map((x,i)=>x+b[i]),sub=(a,b)=>a.map((x,i)=>x-b[i]),mul=(a,s)=>a.map(x=>x*s);
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],len=a=>Math.hypot(...a),norm=a=>mul(a,1/len(a));
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const gcol=g=>C["g"+g];
+
+/* a spike's centre line: straight edge blended with the great-circle arc */
+const OM=Math.acos(-1/3);
+function arc(i,j,s){const a=V[i],b=V[j],line=add(mul(a,1-s),mul(b,s)),sl=add(mul(a,Math.sin((1-s)*OM)/Math.sin(OM)),mul(b,Math.sin(s*OM)/Math.sin(OM)));return add(mul(line,1-bow),mul(sl,bow));}
+function tangentIn(j){const i=(j+3)%4;return norm(sub(arc(i,j,1),arc(i,j,0.995)));}
+function tangentOut(j){const k2=(j+1)%4;return norm(sub(arc(j,k2,0.005),arc(j,k2,0)));}
+function frame(a){const h=Math.abs(a[2])<0.9?[0,0,1]:[1,0,0],e1=norm(cross(a,h));return [e1,cross(a,e1)];}
+/* each horn torus: centred on its corner, axis along the incoming spike, so the spike enters the horn point */
+function torusInfo(j){const a=tangentIn(j),out=tangentOut(j),dp=norm(sub(out,mul(a,dot(out,a))));return {a,src:add(V[j],mul(dp,2*RH*1.02))};}
+function spike(j,s){const k2=(j+1)%4,src=torusInfo(j).src;return add(arc(j,k2,s),mul(sub(src,V[j]),Math.pow(1-s,3)));}
+
+function update(){
+  $("bowO").textContent=bow.toFixed(2);
+  const ang=Math.acos(Math.max(-1,Math.min(1,dot(mul(tangentIn(0),-1),tangentOut(0)))))*180/Math.PI;
+  $("corner").textContent=ang.toFixed(1)+"°";
+  $("bowR").textContent=(len(arc(0,1,0.5))).toFixed(3);
+  const g=((k%4)+4)%4;
+  $("gen").textContent=k===0?"At the parent.":(g===0?`After ${k} spikes: back at the parent. The parent is its own great-great-grandchild.`:`After ${k} spike${k>1?"s":""}: at the ${NAMES[g]}.`);
+  $("balance").textContent="Every torus: one vortex sending +1 out, one horn point receiving it, net charge 0.";
+}
+
+function draw(){
+  const cv=$("cv"),r=cv.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2.5),W=Math.round(r.width*dpr),H=Math.round(r.height*dpr);
+  if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H;}const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);
+  const w=r.width,h=r.height;ctx.clearRect(0,0,w,h);
+  const sc=Math.min(w,h)*0.32,cx=w/2,cy=h/2;
+  const cyw=Math.cos(view.yaw),syw=Math.sin(view.yaw),cp=Math.cos(view.pitch),sp=Math.sin(view.pitch);
+  const P=p=>{const X=p[0]*cyw-p[1]*syw,Y=p[0]*syw+p[1]*cyw;return [cx+X*sc,cy-(Y*sp+p[2]*cp)*sc,Y*cp-p[2]*sp];};
+  const items=[];
+  // faint sphere outline when bowed
+  if(bow>0.02){items.push({d:9,f:()=>{ctx.strokeStyle=rgba(C.muted,0.25*bow);ctx.setLineDash([3,5]);ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,sc,0,TAU);ctx.stroke();ctx.setLineDash([]);}});}
+  // unused tetrahedron edges (0-2 and 1-3)
+  for(const [i,j] of [[0,2],[1,3]]){for(let m=0;m<20;m++){const a=P(arc(i,j,m/20)),b=P(arc(i,j,(m+1)/20));
+    items.push({d:(a[2]+b[2])/2,f:()=>{ctx.setLineDash([4,4]);ctx.strokeStyle=rgba(C.muted,0.55);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();ctx.setLineDash([]);}});}}
+  // spikes: thick at the vortex, sharp at the next horn point
+  for(let j=0;j<4;j++){const col=gcol(j),N=40;
+    for(let m=0;m<N;m++){const a=P(spike(j,m/N)),b=P(spike(j,(m+1)/N)),wd=1+6*Math.pow(1-m/N,1.2);
+      items.push({d:(a[2]+b[2])/2-0.001,f:()=>{ctx.lineCap="round";ctx.strokeStyle=rgba(col,0.85);ctx.lineWidth=wd;ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();}});}}
+  // horn tori
+  for(let j=0;j<4;j++){const {a,src}=torusInfo(j),[e1,e2]=frame(a),col=rgb(gcol(j)),c0=V[j];
+    const pt=(u,v)=>{const rho=RH+RH*Math.cos(TAU*v),z=RH*Math.sin(TAU*v),cu=Math.cos(TAU*u),su=Math.sin(TAU*u);return [0,1,2].map(i=>c0[i]+rho*(cu*e1[i]+su*e2[i])+z*a[i]);};
+    const NU=28,NV=14,G=[];for(let i=0;i<=NU;i++){G[i]=[];for(let m=0;m<=NV;m++)G[i][m]=P(pt(i/NU,m/NV));}
+    for(let i=0;i<NU;i++)for(let m=0;m<NV;m++){const A=G[i][m],B=G[i+1][m],D=G[i+1][m+1],E=G[i][m+1],sh=0.55+0.45*Math.abs(Math.cos(TAU*(m+0.5)/NV-0.6));
+      const fill=`rgba(${Math.round(col[0]*sh)},${Math.round(col[1]*sh)},${Math.round(col[2]*sh)},0.55)`;
+      items.push({d:(A[2]+B[2]+D[2]+E[2])/4,f:()=>{ctx.fillStyle=fill;ctx.beginPath();ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);ctx.lineTo(D[0],D[1]);ctx.lineTo(E[0],E[1]);ctx.closePath();ctx.fill();}});}
+    // vortex on the surface (swirl), horn point (ring)
+    const vs=P(src),hp=P(c0),lab=P(mul(c0,1.32)),cur=((k%4)+4)%4===j;
+    items.push({d:vs[2]-0.02,f:()=>{ctx.strokeStyle=C.ink;ctx.lineWidth=1.6;ctx.beginPath();for(let t=0;t<=40;t++){const an=t/40*TAU*1.6+clock*2,rr=1.5+t/40*5;const x=vs[0]+rr*Math.cos(an),y=vs[1]+rr*Math.sin(an);t?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();}});
+    items.push({d:hp[2]-0.03,f:()=>{ctx.fillStyle=C.panel;ctx.strokeStyle=C.ink;ctx.lineWidth=1.6;ctx.beginPath();ctx.arc(hp[0],hp[1],3.5,0,TAU);ctx.fill();ctx.stroke();}});
+    items.push({d:-9,f:()=>{ctx.font=(cur?"700 ":"600 ")+"12px "+getComputedStyle(document.body).fontFamily;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillStyle=gcol(j);ctx.fillText(NAMES[j]+(cur?" ◂":""),lab[0],lab[1]);}});}
+  // the unit of curl travelling: either following the stepper, or circulating
+  {let pos;if(anim){const j=((anim.from%4)+4)%4,e=Math.min(1,anim.t);pos=spike(j,e);}else{const g=((k%4)+4)%4;pos=V[g];}
+   const q=P(pos);items.push({d:q[2]-0.05,f:()=>{ctx.fillStyle=C.flow;ctx.strokeStyle=C.panel;ctx.lineWidth=2;ctx.beginPath();ctx.arc(q[0],q[1],6,0,TAU);ctx.fill();ctx.stroke();}});}
+  items.sort((a,b)=>b.d-a.d);for(const it of items)it.f();
+}
+
+function step(){if(anim)return;anim={from:k,t:0};}
+let last=0,drag=null;
+function tick(ts){const dt=last?Math.min(0.05,(ts-last)/1000):0;last=ts;if(!reduce)clock+=dt;
+  if(anim){anim.t+=dt/(reduce?0.2:1.3);if(anim.t>=1){k=anim.from+1;anim=null;update();if(auto&&k%4!==0)setTimeout(step,250);else if(auto){auto=false;$("play").textContent="Play";}}}
+  if(!drag&&!reduce)view.yaw+=dt*0.06;
+  draw();requestAnimationFrame(tick);}
+$("bow").addEventListener("input",e=>{bow=+e.target.value;update();});
+$("step").addEventListener("click",step);
+$("play").addEventListener("click",()=>{if(auto){auto=false;$("play").textContent="Play";return;}if(k%4===0)k=0;auto=true;$("play").textContent="Stop";step();});
+$("reset").addEventListener("click",()=>{k=0;anim=null;auto=false;$("play").textContent="Play";update();});
+const cv=$("cv");
+cv.addEventListener("pointerdown",e=>{drag={x:e.clientX,y:e.clientY,yaw:view.yaw,pitch:view.pitch};cv.setPointerCapture(e.pointerId);});
+cv.addEventListener("pointermove",e=>{if(!drag)return;view.yaw=drag.yaw+(e.clientX-drag.x)*0.01;view.pitch=Math.max(-1.5,Math.min(1.5,drag.pitch-(e.clientY-drag.y)*0.01));});
+const end=()=>{drag=null;};cv.addEventListener("pointerup",end);cv.addEventListener("pointercancel",end);
+readColors();
+const mq=matchMedia("(prefers-color-scheme: dark)"),onTheme=()=>readColors();
+mq.addEventListener?mq.addEventListener("change",onTheme):mq.addListener(onTheme);
+new MutationObserver(onTheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+$("bow").value=bow;update();requestAnimationFrame(tick);
+})();
+</script>
