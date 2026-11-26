@@ -1,0 +1,202 @@
+<title>Curved Successions</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* Layout: the tiled sphere leads; the choice of n, the succession stepper and the angle facts sit
+   beside it. Flags keep the colors of the Four-Flag Tetrahedron page. */
+:root{
+  --bg:#f3f5f8; --panel:#ffffff; --ink:#17202b; --muted:#5a6676; --line:#d9dee6; --chip:#eef1f6;
+  --tileA:#dfe6f0; --tileB:#b9c6d8; --arc:#4f6f96; --mark:#c27c00;
+  --red:#cf3b30; --green:#18895a; --blue:#2459c4; --time:#5b6574;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
+  --tileA:#26303c; --tileB:#3a4757; --arc:#8fa8c8; --mark:#f0b033;
+  --red:#ff6a5c; --green:#3fcf8e; --blue:#6f9fff; --time:#c3cad4; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
+  --tileA:#26303c; --tileB:#3a4757; --arc:#8fa8c8; --mark:#f0b033;
+  --red:#ff6a5c; --green:#3fcf8e; --blue:#6f9fff; --time:#c3cad4; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 28px}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.7rem,4.5vw,2.3rem);line-height:1.1}
+h2{font-size:1.05rem}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--muted);max-width:68ch;margin-top:6px}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+canvas{display:block;width:100%;aspect-ratio:1/1;border-radius:6px;background:var(--bg);touch-action:none;cursor:grab}
+.seg{display:flex;gap:0;border:1px solid var(--line);border-radius:8px;overflow:hidden;align-self:flex-start}
+.seg button{border:0;border-radius:0;background:var(--chip);padding:8px 16px;font-weight:500}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
+.status{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tile{border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+.tile .k{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.tile .v{font-family:var(--f-mono);font-size:1.1rem;font-weight:500;font-variant-numeric:tabular-nums}
+.tile .s{font-size:.76rem;color:var(--muted)}
+.gen{font-size:1rem;font-weight:500}
+.row{display:flex;flex-wrap:wrap;gap:6px}
+button{font:inherit;font-size:.84rem;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer}
+button:hover{border-color:var(--muted)}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.hint{font-size:.78rem;color:var(--muted)}
+.dots{display:flex;gap:6px;align-items:center}
+.dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--mark)}
+.dot.on{background:var(--mark)}
+table{width:100%;border-collapse:collapse;font-size:.84rem}
+td,th{padding:5px 4px;border-bottom:1px solid var(--line);text-align:left}
+th{font-weight:500;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em}
+td.num{font-family:var(--f-mono);text-align:right}
+tr.cur td{font-weight:600}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">succession that closes · curvature that forces it</div>
+    <h1>Curved Successions</h1>
+    <p class="lede">The sphere is tiled by curved triangles whose corners are 90°, 60° and 360°/n. Where n of them meet, one succession is a turn of 360°/n. After n successions the parent is back, so it is its own child n generations down. On a flat surface those angles add to exactly 180° only when n = 6. For n = 3 or 4 they add to more, which is why these live on a sphere.</p>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <canvas id="cv" aria-label="Sphere tiled by curved triangles with the four flags and the parent marker"></canvas>
+      <p class="hint">Drag to turn it. The gold arrow is the parent, and the faint arrows are where its descendants land. The shaded and plain triangles alternate, and the turning point sits on the axis drawn through the sphere.</p>
+    </div>
+    <div class="card">
+      <div class="seg" role="group" aria-label="Successions before closing"><button id="n3" aria-pressed="true">3 successions</button><button id="n4" aria-pressed="false">4 successions</button></div>
+      <div class="status">
+        <div class="tile"><div class="k">Corner angles</div><div class="v" id="ang"></div><div class="s" id="angS"></div></div>
+        <div class="tile"><div class="k">Triangles</div><div class="v" id="tri"></div><div class="s">cover the sphere</div></div>
+        <div class="tile"><div class="k">Shape</div><div class="v" id="shape" style="font-size:.95rem"></div></div>
+      </div>
+      <div class="gen" id="gen"></div>
+      <div class="dots" id="dots" aria-hidden="true"></div>
+      <p id="flagsNote" class="hint"></p>
+      <div class="row"><button id="step">One succession</button><button id="play">Play</button><button id="reset">Back to the parent</button></div>
+      <h2>When does succession close?</h2>
+      <table><thead><tr><th>n</th><th>Angle sum</th><th>Space</th></tr></thead><tbody id="tbl"></tbody></table>
+      <p class="hint">Counting that wraps around quickly needs a sphere. At n = 6 the space is flat (the 60°/120° torus). Beyond that it is saddle-shaped, and when succession never closes you get the ordinary integers.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+const TAU=Math.PI*2,$=id=>document.getElementById(id);
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+let n=3,k=0,anim=null,auto=false;
+const view={yaw:0.75,pitch:0.42};
+let C={};
+function readColors(){const cs=getComputedStyle(document.documentElement);for(const c of ["bg","panel","ink","muted","line","tileA","tileB","arc","mark","red","green","blue","time"])C[c]=cs.getPropertyValue("--"+c).trim();}
+const rgb=h=>{const v=parseInt(h.replace("#",""),16);return [(v>>16)&255,(v>>8)&255,v&255];};
+const rgba=(h,a)=>{const [r,g,b]=rgb(h);return `rgba(${r},${g},${b},${a})`;};
+const norm=a=>{const l=Math.hypot(...a);return a.map(x=>x/l);};
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+function rot(p,ax,ang){const c=Math.cos(ang),s=Math.sin(ang),d=dot(ax,p),cr=cross(ax,p);return [0,1,2].map(i=>p[i]*c+cr[i]*s+ax[i]*d*(1-c));}
+
+/* mirror planes of the reflection groups: (2,3,3) has 6, (2,3,4) has 9 */
+const M6=[[1,-1,0],[1,1,0],[1,0,-1],[1,0,1],[0,1,-1],[0,1,1]].map(norm);
+const M9=[[1,0,0],[0,1,0],[0,0,1],...M6];
+const mirrors=()=>n===3?M6:M9;
+const axis=()=>n===3?norm([1,1,1]):[0,0,1];
+const FL=[{name:"time",tok:"time",v:[1,1,1]},{name:"red",tok:"red",v:[1,-1,-1]},{name:"green",tok:"green",v:[-1,1,-1]},{name:"blue",tok:"blue",v:[-1,-1,1]}];
+// the parent: an arrow inside one triangle next to the turning point
+function parentShape(){const a=axis(),d0=n===3?[1,0.55,0.1]:[1,0.4,0],dd=dot(d0,a),dp=norm(d0.map((x,i)=>x-dd*a[i]));const c=norm(a.map((x,i)=>x+0.36*dp[i]));
+  const t=norm(cross(a,c)),r=norm(cross(c,t));const pt=(dx,dy)=>norm(c.map((x,i)=>x+dx*t[i]+dy*r[i]));
+  return [pt(0.19,0),pt(-0.12,0.11),pt(-0.05,0),pt(-0.12,-0.11)];}
+function perp(a){const h=Math.abs(a[2])<0.9?[0,0,1]:[1,0,0];const e1=norm(cross(a,h));return [e1,cross(a,e1)];}
+
+/* readouts */
+const GEN=["the parent","child","grandchild","great-grandchild","great-great-grandchild"];
+function update(){
+  const s=90+60+180/n;
+  $("ang").textContent=`90° 60° ${180/n}°`;$("angS").textContent=`sum ${s}°, ${s-180}° more than flat`;
+  $("tri").textContent=n===3?24:48;
+  $("shape").textContent=n===3?"tetrahedron":"tetrahedron + its mirror (cube)";
+  const kk=((k%n)+n)%n;
+  $("gen").textContent=k===0?"The parent.":(kk===0?`After ${k} successions: back to the parent. The parent is its own ${GEN[Math.min(n,4)]||n+"th descendant"}.`:`After ${k} succession${k>1?"s":""}: the ${GEN[Math.min(kk,4)]}.`);
+  const filled=k===0?0:(kk===0?n:kk);$("dots").innerHTML=Array.from({length:n+1},(_,i)=>`<span class="dot ${i<=filled?"on":""}"></span>`).join("");
+  $("flagsNote").textContent=n===3
+    ?"Each succession turns the tetrahedron 120° about the time corner. Red, green and blue each move one corner around, and after three they are home."
+    :(kk%2?"Odd successions carry the flags onto the mirror tetrahedron (dashed): this step is a turn and a mirror at once. ":"Even successions bring the flags back onto the solid tetrahedron. ")+"After four, everything is home.";
+  $("tbl").innerHTML=[[3,"210°","sphere"],[4,"195°","sphere"],[5,"186°","sphere"],[6,"180°","flat"],[7,"≈ 175.7°","saddle"],["never","→ 150°","the integers"]]
+    .map(([a,b,c])=>`<tr class="${a===n?"cur":""}"><td>${a}</td><td class="num">${b}</td><td>${c}</td></tr>`).join("");
+  $("n3").setAttribute("aria-pressed",String(n===3));$("n4").setAttribute("aria-pressed",String(n===4));
+}
+
+/* drawing */
+function draw(angle){
+  const cv=$("cv"),r=cv.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2.5),W=Math.round(r.width*dpr),H=Math.round(r.height*dpr);
+  if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H;}const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);
+  const w=r.width,h=r.height;ctx.clearRect(0,0,w,h);
+  const sc=Math.min(w,h)*0.40,cx=w/2,cy=h/2;
+  const cyw=Math.cos(view.yaw),syw=Math.sin(view.yaw),cp=Math.cos(view.pitch),sp=Math.sin(view.pitch);
+  const P=p=>{const X=p[0]*cyw-p[1]*syw,Y=p[0]*syw+p[1]*cyw;return [cx+X*sc,cy-(Y*sp+p[2]*cp)*sc,Y*cp-p[2]*sp];};
+  const ax=axis(),R=p=>rot(p,ax,angle),items=[];
+  // tiles: checkerboard by the signs of all mirror planes (the tiling is unchanged by the turn)
+  const MI=mirrors(),NL=54,NO=108,A=rgb(C.tileA),B=rgb(C.tileB);
+  const sph=(i,j)=>{const th=Math.PI*i/NL,ph=TAU*j/NO;return [Math.sin(th)*Math.cos(ph),Math.sin(th)*Math.sin(ph),Math.cos(th)];};
+  for(let i=0;i<NL;i++)for(let j=0;j<NO;j++){const c0=sph(i+0.5,j+0.5);let sg=1;for(const m of MI)sg*=Math.sign(dot(m,c0))||1;
+    const q=[sph(i,j),sph(i+1,j),sph(i+1,j+1),sph(i,j+1)].map(P),d=(q[0][2]+q[1][2]+q[2][2]+q[3][2])/4;if(d>0.05)continue;
+    const base=sg>0?A:B,sh=0.78+0.22*(-d);
+    const fill=`rgb(${Math.round(base[0]*sh)},${Math.round(base[1]*sh)},${Math.round(base[2]*sh)})`;
+    items.push({d:d+5,f:()=>{ctx.fillStyle=fill;ctx.strokeStyle=fill;ctx.lineWidth=0.5;ctx.beginPath();q.forEach((p,m)=>m?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.fill();ctx.stroke();}});}
+  // great circles (mirror lines), front side
+  for(const m of MI){const [e1,e2]=perp(m);let prev=null;
+    for(let s=0;s<=180;s++){const t=TAU*s/180,p=e1.map((x,i)=>x*Math.cos(t)+e2[i]*Math.sin(t)),q=P(p);
+      if(prev&&q[2]<0&&prev[2]<0){const a=prev,b=q;items.push({d:-1,f:()=>{ctx.strokeStyle=rgba(C.arc,0.75);ctx.lineWidth=1.1;ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();}});}prev=q;}}
+  // turning axis
+  {const a=P(ax.map(x=>x*1.25)),b=P(ax.map(x=>-x*1.25));items.push({d:-2,f:()=>{ctx.setLineDash([4,4]);ctx.strokeStyle=rgba(C.ink,0.55);ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();ctx.setLineDash([]);}});}
+  // tetrahedra (solid; plus the mirror one dashed when n = 4)
+  const tets=[FL.map(f=>norm(f.v))];if(n===4)tets.push(FL.map(f=>norm(f.v.map(x=>-x))));
+  tets.forEach((T,ti)=>{const V=T.map(R);for(let i=0;i<4;i++)for(let j=i+1;j<4;j++){const a=P(V[i]),b=P(V[j]);
+    items.push({d:-3,f:()=>{ctx.setLineDash(ti?[5,4]:[]);ctx.strokeStyle=rgba(C.ink,ti?0.5:0.8);ctx.lineWidth=ti?1.3:2;ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();ctx.setLineDash([]);}});}
+    V.forEach((v,i)=>{const p=P(v),f=FL[i];items.push({d:-4+p[2]*0.01,f:()=>{ctx.globalAlpha=p[2]>0?0.45:1;ctx.fillStyle=C[f.tok];ctx.strokeStyle=C.panel;ctx.lineWidth=2;ctx.beginPath();ctx.arc(p[0],p[1],ti?5:7,0,TAU);ctx.fill();ctx.stroke();
+      if(!ti){ctx.fillStyle=C[f.tok];ctx.font="600 11px "+getComputedStyle(document.body).fontFamily;ctx.textAlign="left";ctx.textBaseline="middle";ctx.fillText(f.name,p[0]+9,p[1]-8);}ctx.globalAlpha=1;}});});});
+  // parent and the places its descendants land
+  const PS=parentShape();
+  for(let g=0;g<n;g++){const pts=PS.map(p=>P(rot(p,ax,TAU*g/n))),front=pts[0][2]<0;
+    items.push({d:-5,f:()=>{if(!front)return;ctx.strokeStyle=C.mark;ctx.globalAlpha=0.45;ctx.lineWidth=1.5;ctx.beginPath();pts.forEach((p,m)=>m?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.stroke();ctx.globalAlpha=1;}});}
+  {const pts=PS.map(p=>P(R(p))),front=pts[0][2]<0;items.push({d:-6,f:()=>{ctx.globalAlpha=front?1:0.35;ctx.fillStyle=C.mark;ctx.strokeStyle=C.panel;ctx.lineWidth=1.5;ctx.beginPath();pts.forEach((p,m)=>m?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.fill();ctx.stroke();ctx.globalAlpha=1;}});}
+  // the turning point where n triangles meet
+  {const p=P(ax);items.push({d:-7,f:()=>{if(p[2]>0)return;ctx.strokeStyle=C.ink;ctx.lineWidth=2;ctx.beginPath();ctx.arc(p[0],p[1],6,0,TAU);ctx.stroke();}});}
+  items.sort((a,b)=>b.d-a.d);for(const it of items)it.f();
+}
+
+/* animation */
+function step(){if(anim)return;anim={from:k,t:0};}
+let last=0,drag=null;
+function tick(ts){const dt=last?Math.min(0.05,(ts-last)/1000):0;last=ts;
+  let angle=TAU*k/n;
+  if(anim){anim.t+=dt/(reduce?0.2:1.1);const e=Math.min(1,anim.t),s=e<0.5?2*e*e:1-2*(1-e)*(1-e);angle=TAU*(anim.from+s)/n;
+    if(anim.t>=1){k=anim.from+1;anim=null;update();if(auto&&k%n!==0)setTimeout(step,250);else if(auto){auto=false;$("play").textContent="Play";}}}
+  if(!drag&&!reduce)view.yaw+=dt*0.05;
+  draw(angle);requestAnimationFrame(tick);}
+$("step").addEventListener("click",step);
+$("play").addEventListener("click",()=>{if(auto){auto=false;$("play").textContent="Play";return;}if(k%n===0)k=0;auto=true;$("play").textContent="Stop";step();});
+$("reset").addEventListener("click",()=>{k=0;anim=null;auto=false;$("play").textContent="Play";update();});
+$("n3").addEventListener("click",()=>{n=3;k=0;anim=null;update();});
+$("n4").addEventListener("click",()=>{n=4;k=0;anim=null;update();});
+const cv=$("cv");
+cv.addEventListener("pointerdown",e=>{drag={x:e.clientX,y:e.clientY,yaw:view.yaw,pitch:view.pitch};cv.setPointerCapture(e.pointerId);});
+cv.addEventListener("pointermove",e=>{if(!drag)return;view.yaw=drag.yaw+(e.clientX-drag.x)*0.01;view.pitch=Math.max(-1.5,Math.min(1.5,drag.pitch-(e.clientY-drag.y)*0.01));});
+const end=()=>{drag=null;};cv.addEventListener("pointerup",end);cv.addEventListener("pointercancel",end);
+readColors();
+const mq=matchMedia("(prefers-color-scheme: dark)"),onTheme=()=>readColors();
+mq.addEventListener?mq.addEventListener("change",onTheme):mq.addListener(onTheme);
+new MutationObserver(onTheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+update();requestAnimationFrame(tick);
+})();
+</script>
