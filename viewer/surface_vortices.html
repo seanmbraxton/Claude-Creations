@@ -1,0 +1,236 @@
+<title>Surface Vortices</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* Layout: the 3D parent with its spikes and children leads; the flat phase map (where you move
+   vortices) and the counts sit beside it. Hue on the surface is phase, as in domain coloring. */
+:root{
+  --bg:#f3f5f8; --panel:#ffffff; --ink:#17202b; --muted:#5a6676; --line:#d9dee6; --chip:#eef1f6;
+  --plus:#c27c00; --minus:#2459c4; --path:#17202b; --ok:#13875a; --warn:#cf3b30; --light:55;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
+  --plus:#f0b033; --minus:#6f9fff; --path:#f4f6f9; --ok:#3fcf8e; --warn:#ff6a5c; --light:48; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
+  --plus:#f0b033; --minus:#6f9fff; --path:#f4f6f9; --ok:#3fcf8e; --warn:#ff6a5c; --light:48; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 28px}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.7rem,4.5vw,2.3rem);line-height:1.1}
+h2{font-size:1.05rem}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--muted);max-width:68ch;margin-top:6px}
+.grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+canvas{display:block;width:100%;aspect-ratio:1/1;border-radius:6px;background:var(--bg)}
+#cv{touch-action:none;cursor:grab}
+#map{cursor:crosshair;touch-action:manipulation}
+.status{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.tile{border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+.tile .k{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.tile .v{font-family:var(--f-mono);font-size:1.1rem;font-weight:500;font-variant-numeric:tabular-nums}
+.tile .s{font-size:.78rem;color:var(--muted)}
+.ok{color:var(--ok)} .warn{color:var(--warn)}
+.row{display:flex;flex-wrap:wrap;gap:6px}
+button,select{font:inherit;font-size:.82rem;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:7px 10px;cursor:pointer}
+button:hover,select:hover{border-color:var(--muted)}
+:focus-visible{outline:2px solid var(--minus);outline-offset:2px}
+.ctl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center}
+.ctl label{font-size:.86rem}
+.ctl output{font-family:var(--f-mono);font-size:.82rem}
+.ctl input{grid-column:1/-1;width:100%;accent-color:var(--minus);height:26px}
+.sel{display:flex;flex-direction:column;gap:4px;font-size:.86rem}
+.hint{font-size:.78rem;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.78rem;color:var(--muted)}
+.sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+.notes{font-size:.9rem;max-width:75ch;display:flex;flex-direction:column;gap:8px}
+.notes ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:5px}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">local curl the windings never see</div>
+    <h1>Surface Vortices</h1>
+    <p class="lede">The parent torus is painted by phase: each color is one direction on the color wheel. Where every color meets at a point, the surface has a local vortex, a curl around that point rather than around the torus. Each vortex rises as one spike into a child horn torus, which is a close-up of that vortex.</p>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <canvas id="cv" aria-label="Parent torus colored by phase, with a spike and child horn torus above each vortex"></canvas>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--plus)"></i>+1 vortex: child swirls counterclockwise</span>
+        <span><i class="sw" style="background:var(--minus)"></i>−1 vortex: child swirls clockwise</span>
+        <span><i class="sw" style="background:var(--path)"></i>a path with fixed windings</span>
+      </div>
+      <p class="hint">Drag to turn it. The bead on each child circles its horn point in that vortex's direction.</p>
+    </div>
+    <div class="card">
+      <div class="status">
+        <div class="tile"><div class="k">Vortices</div><div class="v" id="nV">0</div><div class="s" id="nVs"></div></div>
+        <div class="tile"><div class="k">Net charge</div><div class="v" id="net">0</div><div class="s" id="netS"></div></div>
+        <div class="tile"><div class="k">Path windings (t, p)</div><div class="v" id="tp">(1, 0)</div><div class="s">never changed by vortices</div></div>
+        <div class="tile"><div class="k">Phase turns along the path</div><div class="v" id="turns">0</div><div class="s" id="turnsS"></div></div>
+      </div>
+      <canvas id="map" aria-label="Flat map of the parent surface colored by phase; tap to move vortices"></canvas>
+      <p class="hint">This is the parent's surface unrolled: toroidal angle across, poloidal angle up, with the outer equator through the middle and the inner equator at the top and bottom edges. Tap a vortex to select it, then tap anywhere to move it there. Move one across the black path and watch "phase turns along the path" change while the windings stay the same.</p>
+      <div class="row"><button id="addPair">Add a vortex pair (+1 and −1)</button><button id="removePair">Remove a pair</button></div>
+      <div class="ctl"><label for="twist">twist of the field (net charge it forces)</label><output id="twistO"></output><input type="range" id="twist" min="0" max="3" step="1"></div>
+      <div class="sel"><label for="pathSel">Path windings</label>
+        <select id="pathSel"><option value="1,0">(1, 0) once around the big circle</option><option value="0,1">(0, 1) once through the hole</option><option value="1,1">(1, 1)</option><option value="2,1">(2, 1)</option></select></div>
+      <button id="reset">Reset</button>
+    </div>
+  </div>
+
+  <section class="card notes">
+    <h2>What this shows</h2>
+    <ul>
+      <li><b>A vortex is local curl.</b> Around it, the phase turns once through every color, but a small loop around a point can shrink to nothing on the surface. So the windings (t, p), which count trips around the torus, never register it.</li>
+      <li><b>Each child horn torus is a close-up of one vortex.</b> Near a horn point, the angle around the torus becomes the angle around the point. The spike is the vortex core, where the phase is undetermined.</li>
+      <li><b>On a plain torus, vortices must cancel.</b> With no twist, the charges always add to zero (the Poincaré–Hopf theorem; a torus has Euler characteristic 0). That's why you can only add or remove them in +1/−1 pairs.</li>
+      <li><b>A twist forces vortices.</b> Turn the twist up to n and the field needs n unpaired vortices. The colors along the top and bottom edges of the flat map then cycle n times. That's the twist itself, and no smoothing can remove it. Physically, it's like n units of magnetic flux through the surface.</li>
+      <li><b>Two different counts.</b> The windings (t, p) say how a path goes around the torus. The phase turns along the path change by one each time a vortex crosses it. Moving a vortex changes the second count and never the first.</li>
+      <li><b>Where the number theory is.</b> The coloring is built from theta functions, and their zeros are the vortices. The simplest theta function is 1 + 2q + 2q⁴ + 2q⁹ + …, one term per square number. Its powers count the ways to write a number as a sum of squares.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(function(){
+"use strict";
+const TAU=Math.PI*2,$=id=>document.getElementById(id);
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const PR=1.0,Pr=0.42,CH=0.13,SPIKE=0.42;
+const DEF={pairs:[[[0.16,0.68],[0.48,0.34]]],twist:0,path:[1,0]};
+const PV=0.5;   // field coordinates: w = poloidal angle + 1/2, so the seam sits on the hidden inner equator
+let pairs=JSON.parse(JSON.stringify(DEF.pairs)),twist=0,pathW=[1,0],free=[],sel=null,clock=0;
+const view={yaw:0.3,pitch:0.55};
+let C={},L=55,colors=null;
+function readColors(){const cs=getComputedStyle(document.documentElement);for(const n of ["bg","panel","ink","muted","line","plus","minus","path","ok","warn"])C[n]=cs.getPropertyValue("--"+n).trim();L=+cs.getPropertyValue("--light")||55;}
+const rgb=h=>{const n=parseInt(h.replace("#",""),16);return [(n>>16)&255,(n>>8)&255,n&255];};
+const rgba=(h,a)=>{const [r,g,b]=rgb(h);return `rgba(${r},${g},${b},${a})`;};
+
+/* ---- vortices ---- */
+function vortices(){const out=[];pairs.forEach(([a,b])=>{out.push({u:a[0],v:a[1],s:1});out.push({u:b[0],v:b[1],s:-1});});
+  free.forEach(f=>out.push({u:f[0],v:f[1],s:1}));return out;}
+function setTwist(n){twist=n;free=[];for(let i=0;i<n;i++)free.push([fr(0.72+i*0.11),fr(0.62+i*0.1)]);}
+const fr=a=>a-Math.floor(a);
+
+/* ---- the field: phase of a product of theta functions (square torus, tau = i) ---- */
+function theta1(x,y){let re=0,im=0;for(let k=0;k<5;k++){const c=2*Math.exp(-Math.PI*(k+0.5)*(k+0.5))*(k%2?-1:1),a=(2*k+1)*Math.PI*x,b=(2*k+1)*Math.PI*y;
+  re+=c*Math.sin(a)*Math.cosh(b);im+=c*Math.cos(a)*Math.sinh(b);}return [re,im];}
+function phase(u,v,V){let ps=0,A=0;for(const q of V){const t=theta1(u-q.u,v-q.v);ps+=q.s*Math.atan2(t[1],t[0]);A+=q.s*q.u;}
+  return ps-TAU*A*v;}   // the linear term keeps the phase single-valued when the net charge is 0
+
+/* ---- geometry ---- */
+const surfV=(u,v,out=0)=>{const a=TAU*u,b=TAU*v,rr=Pr+out,rho=PR+rr*Math.cos(b);return [rho*Math.cos(a),rho*Math.sin(a),rr*Math.sin(b)];};
+const normalV=(u,v)=>{const a=TAU*u,b=TAU*v;return [Math.cos(b)*Math.cos(a),Math.cos(b)*Math.sin(a),Math.sin(b)];};
+const surf=(u,w,out=0)=>surfV(u,w-0.5,out),normal=(u,w)=>normalV(u,w-0.5);
+function basis(n){const h=Math.abs(n[2])<0.9?[0,0,1]:[1,0,0];let e1=[n[1]*h[2]-n[2]*h[1],n[2]*h[0]-n[0]*h[2],n[0]*h[1]-n[1]*h[0]];const l=Math.hypot(...e1);e1=e1.map(x=>x/l);
+  const e2=[n[1]*e1[2]-n[2]*e1[1],n[2]*e1[0]-n[0]*e1[2],n[0]*e1[1]-n[1]*e1[0]];return [e1,e2];}
+const NU=84,NV=34;
+function recolor(){const V=vortices();colors=[];
+  for(let i=0;i<NU;i++){colors[i]=[];for(let j=0;j<NV;j++){const ph=phase((i+0.5)/NU,(j+0.5)/NV,V);colors[i][j]=((ph/TAU)%1+1)%1;}}
+  updateReadouts();}
+
+/* ---- readouts ---- */
+function phaseTurns(){if(twist)return null;const V=vortices(),n=600;let prev=null,acc=0;
+  for(let k=0;k<=n;k++){const s=k/n,u=fr(0.05+pathW[0]*s),v=fr(PV+pathW[1]*s),p=phase(u,v,V);if(prev!==null){let d=p-prev;d-=TAU*Math.round(d/TAU);acc+=d;}prev=p;}
+  return Math.round(acc/TAU);}
+function updateReadouts(){const V=vortices(),np=V.filter(q=>q.s>0).length,nm=V.length-np,net=np-nm;
+  $("nV").textContent=V.length;$("nVs").textContent=`${np} of +1 · ${nm} of −1`;
+  $("net").textContent=net;$("netS").innerHTML=twist?`<span class="ok">equals the twist ${twist}, as it must</span>`:`<span class="ok">0, as a plain torus requires</span>`;
+  $("tp").textContent=`(${pathW[0]}, ${pathW[1]})`;
+  const t=phaseTurns();$("turns").textContent=t===null?"–":t;$("turnsS").textContent=t===null?"not defined for a twisted field (it depends on the gauge)":"changes by 1 when a vortex crosses the path";
+  $("twistO").textContent=twist;$("removePair").disabled=!pairs.length;}
+
+/* ---- drawing ---- */
+function fit(cv){const r=cv.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2.5),W=Math.round(r.width*dpr),H=Math.round(r.height*dpr);
+  if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H;}const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);return {ctx,w:r.width,h:r.height};}
+function draw3D(){
+  const {ctx,w,h}=fit($("cv"));ctx.clearRect(0,0,w,h);
+  const sc=Math.min(w,h)*0.3,cx=w/2,cy=h*0.52;
+  const cyw=Math.cos(view.yaw),syw=Math.sin(view.yaw),cp=Math.cos(view.pitch),sp=Math.sin(view.pitch);
+  const P=p=>{const X=p[0]*cyw-p[1]*syw,Y=p[0]*syw+p[1]*cyw;return [cx+X*sc,cy-(Y*sp+p[2]*cp)*sc,Y*cp-p[2]*sp];};
+  const items=[],light=[-0.35,0.8,0.5];
+  // parent surface colored by phase
+  const G=[];for(let i=0;i<=NU;i++){G[i]=[];for(let j=0;j<=NV;j++)G[i][j]=P(surf(i/NU,j/NV));}
+  for(let i=0;i<NU;i++)for(let j=0;j<NV;j++){const A=G[i][j],B=G[i+1][j],D=G[i+1][j+1],E=G[i][j+1];
+    const e1=[D[0]-A[0],D[1]-A[1],D[2]-A[2]],e2=[E[0]-B[0],E[1]-B[1],E[2]-B[2]],n=[e1[1]*e2[2]-e1[2]*e2[1],e1[2]*e2[0]-e1[0]*e2[2],e1[0]*e2[1]-e1[1]*e2[0]];
+    const sh=0.62+0.38*Math.abs((n[0]*light[0]+n[1]*light[2]+n[2]*light[1])/(Math.hypot(...n)||1));
+    const fill=`hsl(${Math.round(colors[i][j]*360)},68%,${Math.round(L*sh)}%)`;
+    items.push({d:(A[2]+B[2]+D[2]+E[2])/4,f:()=>{ctx.fillStyle=fill;ctx.strokeStyle=fill;ctx.lineWidth=0.6;ctx.beginPath();ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);ctx.lineTo(D[0],D[1]);ctx.lineTo(E[0],E[1]);ctx.closePath();ctx.fill();ctx.stroke();}});}
+  // path with fixed windings
+  {const pts=[];for(let k=0;k<=240;k++){const s=k/240;pts.push(P(surf(fr(0.05+pathW[0]*s),fr(PV+pathW[1]*s),0.012)));}
+   for(let k=0;k<240;k+=4){const seg=pts.slice(k,k+5),dd=seg.reduce((a,p)=>a+p[2],0)/seg.length;
+     items.push({d:dd-0.01,f:()=>{ctx.strokeStyle=C.path;ctx.lineWidth=2.2;ctx.lineJoin="round";ctx.beginPath();seg.forEach((p,m)=>m?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();}});}}
+  // spikes and children
+  for(const q of vortices()){const n=normal(q.u,q.v),base=surf(q.u,q.v),tip=[base[0]+n[0]*SPIKE,base[1]+n[1]*SPIKE,base[2]+n[2]*SPIKE];
+    const col=q.s>0?C.plus:C.minus,[e1,e2]=basis(n);
+    const b0=P(base),t0=P(tip);
+    items.push({d:(b0[2]+t0[2])/2-0.02,f:()=>{const g=ctx.createLinearGradient(b0[0],b0[1],t0[0],t0[1]);g.addColorStop(0,rgba(col,0.9));g.addColorStop(1,rgba(col,0.25));
+      ctx.fillStyle=g;const dx=t0[0]-b0[0],dy=t0[1]-b0[1],l=Math.hypot(dx,dy)||1,nx=-dy/l*4,ny=dx/l*4;ctx.beginPath();ctx.moveTo(b0[0]+nx,b0[1]+ny);ctx.lineTo(t0[0],t0[1]);ctx.lineTo(b0[0]-nx,b0[1]-ny);ctx.closePath();ctx.fill();}});
+    const child=(a,b)=>{const rho=CH+CH*Math.cos(TAU*b),z=CH*Math.sin(TAU*b),ca=Math.cos(TAU*a),sa=Math.sin(TAU*a);
+      return [tip[0]+rho*(ca*e1[0]+sa*e2[0])+z*n[0],tip[1]+rho*(ca*e1[1]+sa*e2[1])+z*n[1],tip[2]+rho*(ca*e1[2]+sa*e2[2])+z*n[2]];};
+    const cc=rgb(col),M=16,N=10,CG=[];for(let i=0;i<=M;i++){CG[i]=[];for(let j=0;j<=N;j++)CG[i][j]=P(child(i/M,j/N));}
+    for(let i=0;i<M;i++)for(let j=0;j<N;j++){const A=CG[i][j],B=CG[i+1][j],D=CG[i+1][j+1],E=CG[i][j+1],sh=0.55+0.45*((j/N+0.25)%1);
+      const fill=`rgba(${Math.round(cc[0]*sh)},${Math.round(cc[1]*sh)},${Math.round(cc[2]*sh)},0.55)`;
+      items.push({d:(A[2]+B[2]+D[2]+E[2])/4-0.03,f:()=>{ctx.fillStyle=fill;ctx.beginPath();ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);ctx.lineTo(D[0],D[1]);ctx.lineTo(E[0],E[1]);ctx.closePath();ctx.fill();}});}
+    const bead=P(child(q.s*clock*0.35,0.02));
+    items.push({d:bead[2]-0.06,f:()=>{ctx.fillStyle=C.ink;ctx.strokeStyle=C.panel;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(bead[0],bead[1],3.6,0,TAU);ctx.fill();ctx.stroke();}});
+    const core=P(surf(q.u,q.v,0.01));items.push({d:core[2]-0.015,f:()=>{ctx.fillStyle=C.ink;ctx.beginPath();ctx.arc(core[0],core[1],2.6,0,TAU);ctx.fill();}});}
+  items.sort((a,b)=>b.d-a.d);for(const it of items)it.f();
+}
+function drawMap(){
+  const {ctx,w,h}=fit($("map"));ctx.clearRect(0,0,w,h);
+  const m=26,side=Math.min(w,h)-m-8,x0=m,y0=8;
+  const cw=side/NU,chh=side/NV;
+  for(let i=0;i<NU;i++)for(let j=0;j<NV;j++){ctx.fillStyle=`hsl(${Math.round(colors[i][j]*360)},68%,${L}%)`;ctx.fillRect(x0+i*cw,y0+side-(j+1)*chh,cw+0.6,chh+0.6);}
+  ctx.strokeStyle=C.line;ctx.strokeRect(x0+0.5,y0+0.5,side-1,side-1);
+  if(twist){ctx.strokeStyle=C.ink;ctx.setLineDash([5,4]);ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x0,y0+1);ctx.lineTo(x0+side,y0+1);ctx.moveTo(x0,y0+side-1);ctx.lineTo(x0+side,y0+side-1);ctx.stroke();ctx.setLineDash([]);}
+  // path
+  ctx.strokeStyle=C.path;ctx.lineWidth=2;ctx.beginPath();let pu=null,pv=null;
+  for(let k=0;k<=300;k++){const s=k/300,u=fr(0.05+pathW[0]*s),v=fr(PV+pathW[1]*s),X=x0+u*side,Y=y0+(1-v)*side;
+    if(pu===null||Math.abs(u-pu)>0.5||Math.abs(v-pv)>0.5)ctx.moveTo(X,Y);else ctx.lineTo(X,Y);pu=u;pv=v;}ctx.stroke();
+  // vortices
+  vortices().forEach((q,idx)=>{const X=x0+q.u*side,Y=y0+(1-q.v)*side,col=q.s>0?C.plus:C.minus,isSel=sel&&sel.idx===idx;
+    ctx.fillStyle=C.panel;ctx.strokeStyle=col;ctx.lineWidth=isSel?3.5:2;ctx.beginPath();ctx.arc(X,Y,isSel?10:8,0,TAU);ctx.fill();ctx.stroke();
+    ctx.fillStyle=col;ctx.font="600 12px "+getComputedStyle(document.body).fontFamily;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(q.s>0?"+":"−",X,Y+0.5);});
+  ctx.fillStyle=C.muted;ctx.font="11px "+getComputedStyle(document.body).fontFamily;ctx.textAlign="center";ctx.textBaseline="top";ctx.fillText("toroidal angle",x0+side/2,y0+side+6);
+  ctx.save();ctx.translate(10,y0+side/2);ctx.rotate(-Math.PI/2);ctx.textBaseline="middle";ctx.fillText("poloidal angle",0,0);ctx.restore();
+  mapGeom={x0,y0,side};
+}
+let mapGeom={x0:26,y0:8,side:300};
+
+/* ---- interaction ---- */
+$("map").addEventListener("click",e=>{const r=$("map").getBoundingClientRect(),u=(e.clientX-r.left-mapGeom.x0)/mapGeom.side,v=1-(e.clientY-r.top-mapGeom.y0)/mapGeom.side;
+  if(u<0||u>1||v<0||v>1)return;const V=vortices();let best=-1,bd=1e9;
+  V.forEach((q,i)=>{const d=Math.hypot((q.u-u)*mapGeom.side,(q.v-v)*mapGeom.side);if(d<bd){bd=d;best=i;}});
+  if(bd<22){sel={idx:best};return;}
+  if(sel){const i=sel.idx,np=pairs.length*2;if(i<np){pairs[Math.floor(i/2)][i%2]=[u,v];}else free[i-np]=[u,v];sel=null;recolor();}});
+$("addPair").addEventListener("click",()=>{const a=Math.random(),b=Math.random();pairs.push([[fr(a),fr(b)],[fr(a+0.33),fr(b+0.4)]]);sel=null;recolor();});
+$("removePair").addEventListener("click",()=>{pairs.pop();sel=null;recolor();});
+$("twist").addEventListener("input",e=>{setTwist(+e.target.value);sel=null;recolor();});
+$("pathSel").addEventListener("change",e=>{pathW=e.target.value.split(",").map(Number);updateReadouts();});
+$("reset").addEventListener("click",()=>{pairs=JSON.parse(JSON.stringify(DEF.pairs));setTwist(0);$("twist").value=0;pathW=[1,0];$("pathSel").value="1,0";sel=null;recolor();});
+const cv=$("cv");let drag=null;
+cv.addEventListener("pointerdown",e=>{drag={x:e.clientX,y:e.clientY,yaw:view.yaw,pitch:view.pitch};cv.setPointerCapture(e.pointerId);});
+cv.addEventListener("pointermove",e=>{if(!drag)return;view.yaw=drag.yaw+(e.clientX-drag.x)*0.01;view.pitch=Math.max(-1.3,Math.min(1.45,drag.pitch-(e.clientY-drag.y)*0.01));});
+const end=()=>{drag=null;};cv.addEventListener("pointerup",end);cv.addEventListener("pointercancel",end);
+let last=0;function tick(ts){const dt=last?Math.min(0.05,(ts-last)/1000):0;last=ts;if(!reduce){clock+=dt;if(!drag)view.yaw+=dt*0.06;}draw3D();drawMap();requestAnimationFrame(tick);}
+readColors();
+const mq=matchMedia("(prefers-color-scheme: dark)"),onTheme=()=>readColors();
+mq.addEventListener?mq.addEventListener("change",onTheme):mq.addListener(onTheme);
+new MutationObserver(onTheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+$("twist").value=0;recolor();requestAnimationFrame(tick);
+})();
+</script>
