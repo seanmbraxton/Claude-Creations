@@ -1,0 +1,158 @@
+<title>Charge Compass</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* Layout: the top-down compass leads; pattern controls and the all-patterns verification table
+   sit beside it. Charge colors match the other torus pages (+ gold, − blue). */
+:root{
+  --bg:#f3f5f8; --panel:#ffffff; --ink:#17202b; --muted:#5a6676; --line:#d9dee6; --chip:#eef1f6;
+  --torus:#7a8899; --plus:#c27c00; --minus:#2459c4; --ok:#13875a; --fold:#cf3b30;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
+  --torus:#8d9bb0; --plus:#f0b033; --minus:#6f9fff; --ok:#3fcf8e; --fold:#ff6a5c; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
+  --torus:#8d9bb0; --plus:#f0b033; --minus:#6f9fff; --ok:#3fcf8e; --fold:#ff6a5c; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 28px}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.7rem,4.5vw,2.3rem);line-height:1.1}
+h2{font-size:1.05rem}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--muted);max-width:68ch;margin-top:6px}
+.grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+canvas{display:block;width:100%;aspect-ratio:1/1;border-radius:6px;background:var(--bg)}
+.verdict{font-size:1rem;font-weight:500}
+.verdict .yes{color:var(--fold)} .verdict .no{color:var(--ok)}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+button,select{font:inherit;font-size:.84rem;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer}
+button:hover,select:hover{border-color:var(--muted)}
+:focus-visible{outline:2px solid var(--minus);outline-offset:2px}
+.ctl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center}
+.ctl label{font-size:.86rem}
+.ctl output{font-family:var(--f-mono);font-size:.84rem}
+.ctl input{grid-column:1/-1;width:100%;accent-color:var(--minus);height:26px}
+.pat{font-family:var(--f-mono);font-size:.9rem;overflow-wrap:anywhere}
+.hint{font-size:.78rem;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:.84rem}
+td,th{padding:5px 4px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+th{font-weight:500;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em}
+td:first-child,th:first-child{text-align:left}
+tr.prime td{font-weight:600}
+tr.cur td{background:var(--chip)}
+.ok{color:var(--ok)} .fold{color:var(--fold)}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">top-down view · charge sets the angle</div>
+    <h1>Charge Compass</h1>
+    <p class="lede">Looking straight down a parent torus's axis, its children sit around the ring. The gap before each child is proportional to the size of its charge, and its color and swirl show the sign. If the view can be turned part of the way around and land exactly on itself, the children fold into equal, repeating groups. If it can't, the pattern is asymmetric.</p>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <canvas id="cv" aria-label="Top-down view of a parent torus with its children placed by charge"></canvas>
+      <p class="verdict" id="verdict"></p>
+      <p class="pat" id="pat"></p>
+    </div>
+    <div class="card">
+      <div class="ctl"><label for="k">number of children</label><output id="kO"></output><input type="range" id="k" min="2" max="9" step="1"></div>
+      <div class="row"><label for="alph" style="font-size:.86rem">charges allowed</label>
+        <select id="alph"><option value="12">±1, ±2</option><option value="13">±1/3, ±2/3</option><option value="123">±1, ±2, ±3</option></select></div>
+      <div class="row"><button id="prev">◂ Previous pattern</button><button id="next">Next pattern ▸</button><button id="sym">Next symmetric one</button></div>
+      <p class="hint" id="pos"></p>
+      <h2>Every balanced pattern, checked</h2>
+      <table><thead><tr><th>children</th><th>patterns</th><th>fold onto themselves</th><th>asymmetric</th></tr></thead><tbody id="tbl"></tbody></table>
+      <p class="hint">Patterns are counted once per arrangement around the ring (turning the whole view doesn't make a new one). Prime numbers of children are in bold. Larger counts are limited to keep the page fast.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+const TAU=Math.PI*2,$=id=>document.getElementById(id);
+let k=5,alphKey="12",list=[],idx=0,C={};
+function readColors(){const cs=getComputedStyle(document.documentElement);for(const c of ["bg","panel","ink","muted","line","torus","plus","minus","ok","fold"])C[c]=cs.getPropertyValue("--"+c).trim();}
+const rgba=(h,a)=>{const v=parseInt(h.replace("#",""),16);return `rgba(${(v>>16)&255},${(v>>8)&255},${v&255},${a})`;};
+const ALPH={"12":{vals:[-2,-1,1,2],den:1},"13":{vals:[-2,-1,1,2],den:3},"123":{vals:[-3,-2,-1,1,2,3],den:1}};
+const isPrime=n=>{if(n<2)return false;for(let d=2;d*d<=n;d++)if(n%d===0)return false;return true;};
+const rot=(t,s)=>t.slice(s).concat(t.slice(0,s));
+const key=t=>t.join(",");
+function canon(t){let best=null;for(let s=0;s<t.length;s++){const r=key(rot(t,s));if(best===null||r<best)best=r;}return best;}
+function foldOrder(t){const n=t.length;for(let d=1;d<=n;d++)if(n%d===0&&key(rot(t,d))===key(t))return n/d;return 1;}
+function patterns(kk,vals,limit=400000){
+  const seen=new Map(),t=new Array(kk).fill(0);let steps=0;
+  (function rec(i,sum){if(steps>limit)return;
+    if(i===kk){steps++;if(sum===0){const c=canon(t);if(!seen.has(c))seen.set(c,c.split(",").map(Number));}return;}
+    for(const v of vals){t[i]=v;rec(i+1,sum+v);}})(0,0);
+  return {list:[...seen.values()],complete:steps<=limit};
+}
+const fmt=v=>{const d=ALPH[alphKey].den;const s=v>0?"+":"−",a=Math.abs(v);return d===1?s+a:s+a+"/"+d;};
+
+function rebuild(){const r=patterns(k,ALPH[alphKey].vals);list=r.list.sort((a,b)=>foldOrder(b)-foldOrder(a)||key(a).localeCompare(key(b)));idx=Math.min(idx,list.length-1);idx=Math.max(idx,0);table();update();}
+function table(){
+  const rows=[];const vals=ALPH[alphKey].vals;
+  for(let n=2;n<=9;n++){if(Math.pow(vals.length,n)>2.2e6){rows.push(`<tr><td>${n}</td><td colspan="3" style="text-align:left;color:var(--muted)">too many to list here</td></tr>`);continue;}
+    const r=patterns(n,vals,3e6);const sym=r.list.filter(t=>foldOrder(t)>1).length;
+    rows.push(`<tr class="${isPrime(n)?"prime":""} ${n===k?"cur":""}"><td>${n}${isPrime(n)?" (prime)":""}</td><td>${r.list.length}</td><td class="${sym?"fold":"ok"}">${sym}</td><td>${r.list.length-sym}</td></tr>`);}
+  $("tbl").innerHTML=rows.join("");
+}
+function update(){
+  $("kO").textContent=k;
+  if(!list.length){$("verdict").textContent="No balanced pattern with these charges and this many children.";$("pat").textContent="";$("pos").textContent="";draw(null);return;}
+  const t=list[idx],f=foldOrder(t);
+  $("verdict").innerHTML=f>1?`<span class="yes">Folds ${f} ways:</span> turning the view by 1/${f} of a turn lands it on itself.`:`<span class="no">Asymmetric:</span> no partial turn lands the view on itself.`;
+  $("pat").textContent="Charges around the ring: "+t.map(fmt).join("  ");
+  const nsym=list.filter(x=>foldOrder(x)>1).length;
+  $("pos").textContent=`Pattern ${idx+1} of ${list.length} for ${k} children; ${nsym} of them fold.`;
+  draw(t);
+}
+function draw(t){
+  const cv=$("cv"),r=cv.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2.5),W=Math.round(r.width*dpr),H=Math.round(r.height*dpr);
+  if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H;}const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);
+  const w=r.width,h=r.height;ctx.clearRect(0,0,w,h);const cx=w/2,cy=h/2,R=Math.min(w,h)*0.36;
+  // parent torus seen from above: a ring with its hole
+  ctx.lineWidth=R*0.22;ctx.strokeStyle=rgba(C.torus,0.55);ctx.beginPath();ctx.arc(cx,cy,R*0.55,0,TAU);ctx.stroke();
+  ctx.fillStyle=C.ink;ctx.beginPath();ctx.arc(cx,cy,3,0,TAU);ctx.fill();
+  if(!t)return;
+  const tot=t.reduce((s,v)=>s+Math.abs(v),0),f=foldOrder(t);
+  // fold axes
+  if(f>1){ctx.strokeStyle=rgba(C.fold,0.5);ctx.setLineDash([5,5]);ctx.lineWidth=1.2;
+    let start=-Math.PI/2;for(let j=0;j<f;j++){const a=start+TAU*j/f;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+R*1.25*Math.cos(a),cy+R*1.25*Math.sin(a));ctx.stroke();}ctx.setLineDash([]);}
+  // children: gap before each child proportional to |charge|
+  let ang=-Math.PI/2;const font=getComputedStyle(document.body).fontFamily;
+  t.forEach((v,i)=>{ang+=TAU*Math.abs(v)/tot;const a=ang-TAU*Math.abs(v)/tot/2;   // centre the child in its arc
+    const col=v>0?C.plus:C.minus,x=cx+R*Math.cos(ang),y=cy+R*Math.sin(ang),rad=7+5*Math.abs(v);
+    ctx.strokeStyle=rgba(col,0.85);ctx.lineWidth=2+Math.abs(v);ctx.beginPath();ctx.moveTo(cx+R*0.66*Math.cos(ang),cy+R*0.66*Math.sin(ang));ctx.lineTo(x,y);ctx.stroke();
+    ctx.fillStyle=C.panel;ctx.strokeStyle=col;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(x,y,rad,0,TAU);ctx.fill();ctx.stroke();
+    // swirl: counterclockwise for +, clockwise for −
+    ctx.beginPath();for(let q=0;q<=24;q++){const an=(v>0?1:-1)*q/24*TAU*1.3,rr=1+q/24*(rad-3);const px=x+rr*Math.cos(an),py=y+rr*Math.sin(an);q?ctx.lineTo(px,py):ctx.moveTo(px,py);}ctx.lineWidth=1.4;ctx.stroke();
+    ctx.fillStyle=col;ctx.font="600 11px "+font;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(fmt(v),cx+R*1.22*Math.cos(ang),cy+R*1.22*Math.sin(ang));});
+}
+$("k").addEventListener("input",e=>{k=+e.target.value;idx=0;rebuild();});
+$("alph").addEventListener("change",e=>{alphKey=e.target.value;idx=0;rebuild();});
+$("prev").addEventListener("click",()=>{if(list.length){idx=(idx-1+list.length)%list.length;update();}});
+$("next").addEventListener("click",()=>{if(list.length){idx=(idx+1)%list.length;update();}});
+$("sym").addEventListener("click",()=>{if(!list.length)return;for(let s=1;s<=list.length;s++){const j=(idx+s)%list.length;if(foldOrder(list[j])>1){idx=j;update();return;}}
+  $("verdict").innerHTML=`<span class="no">No pattern folds with ${k} children.</span> Every balanced pattern is asymmetric.`;});
+readColors();
+const mq=matchMedia("(prefers-color-scheme: dark)"),onTheme=()=>{readColors();update();};
+mq.addEventListener?mq.addEventListener("change",onTheme):mq.addListener(onTheme);
+new MutationObserver(onTheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+new ResizeObserver(()=>update()).observe($("cv"));
+$("k").value=k;rebuild();
+})();
+</script>
