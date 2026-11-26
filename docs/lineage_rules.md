@@ -50,3 +50,21 @@ The rules that make 2, 3 or 4 (or more) children work:
 Consequence: a torus is linked to 2k different tori of the other set, so the smallest family has
 **4k tori**: 8 for two children, 12 for three, 16 for four. A family reaching this bound exists for
 every k (code: `torus_count/dual_families.py`; page: `viewer/dual_families.html`).
+
+## Draft 4: inherited charge (current)
+
+1. **Two parents.** Every torus has a mother and a father, one at each end of its axis, both
+   from the dual set. Every torus has two children (the counting fact forces it).
+2. **Every tube carries a charge**, the charge of the vortex it came from.
+3. **Natural state.** A child's state is the sum of what its mother and father gave it:
+   +1 and −1 give 0; +1 and −1/3 give 2/3.
+4. **Pass on exactly what you inherited.** The charges a torus sends to its children add up to
+   its natural state.
+5. **The whole family balances.** The states of all tori add up to zero.
+6. As before: nobody is the child of their own child, and tori with identical parents never
+   co-parent.
+
+Consequence: charge can only circulate around generational loops (Kirchhoff's current law). A
+torus's state is the sum of the charges of the loops through it, and the family balances when
+the sum over loops of (charge × loop length) is zero. Fractions come from balancing loops of
+different lengths. Results: `results/exploration.md`.
