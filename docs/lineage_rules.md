@@ -68,3 +68,17 @@ Consequence: charge can only circulate around generational loops (Kirchhoff's cu
 torus's state is the sum of the charges of the loops through it, and the family balances when
 the sum over loops of (charge × loop length) is zero. Fractions come from balancing loops of
 different lengths. Results: `results/exploration.md`.
+
+## Draft 5: the sign is the winding direction
+
+Added to draft 4:
+
+7. **Sign = winding direction about the child's axis.** The mother's tube winds one way about
+   the toroidal axis and carries a positive charge (or zero); the father's tube winds the other
+   way and carries a negative charge (or zero).
+
+Consequence: a negative charge moving forward along a father's tube is a positive charge moving
+backward. Charge therefore circulates on zigzag loops: forward along maternal lines, backward
+along paternal lines. A zigzag loop with f forward and b backward steps, carrying charge c,
+adds c × (f − b) to the family's total. Loops with f = b balance themselves; the rest must
+balance each other, and that sets the fractions.

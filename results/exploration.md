@@ -59,3 +59,27 @@ The three 10-torus families that fail have eigenvalues of exactly 2, the golden 
 * The graph Riemann hypothesis is a well-studied analogue (Ihara zeta functions and Ramanujan
   graphs), not the Riemann hypothesis itself.
 * Random samples are of labelled families, so they're not uniform over distinct families.
+
+## Adding the winding-sign rule (draft 5)
+
+With the mother's tube always positive and the father's always negative, charge circulates on
+zigzag loops (forward along mothers, backward along fathers). A loop's excess f − b decides what
+it contributes, and balancing excesses sets the fractions.
+
+| family | fractions without the sign rule | with it | excesses of zigzag loops | graph RH without → with |
+|---|---|---|---|---|
+| 8 tori, single maternal line of 8 | 1, 2, 3, 4 | **1, 4** | −8, −2, 0, 2, 8 | yes → yes |
+| 8 tori, two maternal lines of 4 | 1, 2, 3, 4 | **1, 2** | −4, −2, 0, 2, 4 | yes → yes |
+| 10 tori, family 1 | 1–5 | 1, 3, 5 | −10, −6, −2, 0, 2, 10 | no → no |
+| 10 tori, family 2 | 1–5 | 1, 2, 5 | −10, −4, −2, 0, 2, 4, 10 | yes → **no** |
+| 10 tori, family 3 | 1–5 | 1, 2, 3, 5 | −10 … 10 | yes → yes |
+| 10 tori, family 4 | 1–5 | 1, 2, 3, 5 | −10 … 10 | no → **yes** |
+| 10 tori, family 5 | 1–5 | 1, 3, 5 | −10, −2, 0, 2, 6, 10 | no → no |
+
+* **The rule tells the two star families apart.** Without it they look identical by every
+  measure. With it, the family whose maternal tubes form one line through all eight allows
+  quarters, and the family with two maternal lines of four allows only halves.
+* **Thirds disappear at 8 tori** and return at 10, in four of the five families. **Quarters
+  disappear entirely at 10 tori.**
+* **The rule changes which families obey the graph Riemann hypothesis** (two of the five swap).
+  Where it fails, the offending eigenvalue is still the golden ratio.

@@ -105,3 +105,43 @@ def ramanujan(A, k=2):
 def fraction_denominators(lengths):
     Ls = list(lengths)
     return sorted({b // gcd(a, b) for a in Ls for b in Ls})
+
+
+def zigzag(plus, minus):
+    """Sign rule: mother tubes carry charge >= 0, father tubes <= 0. A negative charge moving
+    forward is a positive one moving backward, so charge circulates on the 'zigzag' network:
+    forward along + tubes, backward along - tubes. Returns its successor lists, tagged."""
+    n = len(plus)
+    im = [0] * n
+    for v in range(n): im[minus[v]] = v
+    # from v: forward to its + child, or backward to its father
+    return [((plus[v], +1), (im[v], -1)) for v in range(n)]
+
+
+def zigzag_loops(plus, minus):
+    """Simple loops of the zigzag network, as (forward steps, backward steps)."""
+    out = zigzag(plus, minus); n = len(plus); loops = {}
+    def dfs(s, v, f, b, seen):
+        for w, t in out[v]:
+            f2, b2 = f + (t > 0), b + (t < 0)
+            if w == s:
+                loops[(f2, b2)] = loops.get((f2, b2), 0) + 1
+            elif w > s and w not in seen:
+                seen.add(w); dfs(s, w, f2, b2, seen); seen.discard(w)
+    for s in range(n): dfs(s, s, 0, 0, {s})
+    return dict(sorted(loops.items()))
+
+
+def zigzag_adjacency(plus, minus):
+    n = len(plus); A = np.zeros((n, n), dtype=int)
+    for v, succ in enumerate(zigzag(plus, minus)):
+        for w, _ in succ: A[v, w] += 1
+    return A
+
+
+def zigzag_denominators(loops):
+    """With the sign rule, a loop with excess e = f - b != 0 must be balanced by loops of the
+    opposite excess: c2 = c1 * |e1| / |e2|. Denominators that balancing two loops can produce."""
+    ex = sorted({f - b for (f, b) in loops if f != b})
+    pos = [e for e in ex if e > 0]; neg = [-e for e in ex if e < 0]
+    return sorted({q // gcd(p, q) for p in pos for q in neg} | {p // gcd(p, q) for p in pos for q in neg})
