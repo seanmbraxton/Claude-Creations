@@ -1,0 +1,26 @@
+{
+  "cells": 135,
+  "relational == original": 135,
+  "inside 0.3: counts unchanged": 135,
+  "outside 0.3: counts unchanged": 117,
+  "outside 0.3: verdict unchanged": 119,
+  "outside 0.3: mean |obs-true|": 0.13333333333333333,
+  "inside 0.6: counts unchanged": 135,
+  "outside 0.6: counts unchanged": 101,
+  "outside 0.6: verdict unchanged": 101,
+  "outside 0.6: mean |obs-true|": 0.2814814814814815,
+  "inside 0.9: counts unchanged": 135,
+  "outside 0.9: counts unchanged": 86,
+  "outside 0.9: verdict unchanged": 91,
+  "outside 0.9: mean |obs-true|": 0.3925925925925926,
+  "original: mean |obs-true|": 0.14814814814814814,
+  "original: cells where observer agrees with truth": 115,
+  "theta usable as a clock": {
+    "lock=False, flip=off": "9/9 eps values",
+    "lock=True, flip=off": "1/9 eps values",
+    "lock=False, flip=kick": "9/9 eps values",
+    "lock=True, flip=kick": "1/9 eps values",
+    "lock=False, flip=reflect": "5/9 eps values",
+    "lock=True, flip=reflect": "1/9 eps values"
+  }
+}
