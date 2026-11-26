@@ -37,7 +37,7 @@ three spawns bring you back to your own generation, and the connections are comp
 | 2–5 | 0 | — | 0 |
 | 6 | 30 | (2, 2, 2) | 0 |
 | 7 | 210 | (2, 2, 3) | 0 |
-| 8 | 980 predicted by the theorem | (2, 2, 4), (2, 3, 3) | (run in progress) |
+| 8 | 980 (the theorem predicts 980) | (2, 2, 4), (2, 3, 3) | 0 |
 
 ## How many distinct families
 
