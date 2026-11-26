@@ -1,0 +1,211 @@
+<title>Dual Families</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* Layout: the 3D family leads; choice of children per torus, the rules with live checks, and the
+   selected torus's parents and children sit beside it. Charge colors match the other pages. */
+:root{
+  --bg:#f3f5f8; --panel:#ffffff; --ink:#17202b; --muted:#5a6676; --line:#d9dee6; --chip:#eef1f6;
+  --setA:#6b7c93; --setB:#8a7aa8; --plus:#c27c00; --minus:#2459c4; --ok:#13875a; --sel:#cf3b30;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
+  --setA:#9aaac0; --setB:#b6a6d4; --plus:#f0b033; --minus:#6f9fff; --ok:#3fcf8e; --sel:#ff6a5c; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
+  --setA:#9aaac0; --setB:#b6a6d4; --plus:#f0b033; --minus:#6f9fff; --ok:#3fcf8e; --sel:#ff6a5c; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 28px}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.7rem,4.5vw,2.3rem);line-height:1.1}
+h2{font-size:1.05rem}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--muted);max-width:70ch;margin-top:6px}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+canvas{display:block;width:100%;aspect-ratio:1/1;border-radius:6px;background:var(--bg);touch-action:none;cursor:pointer}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;align-self:flex-start;flex-wrap:wrap}
+.seg button{border:0;border-radius:0;background:var(--chip);padding:8px 14px;font-weight:500}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--panel)}
+button{font:inherit;font-size:.84rem;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer}
+:focus-visible{outline:2px solid var(--minus);outline-offset:2px}
+.status{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tile{border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+.tile .k{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.tile .v{font-family:var(--f-mono);font-size:1.05rem;font-weight:500}
+table{width:100%;border-collapse:collapse;font-size:.84rem}
+td,th{padding:5px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-weight:500;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em}
+td.c{text-align:right;font-family:var(--f-mono)}
+.ok{color:var(--ok)} .bad{color:var(--sel)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.78rem;color:var(--muted)}
+.sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+.hint{font-size:.78rem;color:var(--muted)}
+.notes{font-size:.9rem;max-width:75ch;display:flex;flex-direction:column;gap:8px}
+.notes ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:5px}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">as many parents as children · parents from the dual set</div>
+    <h1>Dual Families</h1>
+    <p class="lede">Two sets of horn tori, A and B, the dual tetrahedra generalized. A torus with k children has k parents. Positive charges arrive at one end of its axis (the mother's side) and negative charges at the other (the father's side). Every parent comes from the other set. With these rules the smallest family has 4k tori, and the page shows one for each k.</p>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <canvas id="cv" aria-label="Two dual sets of horn tori joined by charged tubes"></canvas>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--setA)"></i>set A</span><span><i class="sw" style="background:var(--setB)"></i>set B</span>
+        <span><i class="sw" style="background:var(--plus)"></i>positive tube</span><span><i class="sw" style="background:var(--minus)"></i>negative tube</span>
+        <span><i class="sw" style="background:var(--sel)"></i>selected torus</span>
+      </div>
+      <p class="hint">Tap a torus to see its children and parents; the other tubes fade. Drag to turn it. Thicker tubes carry larger charges and taper toward the child.</p>
+    </div>
+    <div class="card">
+      <div class="seg" role="group" aria-label="Children per torus">
+        <button data-k="2" aria-pressed="true">2 children</button><button data-k="3" aria-pressed="false">3</button><button data-k="4" aria-pressed="false">4</button><button data-k="5" aria-pressed="false">5</button>
+      </div>
+      <div class="status">
+        <div class="tile"><div class="k">Tori</div><div class="v" id="nT"></div></div>
+        <div class="tile"><div class="k">Each torus sends</div><div class="v" id="chg" style="font-size:.9rem"></div></div>
+        <div class="tile"><div class="k">Arrangement</div><div class="v" id="arr" style="font-size:.85rem"></div></div>
+      </div>
+      <h2>Rules, checked live</h2>
+      <table><tbody id="rules"></tbody></table>
+      <h2>Selected torus</h2>
+      <table><thead><tr><th>Role</th><th>Torus</th><th class="c">Charge</th></tr></thead><tbody id="selT"></tbody></table>
+    </div>
+  </div>
+
+  <section class="card notes">
+    <h2>Why the smallest family has 4k tori</h2>
+    <ul>
+      <li>A torus with k children has k parents, and no torus is the child of its own child, so it is linked to 2k different tori.</li>
+      <li>All of them are in the other set, so each set needs at least 2k tori, and the family needs at least 4k.</li>
+      <li>The family shown reaches that bound for every k. Every torus is linked to every torus of the other set: k as its children and k as its parents.</li>
+      <li>For k = 2 this is your dual tetrahedron: 8 tori at the corners of a cube, each linked to the four corners of the other tetrahedron.</li>
+    </ul>
+    <h2>Charges</h2>
+    <ul>
+      <li>Each torus sends one large charge and k − 1 small ones, adding to zero: (+1, −1) for k = 2; (+2/3, −1/3, −1/3) for k = 3; (+1, +1, −1, −1) for k = 4; (+4/5, −1/5 four times) for k = 5.</li>
+      <li>Each torus also receives exactly the same pattern, so arrivals balance too. The charge pattern passes unchanged around the family.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(function(){
+"use strict";
+const TAU=Math.PI*2,$=id=>document.getElementById(id);
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+let k=2,sel=null,clock=0;
+const view={yaw:0.6,pitch:0.45};
+let C={};
+function readColors(){const cs=getComputedStyle(document.documentElement);for(const c of ["bg","panel","ink","muted","line","setA","setB","plus","minus","ok","sel"])C[c]=cs.getPropertyValue("--"+c).trim();}
+const rgb=h=>{const v=parseInt(h.replace("#",""),16);return [(v>>16)&255,(v>>8)&255,v&255];};
+const rgba=(h,a)=>{const [r,g,b]=rgb(h);return `rgba(${r},${g},${b},${a})`;};
+const add=(a,b)=>a.map((x,i)=>x+b[i]),sub=(a,b)=>a.map((x,i)=>x-b[i]),mul=(a,s)=>a.map(x=>x*s);
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],norm=a=>{const l=Math.hypot(...a);return a.map(x=>x/l);};
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+function frac(n,d){const g=(a,b)=>b?g(b,a%b):a,G=g(Math.abs(n),d);return {n:n/G,d:d/G,v:n/d};}
+const fs=f=>(f.v>0?"+":"−")+(f.d===1?Math.abs(f.n):Math.abs(f.n)+"/"+f.d);
+
+/* the family: A = B = Z_2k; a -> b iff b - a in {0..k-1}; b -> a iff a - b in {1..k} */
+function build(){
+  const m=2*k,nodes=[];
+  for(let i=0;i<m;i++)nodes.push({set:"A",i});for(let i=0;i<m;i++)nodes.push({set:"B",i});
+  const id=(s,i)=>(s==="A"?0:m)+((i%m)+m)%m,edges=[];
+  // charges: k=4 uses (+1,+1,-1,-1); otherwise one large and k-1 small
+  const chargeOf=(s,d)=>{if(k===4){const pos=s==="A"?(d===0||d===1):(d===1||d===2);return frac(pos?1:-1,1);}
+    const lead=s==="A"?d===0:d===1;if(k===2)return frac(lead?1:-1,1);return lead?frac(k-1,k):frac(-1,k);};
+  for(let a=0;a<m;a++)for(let d=0;d<k;d++)edges.push({u:id("A",a),v:id("B",a+d),q:chargeOf("A",d)});
+  for(let b=0;b<m;b++)for(let d=1;d<=k;d++)edges.push({u:id("B",b),v:id("A",b+d),q:chargeOf("B",d)});
+  // positions: k = 2 -> the two tetrahedra of a cube; otherwise two staggered rings
+  const pos=[];
+  if(k===2){const T=[[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]].map(v=>v.map(x=>x/Math.sqrt(3)));
+    for(let i=0;i<4;i++)pos.push(T[i]);for(let i=0;i<4;i++)pos.push(mul(T[i],-1));}
+  else{const h=0.42,R=Math.sqrt(1-h*h);for(let i=0;i<m;i++)pos.push([R*Math.cos(TAU*i/m),R*Math.sin(TAU*i/m),h]);
+    for(let i=0;i<m;i++)pos.push([R*Math.cos(TAU*(i+0.5)/m),R*Math.sin(TAU*(i+0.5)/m),-h]);}
+  return {m,nodes,edges,pos};
+}
+let F=build();
+
+function checks(){
+  const n=F.nodes.length,out=[...Array(n)].map(()=>[]),inn=[...Array(n)].map(()=>[]),pairs=new Set();
+  for(const e of F.edges){out[e.u].push(e);inn[e.v].push(e);pairs.add(e.u+","+e.v);}
+  const S=a=>a.reduce((s,e)=>s+e.q.v,0);
+  const noMutual=F.edges.every(e=>!pairs.has(e.v+","+e.u));
+  const cross=F.edges.every(e=>F.nodes[e.u].set!==F.nodes[e.v].set);
+  const bal=out.every(a=>Math.abs(S(a))<1e-9)&&inn.every(a=>Math.abs(S(a))<1e-9);
+  const eq=out.every((a,i)=>a.length===inn[i].length);
+  const ends=inn.every(a=>a.some(e=>e.q.v>0)&&a.some(e=>e.q.v<0));
+  const par=inn.map(a=>a.map(e=>e.u).sort().join(","));
+  let sib=true;inn.forEach(a=>{const ps=a.map(e=>e.u);for(let x=0;x<ps.length;x++)for(let y=x+1;y<ps.length;y++)if(par[ps[x]]===par[ps[y]])sib=false;});
+  const touch=out.every((a,i)=>new Set([...a.map(e=>e.v),...inn[i].map(e=>e.u)]).size===F.m);
+  return [["Every parent comes from the other set",cross],["As many parents as children",eq],["No torus is the child of its own child",noMutual],
+    ["Charges leaving and arriving each net zero",bal],["Both ends of every axis are fed (mother's side +, father's side −)",ends],
+    ["Tori with identical parents never co-parent",sib],["Every torus touches the whole other set",touch]];
+}
+function update(){
+  document.querySelectorAll("[data-k]").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.k===k)));
+  $("nT").textContent=4*k;
+  const o=F.edges.filter(e=>e.u===0).map(e=>fs(e.q));$("chg").textContent="("+o.join(", ")+")";
+  $("arr").textContent=k===2?"two tetrahedra in a cube":`two rings of ${2*k}`;
+  $("rules").innerHTML=checks().map(([t,ok])=>`<tr><td>${t}</td><td class="c ${ok?"ok":"bad"}">${ok?"✓":"✗"}</td></tr>`).join("");
+  const s=sel===null?0:sel,nm=i=>F.nodes[i].set+(F.nodes[i].i+1);
+  const rows=[...F.edges.filter(e=>e.v===s).map(e=>["parent ("+(e.q.v>0?"mother's side":"father's side")+")",nm(e.u),fs(e.q)]),...F.edges.filter(e=>e.u===s).map(e=>["child",nm(e.v),fs(e.q)])];
+  $("selT").innerHTML=`<tr><td colspan="3"><b>${nm(s)}</b>${sel===null?" (tap a torus to choose another)":""}</td></tr>`+rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td class="c">${r[2]}</td></tr>`).join("");
+}
+
+let proj=[];
+function draw(){
+  const cv=$("cv"),r=cv.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2.5),W=Math.round(r.width*dpr),H=Math.round(r.height*dpr);
+  if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H;}const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);
+  const w=r.width,h=r.height;ctx.clearRect(0,0,w,h);
+  const sc=Math.min(w,h)*0.36,cx=w/2,cy=h/2;
+  const cyw=Math.cos(view.yaw),syw=Math.sin(view.yaw),cp=Math.cos(view.pitch),sp=Math.sin(view.pitch);
+  const P=p=>{const X=p[0]*cyw-p[1]*syw,Y=p[0]*syw+p[1]*cyw;return [cx+X*sc,cy-(Y*sp+p[2]*cp)*sc,Y*cp-p[2]*sp];};
+  const items=[],s=sel===null?0:sel,RH=k>3?0.07:0.09;
+  // tubes: bowed outward, tapering toward the child
+  for(const e of F.edges){const a=F.pos[e.u],b=F.pos[e.v],mid=norm(add(a,b)),c=add(mul(add(a,b),0.5),mul(mid,0.32));
+    const on=e.u===s||e.v===s,col=e.q.v>0?C.plus:C.minus,wmax=1+5*Math.abs(e.q.v);
+    for(let t=0;t<16;t++){const t0=t/16,t1=(t+1)/16,q=x=>add(add(mul(a,(1-x)*(1-x)),mul(c,2*x*(1-x))),mul(b,x*x)),p0=P(q(t0)),p1=P(q(t1));
+      items.push({d:(p0[2]+p1[2])/2,f:()=>{ctx.lineCap="round";ctx.strokeStyle=rgba(col,on?0.95:0.16);ctx.lineWidth=(on?1:0.6)*(1+(wmax-1)*(1-t0));ctx.beginPath();ctx.moveTo(p0[0],p0[1]);ctx.lineTo(p1[0],p1[1]);ctx.stroke();}});}}
+  // tori: axis toward the centre
+  proj=[];
+  F.pos.forEach((c0,i)=>{const a=norm(mul(c0,-1)),hh=Math.abs(a[2])<0.9?[0,0,1]:[1,0,0],e1=norm(cross(a,hh)),e2=cross(a,e1);
+    const col=rgb(i===s?C.sel:(F.nodes[i].set==="A"?C.setA:C.setB)),NU=18,NV=10,G=[];
+    const pt=(u,v)=>{const rho=RH+RH*Math.cos(TAU*v),z=RH*Math.sin(TAU*v),cu=Math.cos(TAU*u),su=Math.sin(TAU*u);return [0,1,2].map(j=>c0[j]+rho*(cu*e1[j]+su*e2[j])+z*a[j]);};
+    for(let x=0;x<=NU;x++){G[x]=[];for(let y=0;y<=NV;y++)G[x][y]=P(pt(x/NU,y/NV));}
+    for(let x=0;x<NU;x++)for(let y=0;y<NV;y++){const A=G[x][y],B=G[x+1][y],D=G[x+1][y+1],E=G[x][y+1],sh=0.55+0.45*Math.abs(Math.cos(TAU*(y+0.5)/NV-0.6));
+      const fill=`rgba(${Math.round(col[0]*sh)},${Math.round(col[1]*sh)},${Math.round(col[2]*sh)},0.75)`;
+      items.push({d:(A[2]+B[2]+D[2]+E[2])/4-0.01,f:()=>{ctx.fillStyle=fill;ctx.beginPath();ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);ctx.lineTo(D[0],D[1]);ctx.lineTo(E[0],E[1]);ctx.closePath();ctx.fill();}});}
+    const pc=P(c0);proj.push(pc);const lab=P(mul(c0,1.25));
+    items.push({d:-9,f:()=>{ctx.font="600 11px "+getComputedStyle(document.body).fontFamily;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillStyle=i===s?C.sel:C.muted;ctx.fillText(F.nodes[i].set+(F.nodes[i].i+1),lab[0],lab[1]);}});});
+  items.sort((x,y)=>y.d-x.d);for(const it of items)it.f();
+}
+
+document.querySelectorAll("[data-k]").forEach(b=>b.addEventListener("click",()=>{k=+b.dataset.k;sel=null;F=build();update();}));
+const cv=$("cv");let drag=null,moved=false;
+cv.addEventListener("pointerdown",e=>{drag={x:e.clientX,y:e.clientY,yaw:view.yaw,pitch:view.pitch};moved=false;cv.setPointerCapture(e.pointerId);});
+cv.addEventListener("pointermove",e=>{if(!drag)return;if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>5)moved=true;view.yaw=drag.yaw+(e.clientX-drag.x)*0.01;view.pitch=Math.max(-1.5,Math.min(1.5,drag.pitch-(e.clientY-drag.y)*0.01));});
+cv.addEventListener("pointerup",e=>{if(!moved){const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;let best=-1,bd=1e9;proj.forEach((p,i)=>{const d=Math.hypot(p[0]-x,p[1]-y);if(d<bd){bd=d;best=i;}});if(bd<28){sel=best;update();}}drag=null;});
+cv.addEventListener("pointercancel",()=>{drag=null;});
+let last=0;function tick(ts){const dt=last?Math.min(0.05,(ts-last)/1000):0;last=ts;if(!drag&&!reduce)view.yaw+=dt*0.07;draw();requestAnimationFrame(tick);}
+readColors();
+const mq=matchMedia("(prefers-color-scheme: dark)"),onTheme=()=>readColors();
+mq.addEventListener?mq.addEventListener("change",onTheme):mq.addListener(onTheme);
+new MutationObserver(onTheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+update();requestAnimationFrame(tick);
+})();
+</script>
