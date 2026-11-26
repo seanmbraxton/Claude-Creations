@@ -167,7 +167,7 @@ function update(){
   $("selT").innerHTML=`<tr><td colspan="3"><b>${nm(s)}</b>${sel===null?" (tap a torus to choose another)":""}</td></tr>`+rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td class="c">${r[2]}</td></tr>`).join("");
 }
 
-let proj=[];
+let proj=[],drawn=[];window.__drawnCounts=()=>F.nodes.map((_,i)=>[drawn.filter(e=>e.v===i).length,drawn.filter(e=>e.u===i).length]);
 function draw(){
   const cv=$("cv"),r=cv.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2.5),W=Math.round(r.width*dpr),H=Math.round(r.height*dpr);
   if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H;}const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);
@@ -175,11 +175,14 @@ function draw(){
   const sc=Math.min(w,h)*0.36,cx=w/2,cy=h/2;
   const cyw=Math.cos(view.yaw),syw=Math.sin(view.yaw),cp=Math.cos(view.pitch),sp=Math.sin(view.pitch);
   const P=p=>{const X=p[0]*cyw-p[1]*syw,Y=p[0]*syw+p[1]*cyw;return [cx+X*sc,cy-(Y*sp+p[2]*cp)*sc,Y*cp-p[2]*sp];};
-  const items=[],s=sel===null?0:sel,RH=k>3?0.07:0.09;
+  const items=[],s=sel===null?0:sel,RH=k>3?0.07:0.09;drawn=[];
   // tubes: bowed outward, tapering toward the child
-  for(const e of F.edges){const a=F.pos[e.u],b=F.pos[e.v],mid=norm(add(a,b)),c=add(mul(add(a,b),0.5),mul(mid,0.32));
+  for(const e of F.edges){const a=F.pos[e.u],b=F.pos[e.v],sm=add(a,b),L=Math.hypot(...sm);
+    // a tube between opposite corners passes straight through the centre (a long diagonal); all others bow outward
+    const c=L>1e-6?add(mul(sm,0.5),mul(norm(sm),0.32)):[0,0,0];
     const on=e.u===s||e.v===s,col=e.q.v>0?C.plus:C.minus,wmax=1+5*Math.abs(e.q.v);
     for(let t=0;t<16;t++){const t0=t/16,t1=(t+1)/16,q=x=>add(add(mul(a,(1-x)*(1-x)),mul(c,2*x*(1-x))),mul(b,x*x)),p0=P(q(t0)),p1=P(q(t1));
+      if(t===0&&isFinite(p0[0])&&isFinite(p1[0]))drawn.push(e);
       items.push({d:(p0[2]+p1[2])/2,f:()=>{ctx.lineCap="round";ctx.strokeStyle=rgba(col,on?0.95:0.16);ctx.lineWidth=(on?1:0.6)*(1+(wmax-1)*(1-t0));ctx.beginPath();ctx.moveTo(p0[0],p0[1]);ctx.lineTo(p1[0],p1[1]);ctx.stroke();}});}}
   // tori: axis toward the centre
   proj=[];
