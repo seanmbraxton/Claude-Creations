@@ -4,26 +4,26 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
 <style>
-/* Layout: the tetrahedron is the instrument. Status strip above it, hole buttons and
-   relations below, findings last. Same visual family as the ε-Horn Torus Observer. */
+/* Layout: the plumbed tetrahedron is the instrument. Doorways and the loop roles sit beside it,
+   findings below. Same visual family as the ε-Horn Torus Observer. */
 :root{
   --bg:#f3f5f8; --panel:#ffffff; --ink:#17202b; --muted:#5a6676; --line:#d9dee6; --chip:#eef1f6;
-  --red:#cf3b30; --green:#18895a; --blue:#2459c4; --time:#6b7584; --surf-alpha:.42;
+  --red:#cf3b30; --green:#18895a; --blue:#2459c4; --time:#6b7584; --tube:#8a96a8; --amber:#c27c00;
   --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
   --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
   --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
-  --red:#ff6a5c; --green:#3fcf8e; --blue:#6f9fff; --time:#c3cad4; color-scheme:dark }}
+  --red:#ff6a5c; --green:#3fcf8e; --blue:#6f9fff; --time:#c3cad4; --tube:#7d8a9c; --amber:#f0b033; color-scheme:dark }}
 :root[data-theme="dark"]{
   --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
-  --red:#ff6a5c; --green:#3fcf8e; --blue:#6f9fff; --time:#c3cad4; color-scheme:dark }
+  --red:#ff6a5c; --green:#3fcf8e; --blue:#6f9fff; --time:#c3cad4; --tube:#7d8a9c; --amber:#f0b033; color-scheme:dark }
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 28px}
 .wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
-h1,h2,h3{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance}
+h1,h2{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance}
 h1{font-size:clamp(1.7rem,4.5vw,2.3rem);line-height:1.1}
 h2{font-size:1.05rem}
 p{margin:0}
@@ -36,72 +36,66 @@ canvas{display:block;width:100%;aspect-ratio:1/1;border-radius:6px;background:va
 .status{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .tile{border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
 .tile .k{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
-.tile .v{font-family:var(--f-mono);font-size:1.05rem;font-weight:500;font-variant-numeric:tabular-nums}
-.tile .s{font-size:.78rem;color:var(--muted)}
-.pill{display:inline-block;font-family:var(--f-mono);font-size:.82rem;font-weight:500;padding:2px 10px;border-radius:99px;border:1.5px solid currentColor}
+.tile .v{font-family:var(--f-mono);font-size:1.02rem;font-weight:500;font-variant-numeric:tabular-nums}
+.tile .s{font-size:.8rem;color:var(--muted)}
+.pill{display:inline-block;font-family:var(--f-mono);font-size:.8rem;font-weight:500;padding:2px 10px;border-radius:99px;border:1.5px solid currentColor}
+.pill[data-q="0"]{color:var(--green)} .pill[data-q="1"],.pill[data-q="3"]{color:var(--amber)} .pill[data-q="2"]{color:var(--red)}
 .row{display:flex;flex-wrap:wrap;gap:6px}
-button{font:inherit;font-size:.82rem;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:7px 10px;cursor:pointer}
-button:hover{border-color:var(--muted)}
-button:disabled{opacity:.45;cursor:default}
+button,select{font:inherit;font-size:.82rem;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:7px 10px;cursor:pointer}
+button:hover,select:hover{border-color:var(--muted)}
 :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
-.sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:baseline}
+.sel{display:flex;flex-direction:column;gap:4px;font-size:.86rem}
+.sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
 .hint{font-size:.78rem;color:var(--muted)}
 table{width:100%;border-collapse:collapse;font-size:.86rem}
-td,th{padding:5px 4px;border-bottom:1px solid var(--line);text-align:left}
-th{font-weight:500;color:var(--muted);font-size:.74rem;text-transform:uppercase;letter-spacing:.05em}
-td.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:right}
-.back{color:var(--red)} .fwd{color:var(--green)}
+td,th{padding:5px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-weight:500;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em}
+.back{color:var(--red)}
 .findings{display:flex;flex-direction:column;gap:8px;max-width:75ch;font-size:.9rem}
 .findings ol{margin:0;padding-left:1.3em;display:flex;flex-direction:column;gap:6px}
 .findings b{font-weight:600}
 .log{font-family:var(--f-mono);font-size:.76rem;color:var(--muted);overflow-wrap:anywhere}
-@media (prefers-reduced-motion:reduce){canvas{cursor:default}}
 </style>
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">three colors · one time · holes that lead to each other</div>
+    <div class="eyebrow">three colors · one time · one hollow surface</div>
     <h1>Four-Flag Tetrahedron</h1>
-    <p class="lede">Each corner holds a torus that faces the center, so the three edges leaving a corner all pass through its hole. Every hole is a doorway along a hollow fiber to another torus. The top corner is time: the flag we hold fixed and measure the others against. Evert through a hole and the two flags trade places.</p>
+    <p class="lede">Four tori sit at the corners: red, green, blue, and time at the top. Each keeps its own hole and has three openings, one for each neighbor. Hollow tubes join the openings, so the inside of every tube opens into the inside of every torus. The whole thing is one hollow surface, and turning it inside out through any doorway turns all of it inside out.</p>
   </header>
 
   <div class="grid">
     <div class="card">
-      <canvas id="cv" aria-label="Tetrahedron with a torus at each corner and tubes between their holes"></canvas>
-      <p class="hint">Drag to turn it. The bead on each torus shows that flag's phase relative to time. The time torus's bead stays still because time is what everything is measured against. During an eversion both tori pass through the horn shape (the hole closes to a point) and the two flags travel through the tube between them.</p>
+      <canvas id="cv" aria-label="Four tori joined by hollow tubes into one surface"></canvas>
+      <p class="hint">Drag to turn it. Each torus has one bead showing that flag's phase relative to time. Before an eversion the bead runs around the torus's tube. After one eversion it runs through the torus's hole instead. Dark rings mark the openings where tubes join.</p>
     </div>
     <div class="card">
       <div class="status">
-        <div class="tile"><div class="k">Time is held by</div><div class="v"><span class="pill" id="timePill">time</span></div><div class="s" id="timeNote">the original clock</div></div>
-        <div class="tile"><div class="k">Eversions so far</div><div class="v" id="nEv">0</div><div class="s" id="parity">even: no mirror</div></div>
-        <div class="tile" style="grid-column:1/-1"><div class="k">Since the start</div><div class="v" id="typeV">back at the start</div><div class="s" id="typeS"></div></div>
+        <div class="tile"><div class="k">The surface is</div><div class="v"><span class="pill" id="qPill" data-q="0">as built</span></div></div>
+        <div class="tile"><div class="k">Eversions so far</div><div class="v" id="nEv">0</div><div class="s" id="qNote">net quarter turns: 0</div></div>
+        <div class="tile" style="grid-column:1/-1"><div class="k">Time is measured by</div><div class="v" id="timeBy" style="font-family:var(--f-body);font-size:.95rem"></div><div class="s" id="qText"></div></div>
       </div>
-      <h2>Evert through a hole</h2>
-      <div class="row" id="edgeBtns"></div>
-      <h2>Try a sequence</h2>
-      <div class="row">
-        <button data-seq="0-1,0-1">Same hole twice</button>
-        <button data-seq="0-1,1-2">Two holes of one torus</button>
-        <button data-seq="0-1,0-2,0-3,0-1">Loop around the time torus</button>
-        <button data-seq="0-1,1-2,2-3">Path of three holes</button>
-      </div>
+      <h2>Evert through a doorway</h2>
+      <div class="row" id="doorBtns"></div>
+      <div class="sel"><label for="rule">Which way each doorway turns the surface</label>
+        <select id="rule"><option value="same">every doorway turns it the same way</option><option value="split">own holes and tube openings turn it opposite ways</option></select></div>
       <div class="row"><button id="pause">Pause the phases</button><button id="reset">Reset</button></div>
-      <h2>Rates relative to time</h2>
-      <table><thead><tr><th>Corner</th><th>Flag</th><th style="text-align:right">Rate vs time</th></tr></thead><tbody id="rel"></tbody></table>
-      <p class="hint">Each flag carries its own rate of change (time 1.000, red 1.618, green 2.000, blue 2.414). Only differences carry meaning, so each rate is measured from whichever flag holds time. A negative rate means that flag runs backward relative to the current clock.</p>
+      <h2>What each loop does now</h2>
+      <table><thead><tr><th>Hole</th><th>Its cycle runs</th></tr></thead><tbody id="loops"></tbody></table>
+      <p class="hint">One hollow surface with 7 holes: each torus's own hole (4), plus 3 independent loops around the faces of the network. Every hole has two loops, one around it and one through it, and an eversion makes them trade roles.</p>
       <div class="log" id="log"></div>
     </div>
   </div>
 
   <section class="card findings">
-    <h2>What everting does to time</h2>
+    <h2>What everting the plumbing does to time</h2>
     <ol>
-      <li><b>One eversion at the time corner hands time to another flag.</b> The old clock now runs backward relative to the new one, and every other rate is re-measured from the new clock. The same eversion again restores everything.</li>
-      <li><b>Two eversions through holes of one torus make a three-fold turn.</b> Time passes around three flags and comes back after three repeats. A cycle of three appears from eversions alone.</li>
-      <li><b>Everting through each hole of the time torus and once more through the first brings time home, but the three colors have rotated by a third.</b> Time returns, and the colors keep a record of the trip. Three repeats undo it.</li>
-      <li><b>Three eversions along a path of holes make a four-fold cycle.</b> Time visits all four flags. Two repeats swap time with the flag across from it, and four repeats return.</li>
-      <li><b>An even number of eversions turns the tetrahedron; an odd number mirrors it.</b> All the possible moves together are exactly the 24 symmetries of the tetrahedron.</li>
-      <li><b>This connects back to the two-flag torus.</b> The twist-and-eversion moves on the torus, counted in three slots (mod 3), form this same group: its 12 turns without mirrors, and all 24 with them.</li>
+      <li><b>Every doorway turns the whole surface inside out.</b> Because everything is joined, no eversion is local. All 7 holes change at once, whichever doorway you use.</li>
+      <li><b>The hole becomes the clock.</b> Before an eversion, time is the time torus's ticking around its tube. After one eversion, time is passage through the time torus's hole. Each color's own cycle also moves from around its tube to through its hole, and each relation around the network becomes a pinch around a tube.</li>
+      <li><b>No flag changes corners.</b> Unlike swapping a pair, the plumbing keeps every flag in place. What changes is which kind of loop carries each flag's cycle and each relation.</li>
+      <li><b>Two eversions in the same sense reverse every cycle at once.</b> Everything is back in its original role but running backward: a global time reversal. Four eversions bring everything back.</li>
+      <li><b>If doorways of different kinds turn it opposite ways,</b> one eversion through a torus's own hole followed by one through a tube opening returns everything exactly, with nothing reversed.</li>
+      <li><b>What is solid and what is chosen.</b> That an eversion of a connected surface is global, and that each hole's two loops trade roles, is how simply embedded surfaces like this one behave. Which way a particular doorway turns it is a modeling choice here, set by the menu above.</li>
     </ol>
   </section>
 </div>
@@ -109,126 +103,106 @@ td.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;text-align:ri
 <script>
 (function(){
 "use strict";
-const TAU=Math.PI*2, $=id=>document.getElementById(id);
-const reduce=window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const TAU=Math.PI*2,$=id=>document.getElementById(id);
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 const FL=[{name:"time",tok:"time",w:1.000},{name:"red",tok:"red",w:1.618},{name:"green",tok:"green",w:2.000},{name:"blue",tok:"blue",w:2.414}];
 const V=[[0,0,1],[Math.sqrt(8/9),0,-1/3],[-Math.sqrt(2/9),Math.sqrt(2/3),-1/3],[-Math.sqrt(2/9),-Math.sqrt(2/3),-1/3]];
-const CORNER=["time corner","corner 1","corner 2","corner 3"];
 const EDGES=[[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]];
-const TR=0.30, EPS0=0.18;
-let pos=[0,1,2,3], phase=[0,0,0,0], nEv=0, queue=[], anim=null, paused=reduce, holders=["time"];
+const DOORS=[...[0,1,2,3].map(v=>({kind:"hole",v,label:`${FL[v].name}'s hole`})),...EDGES.map(([a,b])=>({kind:"tube",a,b,label:`${FL[a].name}–${FL[b].name} tube`}))];
+const TR=0.27,EPS0=0.17;
+let q=0,nEv=0,phase=[0,0,0,0],queue=[],anim=null,paused=reduce,moves=[];
 const view={yaw:0.45,pitch:0.4};
 let C={};
-function readColors(){const cs=getComputedStyle(document.documentElement);for(const n of ["bg","panel","ink","muted","line","red","green","blue","time"])C[n]=cs.getPropertyValue("--"+n).trim();}
+function readColors(){const cs=getComputedStyle(document.documentElement);for(const n of ["bg","panel","ink","muted","line","red","green","blue","time","tube","amber"])C[n]=cs.getPropertyValue("--"+n).trim();}
 const rgb=h=>{const n=parseInt(h.replace("#",""),16);return [(n>>16)&255,(n>>8)&255,n&255];};
 const rgba=(h,a)=>{const [r,g,b]=rgb(h);return `rgba(${r},${g},${b},${a})`;};
-const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]], cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],add=(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]],mul=(a,s)=>[a[0]*s,a[1]*s,a[2]*s];
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
 const norm=a=>{const l=Math.hypot(...a)||1;return [a[0]/l,a[1]/l,a[2]/l];};
-const frames=V.map(v=>{const a=norm([-v[0],-v[1],-v[2]]);const h=Math.abs(a[2])<0.9?[0,0,1]:[1,0,0];const e1=norm(cross(a,h)),e2=cross(a,e1);return {a,e1,e2};});
+const FR=V.map(v=>{const a=norm(mul(v,-1));const h=Math.abs(a[2])<0.9?[0,0,1]:[1,0,0];const e1=norm(cross(a,h));return {a,e1,e2:cross(a,e1)};});
+// where the tube from corner v to corner w meets torus v
+function attach(v,w,e){const d=sub(V[w],V[v]),a=FR[v].a;const dp=norm(sub(d,mul(a,dot(d,a))));const ring=add(V[v],mul(dp,TR));return add(ring,mul(norm(d),Math.max(0.02,TR-e)));}
+function torusPt(v,th,ph,e,out=1){const f=FR[v],rr=(TR-e)*out,rad=TR+rr*Math.cos(ph),ax=rr*Math.sin(ph);
+  const u=add(mul(f.e1,Math.cos(th)),mul(f.e2,Math.sin(th)));return add(add(V[v],mul(u,rad)),mul(f.a,ax));}
 
-/* ---------- moves ---------- */
-function startSwap(a,b){anim={a,b,fa:pos[a],fb:pos[b],t:0,done:false};updateButtons();}
-function commitSwap(a,b){[pos[a],pos[b]]=[pos[b],pos[a]];nEv++;
-  const holder=FL[pos[0]].name; if(holder!==holders[holders.length-1])holders.push(holder);
-  logMove(a,b);updateReadouts();}
-function enqueue(seq){queue.push(...seq);if(!anim)next();}
-function next(){if(!queue.length){anim=null;updateButtons();return;}const [a,b]=queue.shift();startSwap(a,b);}
-let moveLog=[];
-function logMove(a,b){moveLog.push(`${FL[pos[b]].name}⇄${FL[pos[a]].name}`);$("log").textContent="Moves: "+moveLog.join(" · ");}
+/* ---------- eversions ---------- */
+function senseOf(d){return $("rule").value==="split"&&d.kind==="tube"?-1:1;}
+function evert(i){queue.push(i);if(!anim)next();}
+function next(){if(!queue.length){anim=null;return;}const i=queue.shift();anim={door:DOORS[i],s:senseOf(DOORS[i]),t:0,done:false};}
+function commit(){q=((q+anim.s)%4+4)%4;nEv++;moves.push(anim.door.label+(anim.s<0?" (turns the other way)":""));
+  $("log").textContent="Doorways used: "+moves.join(" · ");update();}
 
 /* ---------- readouts ---------- */
-function cycles(p){const seen=new Set(),L=[];for(let i=0;i<4;i++){if(seen.has(i))continue;let j=i,n=0;while(!seen.has(j)){seen.add(j);j=p[j];n++;}L.push(n);}return L.sort((x,y)=>y-x);}
-function updateReadouts(){
-  const t=pos[0], tf=FL[t];
-  const pill=$("timePill");pill.textContent=tf.name;pill.style.color=C[tf.tok];
-  $("timeNote").textContent=t===0?"the original clock":`the original clock (time) now runs ${FL[0].w-tf.w<0?"backward":"forward"} relative to it`;
-  $("nEv").textContent=nEv;
-  $("parity").textContent=nEv%2?"odd: the tetrahedron is mirrored":"even: no mirror";
-  const cy=cycles(pos).join(",");
-  const T={"1,1,1,1":["back at the start","Every flag is in its original corner."],
-    "2,1,1":["one swap: a mirror","Two flags have traded corners. Repeat this whole history once more to return."],
-    "3,1":["a three-fold turn (120°)","Three flags have rotated corners. Repeat this whole history twice more to return."],
-    "2,2":["a half turn (180°)","Two pairs of flags have swapped. Repeat this whole history once more to return."],
-    "4":["a four-fold cycle","All four flags have moved one step around. Repeat this whole history three more times to return."]}[cy];
-  $("typeV").textContent=T[0];$("typeS").textContent=T[1]+(holders.length>1?` Time has been held by: ${holders.join(" → ")}.`:"");
-  $("rel").innerHTML=[0,1,2,3].map(v=>{const f=FL[pos[v]];const r=f.w-tf.w;
-    return `<tr><td>${CORNER[v]}</td><td><span class="sw" style="background:${C[f.tok]}"></span>${f.name}</td><td class="num ${v===0?"":r<0?"back":"fwd"}">${v===0?"held fixed":(r>0?"+":"−")+Math.abs(r).toFixed(3)+(r<0?" ◂":" ▸")}</td></tr>`;}).join("");
-  updateButtons();
+const LOOP=[["around its tube",""],["through its hole",""],["around its tube","backward"],["through its hole","backward"]];
+const REL=[["along the network loop",""],["pinched around a tube",""],["along the network loop","backward"],["pinched around a tube","backward"]];
+function update(){
+  const pill=$("qPill");pill.dataset.q=q;pill.textContent=["as built","inside out","all cycles reversed","inside out, reversed"][q];
+  $("nEv").textContent=nEv;$("qNote").textContent=`net quarter turns: ${q}`;
+  $("timeBy").innerHTML=["the time torus's ticking around its tube","passage through the time torus's hole: the hole is now the clock","the ticking around its tube, running backward","passage through its hole, running backward"][q];
+  $("qText").textContent=["Every loop is in its original role.","Every hole's two loops have traded roles.","Every loop is back in its role but runs backward: a global time reversal.","Roles traded and running backward. One more eversion in the same sense brings everything back."][q];
+  const rows=FL.map(f=>`<tr><td><span class="sw" style="background:${C[f.tok]}"></span>${f.name}'s own hole</td><td class="${LOOP[q][1]?"back":""}">${LOOP[q][0]}${LOOP[q][1]?", "+LOOP[q][1]:""}</td></tr>`);
+  rows.push(`<tr><td>3 face loops (relations)</td><td class="${REL[q][1]?"back":""}">${REL[q][0]}${REL[q][1]?", "+REL[q][1]:""}</td></tr>`);
+  $("loops").innerHTML=rows.join("");
 }
-function updateButtons(){
-  $("edgeBtns").innerHTML=EDGES.map(([a,b],i)=>`<button data-e="${i}" ${anim?"disabled":""}>${FL[pos[a]].name} ⇄ ${FL[pos[b]].name}</button>`).join("");
-  document.querySelectorAll("[data-seq]").forEach(b=>b.disabled=!!anim);
-}
-$("edgeBtns").addEventListener("click",e=>{const b=e.target.closest("[data-e]");if(!b||anim)return;enqueue([EDGES[+b.dataset.e]]);});
-document.querySelectorAll("[data-seq]").forEach(b=>b.addEventListener("click",()=>{if(anim)return;enqueue(b.dataset.seq.split(",").map(s=>s.split("-").map(Number)));}));
+$("doorBtns").innerHTML=DOORS.map((d,i)=>`<button data-d="${i}">${d.label}</button>`).join("");
+$("doorBtns").addEventListener("click",e=>{const b=e.target.closest("[data-d]");if(b)evert(+b.dataset.d);});
 $("pause").addEventListener("click",()=>{paused=!paused;$("pause").textContent=paused?"Run the phases":"Pause the phases";});
-$("reset").addEventListener("click",()=>{pos=[0,1,2,3];phase=[0,0,0,0];nEv=0;queue=[];anim=null;holders=["time"];moveLog=[];$("log").textContent="";updateReadouts();});
+$("reset").addEventListener("click",()=>{q=0;nEv=0;phase=[0,0,0,0];queue=[];anim=null;moves=[];$("log").textContent="";update();});
 
 /* ---------- drawing ---------- */
 function draw(){
   const cv=$("cv"),r=cv.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2.5);
   const W=Math.round(r.width*dpr),H=Math.round(r.height*dpr);if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H;}
   const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);const w=r.width,h=r.height;ctx.clearRect(0,0,w,h);
-  const sc=Math.min(w,h)*0.30,cx=w/2,cy=h/2+Math.min(w,h)*0.02;
+  const sc=Math.min(w,h)*0.30,cx=w/2,cy=h/2+Math.min(w,h)*0.03;
   const cyw=Math.cos(view.yaw),syw=Math.sin(view.yaw),cp=Math.cos(view.pitch),sp=Math.sin(view.pitch);
-  const P=(p)=>{const X=p[0]*cyw-p[1]*syw,Y=p[0]*syw+p[1]*cyw,z=p[2];return [cx+X*sc,cy-(Y*sp+z*cp)*sc,Y*cp-z*sp];};
+  const P=p=>{const X=p[0]*cyw-p[1]*syw,Y=p[0]*syw+p[1]*cyw;return [cx+X*sc,cy-(Y*sp+p[2]*cp)*sc,Y*cp-p[2]*sp];};
+  const e=anim?EPS0*Math.cos(TAU*anim.t):EPS0;
   const items=[];
-  const epsAt=v=>{if(!anim||(v!==anim.a&&v!==anim.b))return EPS0;return EPS0*Math.cos(TAU*anim.t);};
-  const tp=(v,th,ph,e,out=1)=>{const f=frames[v],c=V[v],rr=(TR-e)*out,rad=TR+rr*Math.cos(ph),ax=rr*Math.sin(ph);
-    const u=[Math.cos(th)*f.e1[0]+Math.sin(th)*f.e2[0],Math.cos(th)*f.e1[1]+Math.sin(th)*f.e2[1],Math.cos(th)*f.e1[2]+Math.sin(th)*f.e2[2]];
-    return P([c[0]+rad*u[0]+ax*f.a[0],c[1]+rad*u[1]+ax*f.a[1],c[2]+rad*u[2]+ax*f.a[2]]);};
-  // tubes between holes
-  for(const [a,b] of EDGES){const n=10;for(let i=0;i<n;i++){const s0=i/n,s1=(i+1)/n;
-    const p0=P([V[a][0]+(V[b][0]-V[a][0])*s0,V[a][1]+(V[b][1]-V[a][1])*s0,V[a][2]+(V[b][2]-V[a][2])*s0]);
-    const p1=P([V[a][0]+(V[b][0]-V[a][0])*s1,V[a][1]+(V[b][1]-V[a][1])*s1,V[a][2]+(V[b][2]-V[a][2])*s1]);
-    items.push({d:(p0[2]+p1[2])/2,f:()=>{ctx.lineCap="round";ctx.strokeStyle=rgba(C.muted,0.16);ctx.lineWidth=9;ctx.beginPath();ctx.moveTo(p0[0],p0[1]);ctx.lineTo(p1[0],p1[1]);ctx.stroke();
-      ctx.strokeStyle=rgba(C.muted,0.55);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(p0[0],p0[1]);ctx.lineTo(p1[0],p1[1]);ctx.stroke();}});}}
+  // tubes, joined to openings on each torus
+  for(const [a,b] of EDGES){const A=attach(a,b,e),B=attach(b,a,e),n=12,tw=Math.max(3,(TR-Math.abs(e))*sc*0.55+4);
+    for(let i=0;i<n;i++){const p0=P(add(A,mul(sub(B,A),i/n))),p1=P(add(A,mul(sub(B,A),(i+1)/n)));
+      items.push({d:(p0[2]+p1[2])/2,f:()=>{ctx.lineCap="round";ctx.strokeStyle=rgba(C.tube,0.34);ctx.lineWidth=tw;ctx.beginPath();ctx.moveTo(p0[0],p0[1]);ctx.lineTo(p1[0],p1[1]);ctx.stroke();
+        ctx.strokeStyle=rgba(C.tube,0.7);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(p0[0],p0[1]);ctx.lineTo(p1[0],p1[1]);ctx.stroke();}});}
+    for(const [pt,v] of [[A,a],[B,b]]){const s=P(pt);items.push({d:s[2]-0.03,f:()=>{ctx.fillStyle=rgba(C.ink,0.55);ctx.strokeStyle=C[FL[v].tok];ctx.lineWidth=1.5;ctx.beginPath();ctx.ellipse(s[0],s[1],5,3.5,0,0,TAU);ctx.fill();ctx.stroke();}});}}
   // tori
   const nu=30,nv=14,light=norm([-0.3,0.5,0.8]);
-  for(let v=0;v<4;v++){
-    const e=epsAt(v),col=rgb(C[FL[pos[v]].tok]);const G=[];
-    for(let i=0;i<=nu;i++){G[i]=[];for(let j=0;j<=nv;j++)G[i][j]=tp(v,TAU*i/nu,TAU*j/nv,e);}
+  for(let v=0;v<4;v++){const col=rgb(C[FL[v].tok]),G=[];
+    for(let i=0;i<=nu;i++){G[i]=[];for(let j=0;j<=nv;j++)G[i][j]=P(torusPt(v,TAU*i/nu,TAU*j/nv,e));}
     for(let i=0;i<nu;i++)for(let j=0;j<nv;j++){const A=G[i][j],B=G[i+1][j],Cq=G[i+1][j+1],D=G[i][j+1];
-      const n=cross(sub(Cq,A),sub(D,B));const nl=Math.hypot(...n)||1;const sh=0.5+0.5*Math.abs((n[0]*light[0]+n[1]*light[2]+n[2]*light[1])/nl);
+      const nn=cross(sub(Cq,A),sub(D,B)),nl=Math.hypot(...nn)||1,sh=0.5+0.5*Math.abs((nn[0]*light[0]+nn[1]*light[2]+nn[2]*light[1])/nl);
       const fill=`rgba(${Math.round(col[0]*sh)},${Math.round(col[1]*sh)},${Math.round(col[2]*sh)},0.5)`;
       items.push({d:(A[2]+B[2]+Cq[2]+D[2])/4,f:()=>{ctx.fillStyle=fill;ctx.beginPath();ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);ctx.lineTo(Cq[0],Cq[1]);ctx.lineTo(D[0],D[1]);ctx.closePath();ctx.fill();}});}
-    // phase bead relative to time
-    const rel=v===0?0:phase[pos[v]]-phase[pos[0]];
-    for(const th of [0,Math.PI]){const q=tp(v,th,TAU*rel,e,1.15);
-      items.push({d:q[2]-0.02,f:()=>{ctx.fillStyle=C.ink;ctx.strokeStyle=C.panel;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(q[0],q[1],v===0?3.5:4.5,0,TAU);ctx.fill();ctx.stroke();}});}
-    // label
-    const L=P([V[v][0]*1.62,V[v][1]*1.62,V[v][2]*1.62]);
-    items.push({d:-99,f:()=>{ctx.font="600 12px "+getComputedStyle(document.body).fontFamily;ctx.textAlign="center";ctx.textBaseline="middle";
-      ctx.fillStyle=C[FL[pos[v]].tok];ctx.fillText(FL[pos[v]].name+(v===0?" · held fixed":""),L[0],L[1]);}});
+    // one bead: around the tube (q even) or through the hole (q odd), sign flips at q = 2, 3
+    const rel=v===0?0:phase[v]-phase[0],sg=q>=2?-1:1,qq=anim&&!anim.done?q:q;
+    const bp=qq%2===0?torusPt(v,0.6,TAU*rel*sg,e,1.18):torusPt(v,0.6+TAU*rel*sg,0,e,1.18),bq=P(bp);
+    items.push({d:bq[2]-0.02,f:()=>{ctx.fillStyle=C.ink;ctx.strokeStyle=C.panel;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(bq[0],bq[1],v===0?3.8:4.6,0,TAU);ctx.fill();ctx.stroke();}});
+    const L=P(mul(V[v],1.62));
+    items.push({d:-99,f:()=>{ctx.font="600 12px "+getComputedStyle(document.body).fontFamily;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillStyle=C[FL[v].tok];ctx.fillText(FL[v].name+(v===0?" · held fixed":""),L[0],L[1]);}});
   }
-  // flags traveling through the tube during an eversion
-  if(anim&&anim.t>0.12&&anim.t<0.88){const s=(anim.t-0.12)/0.76;const {a,b}=anim;
-    for(const [from,to,fl] of [[a,b,anim.fa],[b,a,anim.fb]]){const q=P([V[from][0]+(V[to][0]-V[from][0])*s,V[from][1]+(V[to][1]-V[from][1])*s,V[from][2]+(V[to][2]-V[from][2])*s]);
-      items.push({d:q[2]-0.05,f:()=>{ctx.fillStyle=C[FL[fl].tok];ctx.strokeStyle=C.panel;ctx.lineWidth=2;ctx.beginPath();ctx.arc(q[0],q[1],6,0,TAU);ctx.fill();ctx.stroke();}});}}
+  // highlight the doorway in use
+  if(anim){const d=anim.door,pulse=0.5+0.5*Math.sin(anim.t*TAU*2);
+    const pts=d.kind==="hole"?[V[d.v]]:[attach(d.a,d.b,e),attach(d.b,d.a,e)];
+    for(const p of pts){const s=P(p);items.push({d:-50,f:()=>{ctx.strokeStyle=C.amber;ctx.lineWidth=2.5;ctx.beginPath();ctx.arc(s[0],s[1],9+5*pulse,0,TAU);ctx.stroke();}});}}
   items.sort((x,y)=>y.d-x.d);for(const it of items)it.f();
 }
 
 /* ---------- loop ---------- */
 let last=0,drag=null;
-function tick(ts){
-  const dt=last?Math.min(0.05,(ts-last)/1000):0;last=ts;
+function tick(ts){const dt=last?Math.min(0.05,(ts-last)/1000):0;last=ts;
   if(!paused)for(let f=0;f<4;f++)phase[f]+=FL[f].w*dt*0.25;
   if(!drag&&!reduce)view.yaw+=dt*0.08;
-  if(anim){anim.t+=dt/(reduce?0.35:1.8);
-    if(!anim.done&&anim.t>=0.5){anim.done=true;commitSwap(anim.a,anim.b);}
-    if(anim.t>=1){anim=null;next();}}
-  draw();requestAnimationFrame(tick);
-}
+  if(anim){anim.t+=dt/(reduce?0.35:1.8);if(!anim.done&&anim.t>=0.5){anim.done=true;commit();}if(anim.t>=1)next();}
+  draw();requestAnimationFrame(tick);}
 const cv=$("cv");
 cv.addEventListener("pointerdown",e=>{drag={x:e.clientX,y:e.clientY,yaw:view.yaw,pitch:view.pitch};cv.setPointerCapture(e.pointerId);});
-cv.addEventListener("pointermove",e=>{if(!drag)return;view.yaw=drag.yaw+(e.clientX-drag.x)*0.01;view.pitch=Math.max(0.1,Math.min(Math.PI-0.1,drag.pitch-(e.clientY-drag.y)*0.01));});
+cv.addEventListener("pointermove",e=>{if(!drag)return;view.yaw=drag.yaw+(e.clientX-drag.x)*0.01;view.pitch=Math.max(-1.4,Math.min(1.5,drag.pitch-(e.clientY-drag.y)*0.01));});
 const end=()=>{drag=null;};cv.addEventListener("pointerup",end);cv.addEventListener("pointercancel",end);
 readColors();
-const mq=matchMedia("(prefers-color-scheme: dark)");const onTheme=()=>{readColors();updateReadouts();};
+const mq=matchMedia("(prefers-color-scheme: dark)"),onTheme=()=>{readColors();update();};
 mq.addEventListener?mq.addEventListener("change",onTheme):mq.addListener(onTheme);
 new MutationObserver(onTheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
-updateReadouts();
-if(reduce)$("pause").textContent="Run the phases";
+update();if(reduce)$("pause").textContent="Run the phases";
 requestAnimationFrame(tick);
 })();
 </script>
