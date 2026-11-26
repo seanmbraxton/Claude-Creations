@@ -1,0 +1,242 @@
+<title>Spike and Horn</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* Layout: the 3D scene (child horn above, parent ring below, spikes between) leads; the entry dial
+   and controls sit beside it. Same visual family as the ε-Horn Torus Observer. */
+:root{
+  --bg:#f3f5f8; --panel:#ffffff; --ink:#17202b; --muted:#5a6676; --line:#d9dee6; --chip:#eef1f6;
+  --child:#c27c00; --parent:#4f6f96; --path:#2459c4; --spike:#7346d1; --hit:#13875a;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
+  --child:#f0b033; --parent:#7f9cc4; --path:#6f9fff; --spike:#a98bff; --hit:#3fcf8e; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
+  --child:#f0b033; --parent:#7f9cc4; --path:#6f9fff; --spike:#a98bff; --hit:#3fcf8e; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 28px}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.7rem,4.5vw,2.3rem);line-height:1.1}
+h2{font-size:1.05rem}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--muted);max-width:68ch;margin-top:6px}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+canvas{display:block;width:100%;aspect-ratio:1/1;border-radius:6px;background:var(--bg)}
+#cv{touch-action:none;cursor:grab}
+#dial{max-width:300px;align-self:center}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.78rem;color:var(--muted)}
+.sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:baseline}
+.status{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tile{border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+.tile .k{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.tile .v{font-family:var(--f-mono);font-size:1.15rem;font-weight:500;font-variant-numeric:tabular-nums}
+.verdict{font-size:.9rem}
+.verdict b{font-weight:600}
+.row{display:flex;flex-wrap:wrap;gap:6px}
+button{font:inherit;font-size:.82rem;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:7px 10px;cursor:pointer}
+button:hover{border-color:var(--muted)}
+button[aria-pressed="true"]{border-color:var(--path);color:var(--path)}
+:focus-visible{outline:2px solid var(--path);outline-offset:2px}
+.ctl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center}
+.ctl label{font-size:.86rem}
+.ctl output{font-family:var(--f-mono);font-size:.82rem;font-variant-numeric:tabular-nums}
+.ctl input{grid-column:1/-1;width:100%;accent-color:var(--path);height:26px}
+.hint{font-size:.78rem;color:var(--muted)}
+.notes{font-size:.9rem;max-width:75ch;display:flex;flex-direction:column;gap:8px}
+.notes ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:5px}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">child horn · parent ring · spikes at fixed orientations</div>
+    <h1>Spike and Horn</h1>
+    <p class="lede">A path winds on the child horn torus and passes through its horn point once per poloidal turn. Each pass arrives from some direction around the axis: its entry angle. Spikes from the parent torus meet the horn point at fixed orientations. When a pass arrives lined up with a spike, it slides down that spike to the parent surface. Otherwise it stays on the child.</p>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <canvas id="cv" aria-label="Child horn torus above a parent torus, joined by spikes at the horn point"></canvas>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--child)"></i>child horn torus</span>
+        <span><i class="sw" style="background:var(--parent)"></i>parent torus</span>
+        <span><i class="sw" style="background:var(--spike)"></i>spikes, each a fin at its own orientation</span>
+        <span><i class="sw" style="background:var(--path)"></i>path on the child</span>
+        <span><i class="sw" style="background:var(--hit)"></i>a pass descending to the parent</span>
+      </div>
+      <p class="hint">Drag to turn it. The spikes rise along the axis into the horn point from below. Each carries a fin pointing in the direction it accepts.</p>
+    </div>
+    <div class="card">
+      <div class="status">
+        <div class="tile"><div class="k">Passes</div><div class="v" id="nPass">0</div></div>
+        <div class="tile"><div class="k">Descents</div><div class="v" id="nHit">0</div></div>
+        <div class="tile"><div class="k">Entry angles</div><div class="v" id="nAng">–</div></div>
+      </div>
+      <p class="verdict" id="verdict"></p>
+      <canvas id="dial" aria-label="Entry angles of passes and the spike orientations, seen from above"></canvas>
+      <p class="hint">The horn point seen from above. Spokes are spike orientations, and the shaded wedge is how far off a pass may be and still enter. Dots are the entry angles of passes so far; green ones went down a spike.</p>
+      <h2>Winding</h2>
+      <div class="row" id="presets">
+        <button data-w="1/3">1/3 (locked)</button><button data-w="2/3">2/3 (locked)</button><button data-w="2/5">2/5 (locked)</button>
+        <button data-w="gold">golden (free)</button><button data-w="sqrt2">√2 − 1 (free)</button>
+      </div>
+      <div class="ctl"><label for="w">poloidal turns per toroidal turn</label><output id="wO"></output><input type="range" id="w" min="0.05" max="0.95" step="0.001"></div>
+      <h2>Spikes</h2>
+      <div class="ctl"><label for="k">number of spikes</label><output id="kO"></output><input type="range" id="k" min="1" max="6" step="1"></div>
+      <div class="ctl"><label for="rot">spike orientation</label><output id="rotO"></output><input type="range" id="rot" min="0" max="1" step="0.0025"></div>
+      <div class="ctl"><label for="tol">how far off a pass may be (0 = exact)</label><output id="tolO"></output><input type="range" id="tol" min="0" max="0.2" step="0.0025"></div>
+      <div class="row"><button id="align">Line a spike up with the entry angle</button><button id="play">Pause</button><button id="restart">Restart</button></div>
+    </div>
+  </div>
+
+  <section class="card notes">
+    <h2>What this shows</h2>
+    <ul>
+      <li><b>Locked winding gives a few fixed entry angles.</b> When poloidal turns are a fixed fraction p/t of toroidal turns, the passes arrive from only a handful of directions, set by that fraction. Line a spike up with one of them and those passes go down to the parent every time, at a steady rhythm.</li>
+      <li><b>Free winding spreads the entry angles all the way around.</b> With golden or √2 − 1, no direction repeats. Passes only come near a spike now and then, and with zero tolerance none ever enters exactly.</li>
+      <li><b>This is the portal gate from the original brief, made geometric.</b> The spike orientations are the windows. Zero tolerance is the horn case, ε = 0, where only exact alignment passes. A wider tolerance lets near-misses through, the way a nonzero ε did.</li>
+      <li><b>Descending needs locking.</b> A path reaches the parent level only when its two windings are tied together. Free windings keep it on the child. On the tick staircase, the plateaus are the locked ratios, so the plateaus are the ratios that can reach the level below.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(function(){
+"use strict";
+const TAU=Math.PI*2,$=id=>document.getElementById(id);
+const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
+const GOLD=(Math.sqrt(5)-1)/2,SQ2=Math.SQRT2-1;
+const S={w:1/3,k:3,rot:0,tol:0.02,ph0:0.25,T:36};
+const view={yaw:0.6,pitch:0.3};
+const CR=0.55, PZ=-1.75, PR=1.45, Pr=0.38;
+let C={},play={on:!reduce,t:reduce?S.T:S.T*0.35},drops=[];
+const cd=a=>a-Math.round(a), fr=a=>a-Math.floor(a);
+function readColors(){const cs=getComputedStyle(document.documentElement);for(const n of ["bg","panel","ink","muted","line","child","parent","path","spike","hit"])C[n]=cs.getPropertyValue("--"+n).trim();}
+const rgb=h=>{const n=parseInt(h.replace("#",""),16);return [(n>>16)&255,(n>>8)&255,n&255];};
+const rgba=(h,a)=>{const [r,g,b]=rgb(h);return `rgba(${r},${g},${b},${a})`;};
+
+/* geometry */
+const child=(th,ph,out=1)=>{const a=TAU*th,b=TAU*ph,rr=CR*out,rho=CR+rr*Math.cos(b);return [rho*Math.cos(a),rho*Math.sin(a),rr*Math.sin(b)];};
+const parent=(th,ph)=>{const a=TAU*th,b=TAU*ph,rho=PR+Pr*Math.cos(b);return [rho*Math.cos(a),rho*Math.sin(a),PZ+Pr*Math.sin(b)];};
+const spikeAng=j=>fr(S.rot+j/S.k);
+function spikePt(j,s){const a=TAU*spikeAng(j),foot=parent(spikeAng(j),0.25);
+  const P0=[0,0,0],P1=[0,0,-0.95],P2=[0.55*foot[0],0.55*foot[1],-1.05],P3=foot,u=1-s;
+  return [0,1,2].map(i=>u*u*u*P0[i]+3*u*u*s*P1[i]+3*u*s*s*P2[i]+s*s*s*P3[i]);}
+
+/* passes: the poloidal phase crosses 1/2 (the horn point) */
+function passes(){const out=[],first=fr(0.5-S.ph0)/S.w;
+  for(let n=0;;n++){const t=first+n/S.w;if(t>S.T)break;const ang=fr(t);let hit=-1;
+    for(let j=0;j<S.k;j++){if(Math.abs(cd(ang-spikeAng(j)))<=S.tol/2+1e-9){hit=j;break;}}
+    out.push({t,ang,hit});}
+  return out;}
+function asRational(x){for(let q=1;q<=24;q++){const p=Math.round(x*q);if(Math.abs(p/q-x)<1e-6)return [p,q];}return null;}
+
+/* readouts */
+function update(){
+  const ps=passes().filter(p=>p.t<=play.t),hits=ps.filter(p=>p.hit>=0).length;
+  $("nPass").textContent=ps.length;$("nHit").textContent=hits;
+  const r=asRational(S.w);
+  let distinct=r?(()=>{const g=(a,b)=>b?g(b,a%b):a;const gg=g(r[0],r[1]);return r[0]/gg;})():null;
+  $("nAng").textContent=distinct?distinct:"∞";
+  $("verdict").innerHTML=distinct
+    ?`<b>Locked.</b> The passes arrive from only ${distinct} direction${distinct>1?"s":""}. `+(hits?`They line up with a spike, so they descend to the parent at a steady rhythm.`:`None lines up with a spike yet, so the path stays on the child. Try "Line a spike up".`)
+    :`<b>Free.</b> No entry direction ever repeats, so the angles spread all the way around. `+(hits?`A few passes come close enough to a spike to enter.`:`No pass has entered exactly.`)+(S.tol===0?" With zero tolerance, none ever will.":"");
+}
+
+/* drawing */
+function fit(cv){const r=cv.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2.5),W=Math.round(r.width*dpr),H=Math.round(r.height*dpr);
+  if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H;}const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);return {ctx,w:r.width,h:r.height};}
+function draw3D(){
+  const {ctx,w,h}=fit($("cv"));ctx.clearRect(0,0,w,h);
+  const sc=Math.min(w,h)*0.215,cx=w/2,cy=h*0.38;
+  const cyw=Math.cos(view.yaw),syw=Math.sin(view.yaw),cp=Math.cos(view.pitch),sp=Math.sin(view.pitch);
+  const P=p=>{const X=p[0]*cyw-p[1]*syw,Y=p[0]*syw+p[1]*cyw;return [cx+X*sc,cy-(Y*sp+p[2]*cp)*sc,Y*cp-p[2]*sp];};
+  const items=[],light=[-0.3,0.8,0.5];
+  const mesh=(fn,nu,nv,col,alpha)=>{const c=rgb(col),G=[];for(let i=0;i<=nu;i++){G[i]=[];for(let j=0;j<=nv;j++)G[i][j]=P(fn(i/nu,j/nv));}
+    for(let i=0;i<nu;i++)for(let j=0;j<nv;j++){const A=G[i][j],B=G[i+1][j],D=G[i+1][j+1],E=G[i][j+1];
+      const e1=[D[0]-A[0],D[1]-A[1],D[2]-A[2]],e2=[E[0]-B[0],E[1]-B[1],E[2]-B[2]];const n=[e1[1]*e2[2]-e1[2]*e2[1],e1[2]*e2[0]-e1[0]*e2[2],e1[0]*e2[1]-e1[1]*e2[0]];
+      const nl=Math.hypot(...n)||1,sh=0.5+0.5*Math.abs((n[0]*light[0]+n[1]*light[2]+n[2]*light[1])/nl);
+      const fill=`rgba(${Math.round(c[0]*sh)},${Math.round(c[1]*sh)},${Math.round(c[2]*sh)},${alpha})`;
+      items.push({d:(A[2]+B[2]+D[2]+E[2])/4,f:()=>{ctx.fillStyle=fill;ctx.beginPath();ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);ctx.lineTo(D[0],D[1]);ctx.lineTo(E[0],E[1]);ctx.closePath();ctx.fill();}});}};
+  mesh(parent,54,16,C.parent,0.42);
+  mesh(child,44,26,C.child,0.24);
+  // spikes: a stem from the parent up the axis, with a fin at its orientation near the horn point
+  const ps=passes(),recent=new Set(ps.filter(p=>p.hit>=0&&p.t<=play.t&&p.t>play.t-1.2).map(p=>p.hit));
+  for(let j=0;j<S.k;j++){const a=TAU*spikeAng(j),lit=recent.has(j);
+    for(let i=0;i<24;i++){const s0=i/24,s1=(i+1)/24,p0=P(spikePt(j,s0)),p1=P(spikePt(j,s1));
+      items.push({d:(p0[2]+p1[2])/2-0.01,f:()=>{ctx.lineCap="round";ctx.strokeStyle=lit?C.hit:rgba(C.spike,0.9);ctx.lineWidth=lit?3.2:2;ctx.beginPath();ctx.moveTo(p0[0],p0[1]);ctx.lineTo(p1[0],p1[1]);ctx.stroke();}});}
+    const fin=[[0,0,-0.02],[0.16*Math.cos(a),0.16*Math.sin(a),-0.16],[0.16*Math.cos(a),0.16*Math.sin(a),-0.5],[0,0,-0.62]].map(P);
+    items.push({d:fin.reduce((s,p)=>s+p[2],0)/4-0.02,f:()=>{ctx.fillStyle=rgba(lit?C.hit:C.spike,0.55);ctx.strokeStyle=lit?C.hit:C.spike;ctx.lineWidth=1.2;ctx.beginPath();fin.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.fill();ctx.stroke();}});
+    const foot=P(parent(spikeAng(j),0.25)),cnt=ps.filter(p=>p.hit===j&&p.t<=play.t).length;
+    items.push({d:foot[2]-0.05,f:()=>{ctx.fillStyle=cnt?C.hit:C.panel;ctx.strokeStyle=C.spike;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(foot[0],foot[1],cnt?6:4,0,TAU);ctx.fill();ctx.stroke();
+      if(cnt){ctx.fillStyle=C.panel;ctx.font="600 9px "+getComputedStyle(document.body).fontFamily;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(String(Math.min(cnt,99)),foot[0],foot[1]+0.5);}}});}
+  // path on the child (the last 3 turns bright)
+  const n=Math.max(2,Math.round(play.t*90)),pts=[];
+  for(let i=0;i<=n;i++){const t=play.t*i/n;pts.push(P(child(t,S.ph0+S.w*t,1.02)));}
+  const startBright=Math.max(0,n-Math.round(n*Math.min(1,3/Math.max(play.t,1e-6))));
+  for(let i=0;i<n;i+=4){const seg=pts.slice(i,Math.min(n,i+4)+1);const dd=seg.reduce((s,p)=>s+p[2],0)/seg.length,bright=i>=startBright;
+    items.push({d:dd-0.005,f:()=>{ctx.strokeStyle=bright?C.path:rgba(C.path,0.25);ctx.lineWidth=bright?2:1;ctx.lineJoin="round";ctx.beginPath();seg.forEach((p,k)=>k?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.stroke();}});}
+  // descending dots travel down their spike
+  for(const p of ps){if(p.hit<0||p.t>play.t)continue;const age=(play.t-p.t)/1.2;if(age>1)continue;const q=P(spikePt(p.hit,age));
+    items.push({d:q[2]-0.06,f:()=>{ctx.fillStyle=C.hit;ctx.strokeStyle=C.panel;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(q[0],q[1],5,0,TAU);ctx.fill();ctx.stroke();}});}
+  // current point
+  {const q=P(child(play.t,S.ph0+S.w*play.t,1.03));items.push({d:q[2]-0.07,f:()=>{ctx.fillStyle=C.path;ctx.strokeStyle=C.panel;ctx.lineWidth=2;ctx.beginPath();ctx.arc(q[0],q[1],4.5,0,TAU);ctx.fill();ctx.stroke();}});}
+  items.sort((a,b)=>b.d-a.d);for(const it of items)it.f();
+  const font=getComputedStyle(document.body).fontFamily;ctx.font="600 12px "+font;ctx.textAlign="left";
+  const lc=P([CR*2.05,0,0.25]);ctx.fillStyle=C.child;ctx.fillText("child",lc[0],lc[1]);
+  const lp=P([PR+Pr+0.25,0,PZ]);ctx.fillStyle=C.parent;ctx.fillText("parent",lp[0],lp[1]);
+}
+function drawDial(){
+  const {ctx,w,h}=fit($("dial"));ctx.clearRect(0,0,w,h);
+  const cx=w/2,cy=h/2,R=Math.min(w,h)*0.40;
+  ctx.fillStyle=C.panel;ctx.beginPath();ctx.arc(cx,cy,R*1.12,0,TAU);ctx.fill();
+  ctx.strokeStyle=C.line;ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,R,0,TAU);ctx.stroke();
+  const ang=a=>-TAU*a;
+  for(let j=0;j<S.k;j++){const a=ang(spikeAng(j)),half=TAU*S.tol/2;
+    ctx.fillStyle=rgba(C.spike,0.18);ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,R*1.08,a-Math.max(half,0.004),a+Math.max(half,0.004));ctx.closePath();ctx.fill();
+    ctx.strokeStyle=C.spike;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+R*1.08*Math.cos(a),cy+R*1.08*Math.sin(a));ctx.stroke();}
+  const ps=passes().filter(p=>p.t<=play.t);
+  ps.forEach((p,i)=>{const a=ang(p.ang),rr=R*(0.55+0.4*(i/Math.max(1,ps.length-1)));const x=cx+rr*Math.cos(a),y=cy+rr*Math.sin(a);
+    ctx.fillStyle=p.hit>=0?C.hit:rgba(C.muted,0.7);ctx.beginPath();ctx.arc(x,y,p.hit>=0?4:2.4,0,TAU);ctx.fill();});
+  ctx.fillStyle=C.child;ctx.beginPath();ctx.arc(cx,cy,4,0,TAU);ctx.fill();
+  ctx.fillStyle=C.muted;ctx.font="11px "+getComputedStyle(document.body).fontFamily;ctx.textAlign="center";ctx.fillText("horn point, seen from above",cx,cy+R*1.12+14>h-4?h-6:cy+R*1.12+12);
+}
+
+/* controls */
+function syncUI(){$("w").value=S.w;$("wO").textContent=S.w.toFixed(4);$("k").value=S.k;$("kO").textContent=S.k;
+  $("rot").value=S.rot;$("rotO").textContent=S.rot.toFixed(3)+" turn";$("tol").value=S.tol;$("tolO").textContent=S.tol===0?"exact":S.tol.toFixed(3)+" turn";
+  document.querySelectorAll("[data-w]").forEach(b=>b.setAttribute("aria-pressed",String(Math.abs(pre(b.dataset.w)-S.w)<1e-9)));}
+const pre=k=>k==="gold"?GOLD:k==="sqrt2"?SQ2:(([a,b])=>a/b)(k.split("/").map(Number));
+document.querySelectorAll("[data-w]").forEach(b=>b.addEventListener("click",()=>{S.w=pre(b.dataset.w);play.t=0;syncUI();update();}));
+for(const id of ["w","k","rot","tol"])$(id).addEventListener("input",e=>{S[id]=+e.target.value;if(id==="w")play.t=0;syncUI();update();});
+$("align").addEventListener("click",()=>{const p=passes()[0];if(p){S.rot=p.ang;syncUI();update();}});
+$("play").addEventListener("click",()=>{play.on=!play.on;$("play").textContent=play.on?"Pause":"Play";});
+$("restart").addEventListener("click",()=>{play.t=0;play.on=true;$("play").textContent="Pause";update();});
+const cv=$("cv");let drag=null;
+cv.addEventListener("pointerdown",e=>{drag={x:e.clientX,y:e.clientY,yaw:view.yaw,pitch:view.pitch};cv.setPointerCapture(e.pointerId);});
+cv.addEventListener("pointermove",e=>{if(!drag)return;view.yaw=drag.yaw+(e.clientX-drag.x)*0.01;view.pitch=Math.max(-0.2,Math.min(1.45,drag.pitch-(e.clientY-drag.y)*0.01));});
+const end=()=>{drag=null;};cv.addEventListener("pointerup",end);cv.addEventListener("pointercancel",end);
+let last=0,lastUpd=0;
+function tick(ts){const dt=last?Math.min(0.05,(ts-last)/1000):0;last=ts;
+  if(play.on){play.t+=dt*1.4;if(play.t>S.T)play.t=0;}
+  if(ts-lastUpd>200){update();lastUpd=ts;}
+  draw3D();drawDial();requestAnimationFrame(tick);}
+readColors();
+const mq=matchMedia("(prefers-color-scheme: dark)"),onTheme=()=>readColors();
+mq.addEventListener?mq.addEventListener("change",onTheme):mq.addListener(onTheme);
+new MutationObserver(onTheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+{const p=passes()[0];if(p)S.rot=p.ang;}
+if(!play.on)$("play").textContent="Play";
+syncUI();update();requestAnimationFrame(tick);
+})();
+</script>
