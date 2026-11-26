@@ -5,20 +5,20 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
 <style>
 /* Layout: the closed lineage of four horn tori leads; the bow slider, the generation stepper and the
-   angle readouts sit beside it. Same visual family as the other torus pages. */
+   charge bookkeeping sit beside it. Charge colors match Surface Vortices (+1 gold, −1 blue). */
 :root{
   --bg:#f3f5f8; --panel:#ffffff; --ink:#17202b; --muted:#5a6676; --line:#d9dee6; --chip:#eef1f6;
-  --plus:#c27c00; --minus:#2459c4; --flow:#cf3b30; --flowm:#0e8f9c;
+  --torus:#7a8899; --plus:#c27c00; --minus:#2459c4; --flow:#cf3b30; --flowm:#0e8f9c;
   --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
   --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
 }
 @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
   --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
-  --plus:#f0b033; --minus:#6f9fff; --flow:#ff6a5c; --flowm:#4fd8e6; color-scheme:dark }}
+  --torus:#8d9bb0; --plus:#f0b033; --minus:#6f9fff; --flow:#ff6a5c; --flowm:#4fd8e6; color-scheme:dark }}
 :root[data-theme="dark"]{
   --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
-  --plus:#f0b033; --minus:#6f9fff; --flow:#ff6a5c; --flowm:#4fd8e6; color-scheme:dark }
+  --torus:#8d9bb0; --plus:#f0b033; --minus:#6f9fff; --flow:#ff6a5c; --flowm:#4fd8e6; color-scheme:dark }
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 28px}
@@ -38,7 +38,7 @@ canvas{display:block;width:100%;aspect-ratio:1/1;border-radius:6px;background:va
 .tile .k{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
 .tile .v{font-family:var(--f-mono);font-size:1.1rem;font-weight:500;font-variant-numeric:tabular-nums}
 .tile .s{font-size:.74rem;color:var(--muted)}
-.gen{font-size:1rem;font-weight:500}
+.gen{font-size:.95rem;font-weight:500}
 .row{display:flex;flex-wrap:wrap;gap:6px}
 button{font:inherit;font-size:.84rem;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer}
 button:hover{border-color:var(--muted)}
@@ -50,49 +50,56 @@ button:hover{border-color:var(--muted)}
 .legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.78rem;color:var(--muted)}
 .sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
 .hint{font-size:.78rem;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:.84rem}
+td,th{padding:5px 4px;border-bottom:1px solid var(--line);text-align:left}
+th{font-weight:500;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em}
+td.num{font-family:var(--f-mono);text-align:right}
 .notes{font-size:.9rem;max-width:75ch;display:flex;flex-direction:column;gap:8px}
 .notes ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:5px}
 </style>
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">vortex → spike → horn · four generations · and its mirror</div>
+    <div class="eyebrow">a balanced pair on every torus · four generations</div>
     <h1>Vortex Lineage</h1>
-    <p class="lede">Each horn torus carries one vortex. Its spike curves out and ends in the horn point of the next torus, its child. After four generations the last spike lands in the parent's own horn point, so the parent is its own great-great-grandchild. The −1 children do the same in mirror image: four blue tori at the opposite corners, each antivortex feeding the next, closing after four. Together the two lineages fill the eight corners of a cube. The bow slider takes the spikes from straight edges to arcs bowed out onto a sphere.</p>
+    <p class="lede">Four horn tori sit at the corners of a tetrahedron. Each carries a balanced pair: a +1 vortex and a −1 antivortex. The +1 spike curves forward into the next torus's horn point. The −1 spike does the same in the opposite direction, so each horn point receives one of each, through its two sides. Both loops close after four generations.</p>
   </header>
 
   <div class="grid">
     <div class="card">
-      <canvas id="cv" aria-label="Four horn tori at the corners of a tetrahedron joined in a loop by curved spikes"></canvas>
+      <canvas id="cv" aria-label="Four horn tori at the corners of a tetrahedron, each with a +1 vortex and a −1 antivortex sending spikes around the loop in opposite directions"></canvas>
       <div class="legend">
-        <span><i class="sw" style="background:var(--plus)"></i>+1 lineage: vortices swirl counterclockwise</span>
-        <span><i class="sw" style="background:var(--minus)"></i>−1 lineage (mirror): antivortices swirl clockwise</span>
-        <span><i class="sw" style="background:var(--flow)"></i><i class="sw" style="background:var(--flowm)"></i>one unit of curl travelling each loop</span>
+        <span><i class="sw" style="background:var(--plus)"></i>+1 vortex and its spike (counterclockwise)</span>
+        <span><i class="sw" style="background:var(--minus)"></i>−1 antivortex and its spike (clockwise)</span>
+        <span><i class="sw" style="background:var(--flow)"></i><i class="sw" style="background:var(--flowm)"></i>one unit of each charge travelling</span>
       </div>
-      <p class="hint">Drag to turn it. Each spike is thick where it leaves its vortex and comes to a sharp point in the next torus's horn point. The two dashed edges are the tetrahedron edges the loop doesn't use.</p>
+      <p class="hint">Drag to turn it. Each spike is thick where it leaves its vortex and comes to a sharp point in a horn point. The +1 and −1 spikes between two tori run in separate lanes, in opposite directions.</p>
     </div>
     <div class="card">
-      <label style="display:flex;gap:8px;align-items:center;font-size:.86rem"><input type="checkbox" id="mirror" checked style="width:18px;height:18px;accent-color:var(--minus)"> Show the mirror (−1) lineage</label>
       <div class="ctl"><label for="bow">bow of the spikes (0 = straight edges, 1 = arcs on the sphere)</label><output id="bowO"></output><input type="range" id="bow" min="0" max="1" step="0.01"></div>
       <div class="status">
-        <div class="tile"><div class="k">Corner angle</div><div class="v" id="corner"></div><div class="s">between a spike in and a spike out</div></div>
-        <div class="tile"><div class="k">Center angle</div><div class="v">109.47°</div><div class="s">between two corners, seen from the center</div></div>
-        <div class="tile"><div class="k">Spike bows out to</div><div class="v" id="bowR"></div><div class="s">of the sphere's radius</div></div>
+        <div class="tile"><div class="k">Corner angle</div><div class="v" id="corner"></div><div class="s">between two edges at a corner</div></div>
+        <div class="tile"><div class="k">Center angle</div><div class="v">109.47°</div><div class="s">between two corners</div></div>
+        <div class="tile"><div class="k">Bows out to</div><div class="v" id="bowR"></div><div class="s">of the sphere's radius</div></div>
       </div>
       <div class="gen" id="gen"></div>
-      <div class="row"><button id="step">Follow one spike</button><button id="play">Play</button><button id="reset">Back to the parent</button></div>
-      <p class="hint" id="balance"></p>
+      <div class="row"><button id="step">Follow one spike of each</button><button id="play">Play</button><button id="reset">Back to the parent</button></div>
+      <table><thead><tr><th>On every torus</th><th style="text-align:right">Charge</th></tr></thead><tbody>
+        <tr><td>+1 vortex (sends forward)</td><td class="num">+1</td></tr>
+        <tr><td>−1 antivortex (sends backward)</td><td class="num">−1</td></tr>
+        <tr><td>Surface total</td><td class="num">0</td></tr>
+        <tr><td>Horn point receives +1 and −1</td><td class="num">0</td></tr>
+      </tbody></table>
     </div>
   </div>
 
   <section class="card notes">
     <h2>What this shows</h2>
     <ul>
-      <li><b>The mirror lineage behaves the same way, reflected.</b> Reflecting the whole +1 lineage through the center gives the −1 lineage: every corner goes to the opposite corner, every vortex becomes an antivortex, and its loop closes after four in the same way. The total charge of the whole structure is 0: four +1 and four −1.</li>
-      <li><b>The lineage closes after four.</b> Parent, child, grandchild, great-grandchild, and then the fourth spike lands in the parent's horn point. Following one spike at a time, you are home after four.</li>
-      <li><b>Each torus stays balanced.</b> Every torus sends one unit of curl out through its vortex and receives one through its horn point, so its charges add to zero, as a torus requires. The curl is never created or lost; it travels around the loop.</li>
-      <li><b>The angles.</b> From the center, any two corners are 109.47° apart (the tetrahedral angle). Where a spike arrives and the next one leaves, the corner angle is 60° when the spikes are straight edges. When they bow out onto the sphere, it opens to 120°. That extra opening is what the sphere's positive curvature does.</li>
-      <li><b>The loop uses four of the tetrahedron's six edges.</b> It is a skew square, and the two edges it skips are dashed. Stepping once around it is a quarter turn combined with a mirror. That's the same four-step cycle found on the Four-Flag Tetrahedron and Curved Successions pages.</li>
+      <li><b>Every torus is balanced on its own.</b> Its surface holds one vortex and one antivortex, so the charges add to zero, as a torus requires. Its horn point also receives one of each.</li>
+      <li><b>The −1 spikes trace the same family backward.</b> Following the +1 spikes you go parent → child → grandchild → great-grandchild → parent. Following the −1 spikes from the parent you go parent → great-grandchild → grandchild → child → parent. The opposite charge visits the same lineage in reverse order.</li>
+      <li><b>Each charge has its own side of the horn.</b> A horn point is two cones meeting tip to tip. The +1 spike enters through one cone and the −1 spike through the other.</li>
+      <li><b>The angles.</b> From the center, two corners are 109.47° apart. At a corner, two edges meet at 60° when the spikes are straight and at 120° when they bow out onto the sphere.</li>
     </ul>
   </section>
 </div>
@@ -104,40 +111,43 @@ const TAU=Math.PI*2,$=id=>document.getElementById(id);
 const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 const s3=1/Math.sqrt(3);
 const V=[[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]].map(v=>v.map(x=>x*s3));
-const ORDER=[0,1,2,3];            // parent → child → grandchild → great-grandchild → parent
 const NAMES=["parent","child","grandchild","great-grandchild"];
-let showMirror=true;
-const RH=0.13;
+const RH=0.13,LANE=0.07;
 let bow=1,k=0,anim=null,auto=false,clock=0;
 const view={yaw:0.55,pitch:0.35};
 let C={};
-function readColors(){const cs=getComputedStyle(document.documentElement);for(const c of ["bg","panel","ink","muted","line","plus","minus","flow","flowm"])C[c]=cs.getPropertyValue("--"+c).trim();}
+function readColors(){const cs=getComputedStyle(document.documentElement);for(const c of ["bg","panel","ink","muted","line","torus","plus","minus","flow","flowm"])C[c]=cs.getPropertyValue("--"+c).trim();}
 const rgb=h=>{const v=parseInt(h.replace("#",""),16);return [(v>>16)&255,(v>>8)&255,v&255];};
 const rgba=(h,a)=>{const [r,g,b]=rgb(h);return `rgba(${r},${g},${b},${a})`;};
 const add=(a,b)=>a.map((x,i)=>x+b[i]),sub=(a,b)=>a.map((x,i)=>x-b[i]),mul=(a,s)=>a.map(x=>x*s);
 const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],len=a=>Math.hypot(...a),norm=a=>mul(a,1/len(a));
 const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
-const SHADE=[1,0.82,0.66,0.52];
-const gcol=(g,L)=>{const [r,gg,b]=rgb(C[L>0?"plus":"minus"]),f=SHADE[g],bg=rgb(C.panel);return "#"+[r,gg,b].map((x,i)=>Math.round(x*f+bg[i]*(1-f))).map(x=>x.toString(16).padStart(2,"0")).join("");};
+const nxt=j=>(j+1)%4,prv=j=>(j+3)%4;
 
-/* a spike's centre line: straight edge blended with the great-circle arc */
+/* edge centre line between corners i and j: straight edge blended with the great-circle arc */
 const OM=Math.acos(-1/3);
 function arc(i,j,s){const a=V[i],b=V[j],line=add(mul(a,1-s),mul(b,s)),sl=add(mul(a,Math.sin((1-s)*OM)/Math.sin(OM)),mul(b,Math.sin(s*OM)/Math.sin(OM)));return add(mul(line,1-bow),mul(sl,bow));}
-function tangentIn(j){const i=(j+3)%4;return norm(sub(arc(i,j,1),arc(i,j,0.995)));}
-function tangentOut(j){const k2=(j+1)%4;return norm(sub(arc(j,k2,0.005),arc(j,k2,0)));}
+/* each spike runs in its own lane: offset sideways, so i→j and j→i sit on opposite sides */
+function lane(i,j,s){const p=arc(i,j,s),t=sub(arc(i,j,Math.min(1,s+0.01)),arc(i,j,Math.max(0,s-0.01))),n=norm(cross(t,p));return add(p,mul(n,LANE*Math.sin(Math.PI*s)));}
+const tanEnd=(i,j)=>norm(sub(lane(i,j,1),lane(i,j,0.99)));
+const tanStart=(i,j)=>norm(sub(lane(i,j,0.01),lane(i,j,0)));
 function frame(a){const h=Math.abs(a[2])<0.9?[0,0,1]:[1,0,0],e1=norm(cross(a,h));return [e1,cross(a,e1)];}
-/* each horn torus: centred on its corner, axis along the incoming spike, so the spike enters the horn point */
-function torusInfo(j){const a=tangentIn(j),out=tangentOut(j),dp=norm(sub(out,mul(a,dot(out,a))));return {a,src:add(V[j],mul(dp,2*RH*1.02))};}
-function spike(j,s){const k2=(j+1)%4,src=torusInfo(j).src;return add(arc(j,k2,s),mul(sub(src,V[j]),Math.pow(1-s,3)));}
+/* torus j: axis bisects the two incoming directions, so +1 enters one cone of the horn and −1 the other */
+function torusInfo(j){
+  const dPlus=tanEnd(prv(j),j),dMinus=tanEnd(nxt(j),j),a=norm(sub(dPlus,dMinus));
+  const place=out=>{const dp=norm(sub(out,mul(a,dot(out,a))));return add(V[j],mul(dp,2*RH*1.02));};
+  return {a,srcPlus:place(tanStart(j,nxt(j))),srcMinus:place(tanStart(j,prv(j)))};}
+function spikePlus(j,s){const t=torusInfo(j);return add(lane(j,nxt(j),s),mul(sub(t.srcPlus,V[j]),Math.pow(1-s,3)));}
+function spikeMinus(j,s){const t=torusInfo(j);return add(lane(j,prv(j),s),mul(sub(t.srcMinus,V[j]),Math.pow(1-s,3)));}
 
 function update(){
   $("bowO").textContent=bow.toFixed(2);
-  const ang=Math.acos(Math.max(-1,Math.min(1,dot(mul(tangentIn(0),-1),tangentOut(0)))))*180/Math.PI;
-  $("corner").textContent=ang.toFixed(1)+"°";
-  $("bowR").textContent=(len(arc(0,1,0.5))).toFixed(3);
-  const g=((k%4)+4)%4;
-  $("gen").textContent=k===0?(showMirror?"At the parent, and at the mirror parent.":"At the parent."):(g===0?`After ${k} spikes: back at the parent. The parent is its own great-great-grandchild.`:`After ${k} spike${k>1?"s":""}: at the ${NAMES[g]}.`);
-  $("balance").textContent=showMirror?"Every torus is balanced: it sends one unit of curl out and receives one at its horn point. Whole structure: four +1 and four −1, total 0.":"Every torus: one vortex sending +1 out, one horn point receiving it, net charge 0.";
+  const e1=norm(sub(arc(0,1,0.001),arc(0,1,0))),e2=norm(sub(arc(0,3,0.001),arc(0,3,0)));
+  $("corner").textContent=(Math.acos(Math.max(-1,Math.min(1,dot(e1,e2))))*180/Math.PI).toFixed(1)+"°";
+  $("bowR").textContent=len(arc(0,1,0.5)).toFixed(3);
+  const g=((k%4)+4)%4,gm=((-k%4)+4)%4;
+  $("gen").innerHTML=k===0?"Both charges start at the parent."
+    :(g===0?`After ${k} spikes both charges are back at the parent.`:`After ${k} spike${k>1?"s":""}: the +1 charge is at the <b>${NAMES[g]}</b>, the −1 charge at the <b>${NAMES[gm]}</b>.`);
 }
 
 function draw(){
@@ -147,35 +157,31 @@ function draw(){
   const sc=Math.min(w,h)*0.32,cx=w/2,cy=h/2;
   const cyw=Math.cos(view.yaw),syw=Math.sin(view.yaw),cp=Math.cos(view.pitch),sp=Math.sin(view.pitch);
   const P=p=>{const X=p[0]*cyw-p[1]*syw,Y=p[0]*syw+p[1]*cyw;return [cx+X*sc,cy-(Y*sp+p[2]*cp)*sc,Y*cp-p[2]*sp];};
-  const items=[];
-  // faint sphere outline when bowed
-  if(bow>0.02){items.push({d:9,f:()=>{ctx.strokeStyle=rgba(C.muted,0.25*bow);ctx.setLineDash([3,5]);ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,sc,0,TAU);ctx.stroke();ctx.setLineDash([]);}});}
-  // unused tetrahedron edges (0-2 and 1-3)
-  for(const L of (showMirror?[1,-1]:[1]))for(const [i,j] of [[0,2],[1,3]]){for(let m=0;m<20;m++){const a=P(mul(arc(i,j,m/20),L)),b=P(mul(arc(i,j,(m+1)/20),L));
-    items.push({d:(a[2]+b[2])/2,f:()=>{ctx.setLineDash([4,4]);ctx.strokeStyle=rgba(C.muted,0.55);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();ctx.setLineDash([]);}});}}
-  const LIN=showMirror?[1,-1]:[1];
-  for(const L of LIN){
-  const MP=p=>P(mul(p,L));
-  // spikes: thick at the vortex, sharp at the next horn point
-  for(let j=0;j<4;j++){const col=gcol(j,L),N=40;
-    for(let m=0;m<N;m++){const a=MP(spike(j,m/N)),b=MP(spike(j,(m+1)/N)),wd=1+6*Math.pow(1-m/N,1.2);
-      items.push({d:(a[2]+b[2])/2-0.001,f:()=>{ctx.lineCap="round";ctx.strokeStyle=rgba(col,0.85);ctx.lineWidth=wd;ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();}});}}
-  // horn tori
-  for(let j=0;j<4;j++){const {a,src}=torusInfo(j),[e1,e2]=frame(a),col=rgb(gcol(j,L)),c0=V[j];
-    const pt=(u,v)=>{const rho=RH+RH*Math.cos(TAU*v),z=RH*Math.sin(TAU*v),cu=Math.cos(TAU*u),su=Math.sin(TAU*u);return [0,1,2].map(i=>c0[i]+rho*(cu*e1[i]+su*e2[i])+z*a[i]);};
-    const NU=28,NV=14,G=[];for(let i=0;i<=NU;i++){G[i]=[];for(let m=0;m<=NV;m++)G[i][m]=MP(pt(i/NU,m/NV));}
+  const items=[],font=getComputedStyle(document.body).fontFamily;
+  if(bow>0.02)items.push({d:9,f:()=>{ctx.strokeStyle=rgba(C.muted,0.25*bow);ctx.setLineDash([3,5]);ctx.lineWidth=1;ctx.beginPath();ctx.arc(cx,cy,sc,0,TAU);ctx.stroke();ctx.setLineDash([]);}});
+  for(const [i,j] of [[0,2],[1,3]])for(let m=0;m<20;m++){const a=P(arc(i,j,m/20)),b=P(arc(i,j,(m+1)/20));
+    items.push({d:(a[2]+b[2])/2,f:()=>{ctx.setLineDash([4,4]);ctx.strokeStyle=rgba(C.muted,0.5);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();ctx.setLineDash([]);}});}
+  // spikes
+  for(let j=0;j<4;j++)for(const [fn,col] of [[spikePlus,C.plus],[spikeMinus,C.minus]]){const N=40;
+    for(let m=0;m<N;m++){const a=P(fn(j,m/N)),b=P(fn(j,(m+1)/N)),wd=1+5.5*Math.pow(1-m/N,1.2);
+      items.push({d:(a[2]+b[2])/2-0.001,f:()=>{ctx.lineCap="round";ctx.strokeStyle=rgba(col,0.88);ctx.lineWidth=wd;ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.stroke();}});}}
+  // tori, vortex pair, horn point, labels
+  const gp=((k%4)+4)%4;
+  for(let j=0;j<4;j++){const t=torusInfo(j),[e1,e2]=frame(t.a),col=rgb(C.torus),c0=V[j];
+    const pt=(u,v)=>{const rho=RH+RH*Math.cos(TAU*v),z=RH*Math.sin(TAU*v),cu=Math.cos(TAU*u),su=Math.sin(TAU*u);return [0,1,2].map(i=>c0[i]+rho*(cu*e1[i]+su*e2[i])+z*t.a[i]);};
+    const NU=28,NV=14,G=[];for(let i=0;i<=NU;i++){G[i]=[];for(let m=0;m<=NV;m++)G[i][m]=P(pt(i/NU,m/NV));}
     for(let i=0;i<NU;i++)for(let m=0;m<NV;m++){const A=G[i][m],B=G[i+1][m],D=G[i+1][m+1],E=G[i][m+1],sh=0.55+0.45*Math.abs(Math.cos(TAU*(m+0.5)/NV-0.6));
-      const fill=`rgba(${Math.round(col[0]*sh)},${Math.round(col[1]*sh)},${Math.round(col[2]*sh)},0.55)`;
+      const fill=`rgba(${Math.round(col[0]*sh)},${Math.round(col[1]*sh)},${Math.round(col[2]*sh)},0.5)`;
       items.push({d:(A[2]+B[2]+D[2]+E[2])/4,f:()=>{ctx.fillStyle=fill;ctx.beginPath();ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);ctx.lineTo(D[0],D[1]);ctx.lineTo(E[0],E[1]);ctx.closePath();ctx.fill();}});}
-    // vortex on the surface (swirl), horn point (ring)
-    const vs=MP(src),hp=MP(c0),lab=MP(mul(c0,1.3)),cur=((k%4)+4)%4===j;
-    items.push({d:vs[2]-0.02,f:()=>{ctx.strokeStyle=C.ink;ctx.lineWidth=1.6;ctx.beginPath();for(let t=0;t<=40;t++){const an=L*(t/40*TAU*1.6+clock*2),rr=1.5+t/40*5;const x=vs[0]+rr*Math.cos(an),y=vs[1]+rr*Math.sin(an);t?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();}});
+    for(const [src,sg,c] of [[t.srcPlus,1,C.plus],[t.srcMinus,-1,C.minus]]){const vs=P(src);
+      items.push({d:vs[2]-0.02,f:()=>{ctx.strokeStyle=c;ctx.lineWidth=2;ctx.beginPath();for(let q=0;q<=40;q++){const an=sg*(q/40*TAU*1.6+clock*2),rr=1.5+q/40*5,x=vs[0]+rr*Math.cos(an),y=vs[1]+rr*Math.sin(an);q?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();}});}
+    const hp=P(c0),lab=P(mul(c0,1.32));
     items.push({d:hp[2]-0.03,f:()=>{ctx.fillStyle=C.panel;ctx.strokeStyle=C.ink;ctx.lineWidth=1.6;ctx.beginPath();ctx.arc(hp[0],hp[1],3.5,0,TAU);ctx.fill();ctx.stroke();}});
-    items.push({d:-9,f:()=>{ctx.font=(cur?"700 ":"600 ")+"12px "+getComputedStyle(document.body).fontFamily;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillStyle=gcol(j,L);ctx.font=(cur?"700 ":"600 ")+"11px "+getComputedStyle(document.body).fontFamily;ctx.fillText((L<0?"−":"")+NAMES[j]+(cur?" ◂":""),lab[0],lab[1]);}});}
-  // the unit of curl travelling: either following the stepper, or circulating
-  {let pos;if(anim){const j=((anim.from%4)+4)%4,e=Math.min(1,anim.t);pos=spike(j,e);}else{const g=((k%4)+4)%4;pos=V[g];}
-   const q=MP(pos);items.push({d:q[2]-0.05,f:()=>{ctx.fillStyle=L>0?C.flow:C.flowm;ctx.strokeStyle=C.panel;ctx.lineWidth=2;ctx.beginPath();ctx.arc(q[0],q[1],6,0,TAU);ctx.fill();ctx.stroke();}});}
-  }
+    items.push({d:-9,f:()=>{ctx.font="600 12px "+font;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillStyle=C.ink;ctx.fillText(NAMES[j],lab[0],lab[1]);}});}
+  // travelling charges: +1 forward, −1 backward
+  {let pp,pm;if(anim){const e=Math.min(1,anim.t),j=((anim.from%4)+4)%4,jm=((-anim.from%4)+4)%4;pp=spikePlus(j,e);pm=spikeMinus(jm,e);}
+   else{pp=V[((k%4)+4)%4];pm=V[((-k%4)+4)%4];}
+   for(const [p,c,o] of [[pp,C.flow,0],[pm,C.flowm,1]]){const q=P(p);items.push({d:q[2]-0.05,f:()=>{ctx.fillStyle=c;ctx.strokeStyle=C.panel;ctx.lineWidth=2;ctx.beginPath();ctx.arc(q[0]+(anim?0:o*5-2.5),q[1],6,0,TAU);ctx.fill();ctx.stroke();}});}}
   items.sort((a,b)=>b.d-a.d);for(const it of items)it.f();
 }
 
@@ -186,7 +192,6 @@ function tick(ts){const dt=last?Math.min(0.05,(ts-last)/1000):0;last=ts;if(!redu
   if(!drag&&!reduce)view.yaw+=dt*0.06;
   draw();requestAnimationFrame(tick);}
 $("bow").addEventListener("input",e=>{bow=+e.target.value;update();});
-$("mirror").addEventListener("change",e=>{showMirror=e.target.checked;update();});
 $("step").addEventListener("click",step);
 $("play").addEventListener("click",()=>{if(auto){auto=false;$("play").textContent="Play";return;}if(k%4===0)k=0;auto=true;$("play").textContent="Stop";step();});
 $("reset").addEventListener("click",()=>{k=0;anim=null;auto=false;$("play").textContent="Play";update();});
