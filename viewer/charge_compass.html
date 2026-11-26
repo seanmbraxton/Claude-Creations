@@ -45,8 +45,9 @@ button:hover,select:hover{border-color:var(--muted)}
 .ctl input{grid-column:1/-1;width:100%;accent-color:var(--minus);height:26px}
 .pat{font-family:var(--f-mono);font-size:.9rem;overflow-wrap:anywhere}
 .hint{font-size:.78rem;color:var(--muted)}
-table{width:100%;border-collapse:collapse;font-size:.84rem}
-td,th{padding:5px 4px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+table{width:100%;border-collapse:collapse;font-size:.8rem}
+.tblwrap{overflow-x:auto;max-width:100%}
+td,th{padding:5px 3px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
 th{font-weight:500;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em}
 td:first-child,th:first-child{text-align:left}
 tr.prime td{font-weight:600}
@@ -58,7 +59,7 @@ tr.cur td{background:var(--chip)}
   <header>
     <div class="eyebrow">top-down view · charge sets the angle</div>
     <h1>Charge Compass</h1>
-    <p class="lede">Looking straight down a parent torus's axis, its children sit around the ring. The gap before each child is proportional to the size of its charge, and its color and swirl show the sign. If the view can be turned part of the way around and land exactly on itself, the children fold into equal, repeating groups. If it can't, the pattern is asymmetric.</p>
+    <p class="lede">Like a molecule seen from above: neutral overall, with partial charges around a center. Looking straight down a parent torus's axis, its children sit around the ring. The gap before each child is proportional to the size of its charge, and its color and swirl show the sign. If the view can be turned part of the way around and land exactly on itself, the children fold into equal, repeating groups. If it can't, the pattern is asymmetric.</p>
   </header>
 
   <div class="grid">
@@ -74,7 +75,7 @@ tr.cur td{background:var(--chip)}
       <div class="row"><button id="prev">◂ Previous pattern</button><button id="next">Next pattern ▸</button><button id="sym">Next symmetric one</button></div>
       <p class="hint" id="pos"></p>
       <h2>Every balanced pattern, checked</h2>
-      <table><thead><tr><th>children</th><th>patterns</th><th>fold onto themselves</th><th>asymmetric</th></tr></thead><tbody id="tbl"></tbody></table>
+      <div class="tblwrap"><table><thead><tr><th>children</th><th>patterns</th><th>fold</th><th>asymmetric</th><th>polar</th></tr></thead><tbody id="tbl"></tbody></table></div>
       <p class="hint">Patterns are counted once per arrangement around the ring (turning the whole view doesn't make a new one). Prime numbers of children are in bold. Larger counts are limited to keep the page fast.</p>
     </div>
   </div>
@@ -92,6 +93,9 @@ const isPrime=n=>{if(n<2)return false;for(let d=2;d*d<=n;d++)if(n%d===0)return f
 const rot=(t,s)=>t.slice(s).concat(t.slice(0,s));
 const key=t=>t.join(",");
 function canon(t){let best=null;for(let s=0;s<t.length;s++){const r=key(rot(t,s));if(best===null||r<best)best=r;}return best;}
+function dipole(t){const tot=t.reduce((s,v)=>s+Math.abs(v),0);let ang=-Math.PI/2,x=0,y=0;
+  for(const v of t){ang+=TAU*Math.abs(v)/tot;x+=v*Math.cos(ang);y+=v*Math.sin(ang);}return [x,y];}
+function chiral(t){return canon(t.slice().reverse())!==canon(t);}
 function foldOrder(t){const n=t.length;for(let d=1;d<=n;d++)if(n%d===0&&key(rot(t,d))===key(t))return n/d;return 1;}
 function patterns(kk,vals,limit=400000){
   const seen=new Map(),t=new Array(kk).fill(0);let steps=0;
@@ -105,9 +109,10 @@ const fmt=v=>{const d=ALPH[alphKey].den;const s=v>0?"+":"−",a=Math.abs(v);retu
 function rebuild(){const r=patterns(k,ALPH[alphKey].vals);list=r.list.sort((a,b)=>foldOrder(b)-foldOrder(a)||key(a).localeCompare(key(b)));idx=Math.min(idx,list.length-1);idx=Math.max(idx,0);table();update();}
 function table(){
   const rows=[];const vals=ALPH[alphKey].vals;
-  for(let n=2;n<=9;n++){if(Math.pow(vals.length,n)>2.2e6){rows.push(`<tr><td>${n}</td><td colspan="3" style="text-align:left;color:var(--muted)">too many to list here</td></tr>`);continue;}
+  for(let n=2;n<=9;n++){if(Math.pow(vals.length,n)>2.2e6){rows.push(`<tr><td>${n}</td><td colspan="4" style="text-align:left;color:var(--muted)">too many to list here</td></tr>`);continue;}
     const r=patterns(n,vals,3e6);const sym=r.list.filter(t=>foldOrder(t)>1).length;
-    rows.push(`<tr class="${isPrime(n)?"prime":""} ${n===k?"cur":""}"><td>${n}${isPrime(n)?" (prime)":""}</td><td>${r.list.length}</td><td class="${sym?"fold":"ok"}">${sym}</td><td>${r.list.length-sym}</td></tr>`);}
+    const pol=r.list.filter(t=>Math.hypot(...dipole(t))>1e-9).length;
+    rows.push(`<tr class="${isPrime(n)?"prime":""} ${n===k?"cur":""}"><td>${n}${isPrime(n)?" (prime)":""}</td><td>${r.list.length}</td><td class="${sym?"fold":"ok"}">${sym}</td><td>${r.list.length-sym}</td><td>${pol}</td></tr>`);}
   $("tbl").innerHTML=rows.join("");
 }
 function update(){
@@ -115,7 +120,9 @@ function update(){
   if(!list.length){$("verdict").textContent="No balanced pattern with these charges and this many children.";$("pat").textContent="";$("pos").textContent="";draw(null);return;}
   const t=list[idx],f=foldOrder(t);
   $("verdict").innerHTML=f>1?`<span class="yes">Folds ${f} ways:</span> turning the view by 1/${f} of a turn lands it on itself.`:`<span class="no">Asymmetric:</span> no partial turn lands the view on itself.`;
-  $("pat").textContent="Charges around the ring: "+t.map(fmt).join("  ");
+  const dp=dipole(t),dm=Math.hypot(...dp);
+  $("pat").innerHTML="Charges around the ring: "+t.map(fmt).join("  ")+
+    `<br>${dm>1e-9?"<b>Polar</b>: neutral overall, but the charge is lopsided (arrow).":"<b>Non-polar</b>: the lopsidedness cancels exactly."} ${chiral(t)?"<b>Chiral</b>: its mirror image is a different arrangement.":"Not chiral: it matches its mirror image."}`;
   const nsym=list.filter(x=>foldOrder(x)>1).length;
   $("pos").textContent=`Pattern ${idx+1} of ${list.length} for ${k} children; ${nsym} of them fold.`;
   draw(t);
@@ -132,6 +139,10 @@ function draw(t){
   // fold axes
   if(f>1){ctx.strokeStyle=rgba(C.fold,0.5);ctx.setLineDash([5,5]);ctx.lineWidth=1.2;
     let start=-Math.PI/2;for(let j=0;j<f;j++){const a=start+TAU*j/f;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+R*1.25*Math.cos(a),cy+R*1.25*Math.sin(a));ctx.stroke();}ctx.setLineDash([]);}
+  // dipole arrow: the overall lopsidedness of the charge
+  {const [dx,dy]=dipole(t),dm=Math.hypot(dx,dy);if(dm>1e-9){const L=Math.min(R*0.5,R*0.12*dm+R*0.15),ux=dx/dm,uy=dy/dm,ex=cx+L*ux,ey=cy+L*uy;
+    ctx.strokeStyle=C.ink;ctx.fillStyle=C.ink;ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(ex,ey);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(ex+8*ux,ey+8*uy);ctx.lineTo(ex-6*uy,ey+6*ux);ctx.lineTo(ex+6*uy,ey-6*ux);ctx.closePath();ctx.fill();}}
   // children: gap before each child proportional to |charge|
   let ang=-Math.PI/2;const font=getComputedStyle(document.body).fontFamily;
   t.forEach((v,i)=>{ang+=TAU*Math.abs(v)/tot;const a=ang-TAU*Math.abs(v)/tot/2;   // centre the child in its arc
