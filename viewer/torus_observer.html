@@ -48,6 +48,9 @@ p{margin:0}
 .pill[data-c="locked"]{color:var(--count)} .pill[data-c="quasi"]{color:var(--path)}
 .pill[data-c="aliased"]{color:var(--block)} .pill[data-c="irregular"]{color:var(--truth)}
 .pill[data-c="none"]{color:var(--muted)} .pill[data-c="saturated"]{color:var(--delta)}
+.pill[data-c="start"]{color:var(--count)} .pill[data-c="reversed"]{color:var(--block)} .pill[data-c="mirror"]{color:var(--truth)}
+.pill[data-c="partial"]{color:var(--delta)} .pill[data-c="away"]{color:var(--muted)}
+#ce{aspect-ratio:1/1;background:var(--bg)}
 @media (max-width:820px){.status{grid-template-columns:repeat(2,minmax(0,1fr))}.clsTile{grid-column:1/-1}}
 
 /* views */
@@ -73,6 +76,7 @@ figcaption{font-size:.84rem;color:var(--muted);max-width:70ch}
 .stair{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;align-items:start}
 @media (max-width:820px){.stair{grid-template-columns:minmax(0,1fr)}}
 .stairSide{display:flex;flex-direction:column;gap:10px;min-width:0}
+.stairSide .sel{grid-template-columns:minmax(0,1fr);gap:4px}
 #cs{aspect-ratio:1/1;touch-action:pan-y;cursor:crosshair;background:var(--bg)}
 .diag.one{grid-template-columns:minmax(0,1fr)}
 /* controls */
@@ -185,6 +189,25 @@ input[type=checkbox]{accent-color:var(--path);width:18px;height:18px}
       </div>
       <figcaption>The x-axis is the bare tick rate ω, the number of portal passes per toroidal turn with no gate. The y-axis is the rate that actually gets counted. With no pull and an infinitely fine observer the two are equal, giving the dashed diagonal. ε folds that line into real plateaus: the black curve is the true rotation number of the pass map, pulled toward the portal with strength K = c<sub>K</sub>|ε| at k-fold symmetry. δ folds it again. The observer takes one frame per toroidal turn and stops at the first turn q where the poloidal phase is back within δ of its first frame. It then reads the rate as p/q, where p is the whole number of ticks (the floor) and the leftover remainder was smaller than its grain. Tap the plot to set ω for the whole page.</figcaption>
     </figure>
+    <figure class="card wide">
+      <div class="cardhead"><h2>Eversion and return</h2><span class="tag" id="evTag"></span></div>
+      <div class="stair">
+        <canvas id="ce" aria-label="A winding on the flat torus before and after eversions"></canvas>
+        <div class="stairSide">
+          <div class="clsTile" style="gap:6px"><span class="pill" id="evPill" data-c="start">start</span><p class="s" id="evText" style="font-size:.86rem"></p></div>
+          <div class="row"><button id="evA">Evert through hole A</button><button id="evB">Evert through hole B</button></div>
+          <div class="row"><button id="evT">Twist (one succession)</button><button id="evUndo">Undo</button><button id="evReset">Reset</button></div>
+          <div class="sel"><label for="evW">Starting winding (toroidal, poloidal)</label>
+            <select id="evW"><option value="2,1">(2, 1)</option><option value="1,1">(1, 1)</option><option value="3,2">(3, 2) trefoil</option><option value="3,1">(3, 1)</option><option value="1,0">(1, 0) toroidal only</option><option value="0,1">(0, 1) poloidal only</option></select></div>
+          <div class="sel"><label for="evType">Each eversion swaps the windings</label>
+            <select id="evType"><option value="quarter">by a quarter turn (keeps handedness)</option><option value="mirror">like a mirror (flips handedness)</option></select></div>
+          <div class="sel"><label for="evSense">Hole B everts</label>
+            <select id="evSense"><option value="same">in the same sense as hole A</option><option value="opposite">in the opposite sense</option></select></div>
+          <dl class="diag one" id="evRead"></dl>
+        </div>
+      </div>
+      <figcaption>Each move acts on the winding pair. The dashed curve is where you started and the solid curve is where you are now. The arrows show the direction of travel, which is the direction of time along the path. A quarter-turn eversion swaps the two windings and reverses one of them. A mirror eversion swaps them like a reflection. Which sense a real eversion through a second hole has depends on the path it takes, so you choose it here. A twist gives the curve one extra toroidal turn for each poloidal turn.</figcaption>
+    </figure>
   </section>
 
   <section class="panels">
@@ -209,6 +232,10 @@ input[type=checkbox]{accent-color:var(--path);width:18px;height:18px}
       <h3>Observer</h3>
       <div class="sel"><label for="metric">What the observer projects onto</label>
         <select id="metric"><option value="flat">both angles (flat)</option><option value="emb">3D distance on surface</option><option value="theta">toroidal angle only</option></select></div>
+      <div class="sel"><label for="clock">What runs the observer's shutter</label>
+        <select id="clock"><option value="own">the system's own change</option><option value="all">uneven outside clock, runs everything</option><option value="shutter">uneven outside clock, runs only the shutter</option></select></div>
+      <div class="ctl"><label for="warp">how uneven the outside clock is</label><output id="warpO"></output><input type="range" id="warp" min="0" max="0.95" step="0.05">
+        <span class="note">0 ticks evenly; 0.9 swings its rate between 10% and 190%. Compare the count with the "no outside clock" number under Observer counts.</span></div>
       <label class="check"><input type="checkbox" id="decouple"> Set the frame interval separately from δ</label>
       <div class="ctl"><label for="dt">frame interval Δt (toroidal turns)</label><output id="dtO"></output><input type="range" id="dt" min="0" max="1000" step="1">
         <span class="note" id="dtNote">Coupled now: Δt = δ / |v|, so a frame step covers a distance g = δ.</span></div>
@@ -255,7 +282,7 @@ input[type=checkbox]{accent-color:var(--path);width:18px;height:18px}
 "use strict";
 const TAU=Math.PI*2, GOLD=(Math.sqrt(5)-1)/2, SQ2=Math.SQRT2-1;
 const MAXF=20000;
-const DEFAULTS={eps:0.25,delta:0.03,omega:GOLD,k:3,cw:0.4,lock:true,cK:1.0,flip:"off",metric:"flat",decouple:false,dt:0.05,drift:0,th0:0.05,ph0:0.25,T:40,settle:true};
+const DEFAULTS={eps:0.25,delta:0.03,omega:GOLD,k:3,cw:0.4,lock:true,cK:1.0,flip:"off",metric:"flat",decouple:false,dt:0.05,drift:0,th0:0.05,ph0:0.25,T:40,settle:true,clock:"own",warp:0.6};
 const P=Object.assign({},DEFAULTS);
 const $=id=>document.getElementById(id);
 
@@ -276,7 +303,7 @@ function buildFlow(p,T){
   const eps=p.eps,k=p.k,w=p.cw*Math.abs(eps),K=p.lock?p.cK*Math.abs(eps):0;
   const segT=[0],segTh=[p.th0],passes=[];
   const first=fr(0.5-p.ph0)/p.omega;
-  let sign=1;
+  let sign=1, thetaClock=true;
   for(let n=0;;n++){
     const tn=first+n/p.omega; if(tn>T) break;
     const thB=segTh[segTh.length-1]+(tn-segT[segT.length-1]);
@@ -286,14 +313,43 @@ function buildFlow(p,T){
     if(K>0){const s=(p.flip==="kick"&&eps<0)?sign:1; thA=thB-s*K/(TAU*k)*Math.sin(TAU*k*thB);}
     if(p.flip==="kick"&&eps<0) sign=-sign;
     if(p.flip==="reflect"&&eps<0) thA=-thA;
+    if(thA<thB-1e-12) thetaClock=false;
     passes.push({t:tn,th:thB,open});
     segT.push(tn); segTh.push(thA);
   }
-  return {segT,segTh,passes,w,K};
+  return {segT,segTh,passes,w,K,thetaClock};
 }
 function sampler(flow,p){
   let i=0; const {segT,segTh}=flow;
   return (t,o)=>{while(i+1<segT.length&&segT[i+1]<=t) i++; o[0]=segTh[i]+(t-segT[i]); o[1]=p.ph0+p.omega*t; return o;};
+}
+
+/* ---------------- clocks ---------------- */
+/* Frame times are given in the system's own change (t = poloidal phase / ω).
+   own:     frames every dt of the system's change. No outside clock exists.
+   all:     an uneven outside clock τ drives every change, the shutter included.
+   shutter: the uneven outside clock drives only the shutter.
+   The outside clock's rate is 1 + warp·cos(2πτ/P), integrated numerically. */
+const CLOCK_P=2.5;
+function lerpAt(x,xs,ys){let lo=0,hi=xs.length-1;if(x<=xs[0])return ys[0];if(x>=xs[hi])return ys[hi];
+  while(hi-lo>1){const m=(lo+hi)>>1;if(xs[m]<=x)lo=m;else hi=m;}const f=(x-xs[lo])/(xs[hi]-xs[lo]);return ys[lo]+f*(ys[hi]-ys[lo]);}
+function frameTimes(p,dt,N){
+  const ft=new Float64Array(N+1);
+  if(p.clock==="own"||p.warp===0){for(let i=0;i<=N;i++)ft[i]=i*dt;return ft;}
+  const Tm=N*dt+2*CLOCK_P, step=Math.max(5e-4,Tm/60000), n=Math.ceil(Tm/step)+1;
+  const tau=new Float64Array(n), I=new Float64Array(n);
+  for(let i=1;i<n;i++){tau[i]=i*step;const r0=1+p.warp*Math.cos(TAU*tau[i-1]/CLOCK_P),r1=1+p.warp*Math.cos(TAU*tau[i]/CLOCK_P);I[i]=I[i-1]+0.5*(r0+r1)*step;}
+  for(let i=0;i<=N;i++){
+    const tauI=p.clock==="all"?lerpAt(i*dt,I,tau):i*dt;   // all: the shutter's own phase is a change too
+    ft[i]=lerpAt(tauI,tau,I);
+  }
+  ft[0]=0; return ft;
+}
+function countOnly(flow,p,ft){
+  const dObs=metricFn(p.metric,p.eps),smp=sampler(flow,p),s=[0,0];let mTh=p.th0,mPh=p.ph0,was=true,n=0;
+  for(let i=0;i<ft.length;i++){smp(ft[i],s);const inside=dObs(s[0],s[1],mTh,mPh)<p.delta;
+    if(i>0&&inside&&!was){n++;if(p.drift>0){mTh+=p.drift*cd(s[0]-mTh);mPh+=p.drift*cd(s[1]-mPh);}}was=inside;}
+  return n;
 }
 
 /* ---------------- observer + truth ---------------- */
@@ -303,8 +359,9 @@ function simulate(p){
   let N=Math.floor(p.T/dt), capped=false;
   if(N>MAXF){N=MAXF;capped=true;}
   if(N<2) N=2;
-  const Teff=N*dt;
-  const flow=buildFlow(p,Teff);
+  const ft=frameTimes(p,dt,N);
+  const Teff=ft[N];
+  const flow=buildFlow(p,Teff+1);
   const sub=Math.max(12,Math.min(24,Math.floor(400000/N)));
   const dObs=metricFn(p.metric,p.eps), dTru=metricFn("flat",p.eps);
   const fth=new Float64Array(N+1), fph=new Float64Array(N+1), fd=new Float32Array(N+1), fin=new Uint8Array(N+1);
@@ -312,11 +369,11 @@ function simulate(p){
   const L=N*sub+1, fineD=new Float32Array(L);
   const entries=[], visits=[];
   let mTh=p.th0,mPh=p.ph0, obsIn=true, truIn=true, vs=null, vsPos=null;
-  const smp=sampler(flow,p), s=[0,0], h=dt/sub, d=p.delta;
+  const smp=sampler(flow,p), s=[0,0], h=(Teff/N)/sub, d=p.delta;
   for(let i=0;i<=N;i++){
     const jmax=i<N?sub:1;
     for(let j=0;j<jmax;j++){
-      const t=i*dt+j*h; smp(t,s);
+      const t=ft[i]+(i<N?j*(ft[i+1]-ft[i])/sub:0); smp(t,s);
       if(j===0){
         fth[i]=s[0]; fph[i]=s[1];
         let dd=dObs(s[0],s[1],mTh,mPh); const inside=dd<d;
@@ -337,7 +394,7 @@ function simulate(p){
   // match observer entries to true visits
   const eOk=[]; let vi=0;
   for(const i of entries){
-    const t=i*dt; while(vi<visits.length&&visits[vi].tout<t-1e-12) vi++;
+    const t=ft[i]; while(vi<visits.length&&visits[vi].tout<t-1e-12) vi++;
     const ok=vi<visits.length&&visits[vi].tin<=t+h&&t<=visits[vi].tout+1e-12;
     eOk.push(ok); if(ok) visits[vi].caught=true;
   }
@@ -347,7 +404,8 @@ function simulate(p){
   const smp2=sampler(flow,p), hp=Teff/M;
   for(let m=0;m<=M;m++){smp2(m*hp,s); pth[m]=s[0]; pph[m]=s[1];
     if(m>0&&Math.abs(cd(pth[m]-pth[m-1]-hp))>0.06) pbreak[m]=1;}
-  return {p:Object.assign({},p),v,dt,N,Teff,capped,sub,flow,fth,fph,fd,fin,memTh,memPh,fineD,entries,eOk,visits,pth,pph,pbreak,M,inFrac:fin.reduce((a,b)=>a+b,0)/(N+1)};
+  const baseline=(p.clock!=="own"&&p.warp>0)?countOnly(flow,p,frameTimes(Object.assign({},p,{clock:"own"}),dt,N)):entries.length;
+  return {p:Object.assign({},p),v,dt,ft,baseline,N,Teff,capped,sub,flow,fth,fph,fd,fin,memTh,memPh,fineD,entries,eOk,visits,pth,pph,pbreak,M,inFrac:fin.reduce((a,b)=>a+b,0)/(N+1)};
 }
 
 /* ---------------- classification ---------------- */
@@ -359,7 +417,7 @@ function clusters(vals,tol){
 function returnTimes(times){const r=[];let prev=0;for(const t of times){r.push(t-prev);prev=t;}return r;}
 function classify(S){
   const nObs=S.entries.length, nTru=S.visits.length, nFalse=S.eOk.filter(x=>!x).length;
-  const obsRT=returnTimes(S.entries.map(i=>i*S.dt)), truRT=returnTimes(S.visits.map(v=>v.tin));
+  const obsRT=returnTimes(S.entries.map(i=>S.ft[i])), truRT=returnTimes(S.visits.map(v=>v.tin));
   const tolT=2*S.p.delta/S.v;
   const cObs=clusters(obsRT,tolT+1.5*S.dt), cTru=clusters(truRT,tolT);
   let c;
@@ -435,7 +493,7 @@ function draw3D(S,play){
   if(Math.abs(p.eps)<1e-9){const q=P3(0,0,0,[0,0,0]);items.push({d:q[2]-0.02,f:()=>{ctx.strokeStyle=C.ink;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(q[0],q[1],6,0,TAU);ctx.stroke();
     ctx.fillStyle=C.ink;ctx.font="11px "+getComputedStyle(document.body).fontFamily;ctx.fillText("horn point",q[0]+9,q[1]-8);}});}
   // path so far
-  const tNow=play.idx*S.dt, mNow=Math.min(S.M,Math.round(tNow/S.Teff*S.M));
+  const tNow=S.ft[Math.min(play.idx,S.N)], mNow=Math.min(S.M,Math.round(tNow/S.Teff*S.M));
   const step=Math.max(1,Math.ceil(S.M/2600)), pts=[];
   for(let m=0;m<=mNow;m+=step){const q=onT(S.pth[m],S.pph[m],[0,0,0,0]);let br=0;for(let u=Math.max(1,m-step+1);u<=m;u++)if(S.pbreak[u])br=1;q[3]=br;pts.push(q);}
   if(mNow%step){const q=onT(S.pth[mNow],S.pph[mNow],[0,0,0,0]);pts.push(q);}
@@ -507,7 +565,7 @@ function drawFlat(S,play){
   for(let j=0;j<p.k;j++){const c0=j/p.k;if(w_>0){for(const sh of [-1,0,1]){const a=Math.max(0,c0-w_/2+sh),b=Math.min(1,c0+w_/2+sh);if(b>a){ctx.beginPath();ctx.moveTo(x0+a*side,Y(0.5));ctx.lineTo(x0+b*side,Y(0.5));ctx.stroke();}}}
     else{ctx.fillStyle=C.count;ctx.beginPath();ctx.arc(X(c0),Y(0.5),3,0,TAU);ctx.fill();}}
   // path
-  const tNow=play.idx*S.dt, mNow=Math.min(S.M,Math.round(tNow/S.Teff*S.M));
+  const tNow=S.ft[Math.min(play.idx,S.N)], mNow=Math.min(S.M,Math.round(tNow/S.Teff*S.M));
   const mRec=Math.max(0,mNow-Math.round(3/S.Teff*S.M));
   const seg=(m0,m1)=>{ctx.beginPath();for(let m=m0;m<=m1;m++){const xa=X(S.pth[m]),ya=Y(S.pph[m]);
     if(m===m0||S.pbreak[m]||Math.abs(fr(S.pth[m])-fr(S.pth[m-1]))>0.5||Math.abs(fr(S.pph[m])-fr(S.pph[m-1]))>0.5)ctx.moveTo(xa,ya);else ctx.lineTo(xa,ya);}ctx.stroke();};
@@ -562,14 +620,14 @@ function drawTimeline(S,play){
     if(lo>ymax)continue;const xx=x0+c+0.5;ctx.moveTo(xx,Yd(hi));ctx.lineTo(xx,Yd(lo)+0.8);}
   ctx.stroke();
   // frames, when they can be told apart
-  if(W/S.N>=3){ctx.fillStyle=C.path;for(let i=0;i<=S.N;i++){if(S.fd[i]>ymax)continue;ctx.beginPath();ctx.arc(X(i*S.dt),Yd(S.fd[i]),1.8,0,TAU);ctx.fill();}}
-  else{ctx.fillStyle=C.delta;for(let i=0;i<=S.N;i++){if(!S.fin[i])continue;ctx.fillRect(X(i*S.dt)-0.75,Yd(S.fd[i])-0.75,1.5,1.5);}}
+  if(W/S.N>=3){ctx.fillStyle=C.path;for(let i=0;i<=S.N;i++){if(S.fd[i]>ymax)continue;ctx.beginPath();ctx.arc(X(S.ft[i]),Yd(S.fd[i]),1.8,0,TAU);ctx.fill();}}
+  else{ctx.fillStyle=C.delta;for(let i=0;i<=S.N;i++){if(!S.fin[i])continue;ctx.fillRect(X(S.ft[i])-0.75,Yd(S.fd[i])-0.75,1.5,1.5);}}
   // lanes
   ctx.font="10px "+font;ctx.fillStyle=C.muted;ctx.textAlign="right";ctx.textBaseline="middle";
   ctx.fillText("portal",x0-6,yP);ctx.fillText("observer",x0-6,yO);ctx.fillText("truth",x0-6,yT);
   ctx.fillText("δ",x0-6,Yd(d));ctx.fillText("4δ",x0-6,top+4);ctx.fillText("0",x0-6,bot);
   for(const ps of S.flow.passes){const xx=X(ps.t);ctx.strokeStyle=ps.open?C.count:C.block;ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(xx,yP-6);ctx.lineTo(xx,yP+6);ctx.stroke();}
-  S.entries.forEach((i,n)=>{const xx=X(i*S.dt);
+  S.entries.forEach((i,n)=>{const xx=X(S.ft[i]);
     if(S.eOk[n]){ctx.fillStyle=C.count;ctx.beginPath();ctx.moveTo(xx,yO-6);ctx.lineTo(xx+4.5,yO+4);ctx.lineTo(xx-4.5,yO+4);ctx.closePath();ctx.fill();}
     else{ctx.strokeStyle=C.block;ctx.lineWidth=1.8;ctx.beginPath();ctx.moveTo(xx-4,yO-4);ctx.lineTo(xx+4,yO+4);ctx.moveTo(xx+4,yO-4);ctx.lineTo(xx-4,yO+4);ctx.stroke();}});
   for(const v of S.visits){const xx=X(v.tin);ctx.lineWidth=1.6;ctx.strokeStyle=C.truth;ctx.fillStyle=C.truth;ctx.beginPath();ctx.arc(xx,yT,3.6,0,TAU);v.caught?ctx.fill():ctx.stroke();}
@@ -579,7 +637,7 @@ function drawTimeline(S,play){
   const nice=[1,2,5,10,20,25,50,100,200,500];let st=nice.find(s=>S.Teff/s<=8)||1000;
   for(let t=0;t<=S.Teff+1e-9;t+=st){ctx.fillText(String(t),X(t),yAx+2);}
   // playhead
-  const xp=X(Math.min(play.idx,S.N)*S.dt);ctx.strokeStyle=C.ink;ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(xp,4);ctx.lineTo(xp,yT+8);ctx.stroke();
+  const xp=X(S.ft[Math.min(play.idx,S.N)]);ctx.strokeStyle=C.ink;ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(xp,4);ctx.lineTo(xp,yT+8);ctx.stroke();
   timelineGeom={x0,W};
 }
 let timelineGeom={x0:60,W:300};
@@ -674,13 +732,85 @@ let stairGeom={x0:40,side:300},stairReadKey="";
   cv.addEventListener("pointerdown",e=>{down=true;set(e);});cv.addEventListener("pointermove",e=>{if(down)set(e);});
   const end=()=>{down=false;};cv.addEventListener("pointerup",end);cv.addEventListener("pointercancel",end);})();
 
+/* ---------------- eversion algebra ---------------- */
+/* Moves act on the winding pair (t, p) as 2×2 integer matrices.
+   Quarter-turn eversion S: (t,p) → (−p, t); opposite sense S⁻¹: (t,p) → (p, −t).
+   Mirror eversion J: (t,p) → (p, t); opposite sense: (t,p) → (−p, −t).
+   Twist T: (t,p) → (t+p, p). */
+const EV={w:[2,1],M:[1,0,0,1],stack:[],word:[]};
+const mmul=(A,B)=>[A[0]*B[0]+A[1]*B[2],A[0]*B[1]+A[1]*B[3],A[2]*B[0]+A[3]*B[2],A[2]*B[1]+A[3]*B[3]];
+function evMove(name){
+  const quarter=$("evType").value==="quarter", opp=name==="B"&&$("evSense").value==="opposite";
+  let M;
+  if(name==="T") M=[1,1,0,1];
+  else if(quarter) M=opp?[0,1,-1,0]:[0,-1,1,0];
+  else M=opp?[0,-1,-1,0]:[0,1,1,0];
+  EV.stack.push(EV.M); EV.M=mmul(M,EV.M); EV.word.push(name==="T"?"twist":name); drawEv();
+}
+function evStatus(){
+  const [a,b,c,d]=EV.M, det=a*d-b*c, w=EV.w, v=[a*w[0]+b*w[1],c*w[0]+d*w[1]];
+  if(a===1&&b===0&&c===0&&d===1) return ["start","Back at the start: same curve, same direction, nothing reversed."];
+  if(a===-1&&b===0&&c===0&&d===-1) return ["reversed","Same curves, all traveled backward. Every winding is reversed: time reversal."];
+  if(det<0) return ["mirror","Mirror world: handedness is flipped."+(v[0]===w[0]&&v[1]===w[1]?" This curve looks unchanged, but its orientation on the surface is reversed.":"")];
+  if(v[0]===w[0]&&v[1]===w[1]) return ["partial","This curve is back, but other curves have moved."];
+  if(v[0]===-w[0]&&v[1]===-w[1]) return ["partial","This curve is back but traveled backward, and other curves have moved."];
+  return ["away","Somewhere else: the windings have been rearranged."];
+}
+function drawWinding(ctx,x0,y0,side,a,b,color,dashed){
+  const gg=(x,y)=>y?gg(y,x%y):x, g=gg(Math.abs(a),Math.abs(b))||1, A=a/g, B=b/g;
+  ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=dashed?1.5:2.4;ctx.setLineDash(dashed?[5,4]:[]);
+  for(let k=0;k<g;k++){
+    let o0=0.12,o1=0.09; if(B!==0) o0+=k/(g*Math.abs(B)); else o1+=k/g;
+    ctx.beginPath(); let pt=null,pp=null;
+    for(let i=0;i<=600;i++){const sv=i/600,th=fr(o0+A*sv),ph=fr(o1+B*sv),X=x0+th*side,Y=y0+(1-ph)*side;
+      if(i===0||Math.abs(th-pt)>0.5||Math.abs(ph-pp)>0.5)ctx.moveTo(X,Y);else ctx.lineTo(X,Y);pt=th;pp=ph;}
+    ctx.stroke();
+    if(!dashed){const L=Math.hypot(A,B)||1;
+      for(const sv of [0.18,0.52,0.86]){const th=fr(o0+A*sv),ph=fr(o1+B*sv),X=x0+th*side,Y=y0+(1-ph)*side,ux=A/L,uy=-B/L;
+        ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(X+ux*8,Y+uy*8);ctx.lineTo(X-ux*5+uy*5,Y-uy*5-ux*5);ctx.lineTo(X-ux*5-uy*5,Y-uy*5+ux*5);ctx.closePath();ctx.fill();}}
+  }
+  ctx.setLineDash([]);
+}
+function lin(x,y){const parts=[];for(const [k,v] of [[x,"t"],[y,"p"]]){if(!k)continue;const m=Math.abs(k)===1?v:Math.abs(k)+v;
+  parts.push(parts.length?(k<0?" − ":" + ")+m:(k<0?"−":"")+m);}return parts.join("")||"0";}
+function drawEv(){
+  const {ctx,w,h}=fit($("ce")); ctx.clearRect(0,0,w,h);
+  const font=getComputedStyle(document.body).fontFamily;
+  const ml=30,mb=28,mt=10,mr=10,side=Math.min(w-ml-mr,h-mt-mb),x0=ml,y0=mt;
+  ctx.fillStyle=C.panel;ctx.fillRect(x0,y0,side,side);
+  ctx.strokeStyle=C.grid;for(let g=1;g<4;g++){ctx.beginPath();ctx.moveTo(x0+g*side/4,y0);ctx.lineTo(x0+g*side/4,y0+side);ctx.moveTo(x0,y0+g*side/4);ctx.lineTo(x0+side,y0+g*side/4);ctx.stroke();}
+  const [a,b,c,d]=EV.M, w0=EV.w, v=[a*w0[0]+b*w0[1],c*w0[0]+d*w0[1]];
+  const st=evStatus();
+  ctx.save();ctx.beginPath();ctx.rect(x0,y0,side,side);ctx.clip();
+  drawWinding(ctx,x0,y0,side,w0[0],w0[1],rgba(C.muted,0.8),true);
+  drawWinding(ctx,x0,y0,side,v[0],v[1],st[0]==="reversed"?C.block:st[0]==="mirror"?C.truth:C.path,false);
+  ctx.restore();
+  ctx.strokeStyle=C.line;ctx.strokeRect(x0+0.5,y0+0.5,side-1,side-1);
+  ctx.fillStyle=C.muted;ctx.font="11px "+font;ctx.textAlign="center";ctx.textBaseline="top";ctx.fillText("θ toroidal",x0+side/2,y0+side+6);
+  ctx.save();ctx.translate(12,y0+side/2);ctx.rotate(-Math.PI/2);ctx.textBaseline="middle";ctx.fillText("φ poloidal",0,0);ctx.restore();
+  $("evPill").dataset.c=st[0];$("evPill").textContent={start:"back at start",reversed:"time reversed",mirror:"mirrored",partial:"partly back",away:"elsewhere"}[st[0]];
+  $("evText").textContent=st[1];
+  const sg=x=>String(x).replace("-","−");$("evTag").textContent=`(${sg(w0[0])}, ${sg(w0[1])}) → (${sg(v[0])}, ${sg(v[1])})`;
+  $("evRead").innerHTML=[["Moves so far",EV.word.length?EV.word.join(" → "):"none"],
+    ["What the moves do to every winding",`(t, p) → (${lin(a,b)}, ${lin(c,d)})`],
+  ].map(([x,y])=>`<div><dt>${x}</dt><dd>${y}</dd></div>`).join("");
+}
+$("evA").addEventListener("click",()=>evMove("A"));
+$("evB").addEventListener("click",()=>evMove("B"));
+$("evT").addEventListener("click",()=>evMove("T"));
+$("evUndo").addEventListener("click",()=>{if(EV.stack.length){EV.M=EV.stack.pop();EV.word.pop();drawEv();}});
+$("evReset").addEventListener("click",()=>{EV.M=[1,0,0,1];EV.stack=[];EV.word=[];drawEv();});
+$("evW").addEventListener("change",e=>{EV.w=e.target.value.split(",").map(Number);drawEv();});
+$("evType").addEventListener("change",()=>{EV.M=[1,0,0,1];EV.stack=[];EV.word=[];drawEv();});
+$("evSense").addEventListener("change",()=>{EV.M=[1,0,0,1];EV.stack=[];EV.word=[];drawEv();});
+
 /* ---------------- readouts ---------------- */
 let cls=null;
 function shapeName(e){return Math.abs(e)<1e-9?"horn":e>0?"ring":"spindle";}
 function updateReadouts(S,play){
-  const tNow=play.idx*S.dt, nObsNow=S.entries.filter(i=>i<=play.idx).length, nTruNow=S.visits.filter(v=>v.tin<=tNow).length;
+  const tNow=S.ft[Math.min(play.idx,S.N)], nObsNow=S.entries.filter(i=>i<=play.idx).length, nTruNow=S.visits.filter(v=>v.tin<=tNow).length;
   const passNow=S.flow.passes.filter(x=>x.t<=tNow), openNow=passNow.filter(x=>x.open).length;
-  $("tObs").textContent=nObsNow; $("tObsS").textContent=`of ${cls.nObs} in the full run`;
+  $("tObs").textContent=nObsNow; $("tObsS").textContent=`of ${cls.nObs} in the full run`+(S.p.clock!=="own"&&S.p.warp>0?` · ${S.baseline} with no outside clock`:"");
   $("tTrue").textContent=nTruNow;
   const missNow=S.visits.filter(v=>v.tin<=tNow&&!v.caught).length, falseNow=S.entries.filter((i,n)=>i<=play.idx&&!S.eOk[n]).length;
   $("tMiss").textContent=`${missNow} · ${falseNow}`;
@@ -722,6 +852,10 @@ function updateDiag(S){
     ["Continued-fraction convergents of ω",conv],
     ["ε = 0 selection rule",rule],
   ];
+  const clockName={own:"the system's own change (no outside clock)",all:"an uneven outside clock that runs everything",shutter:"an uneven outside clock that runs only the shutter"}[p.clock];
+  const sameCount=cls.nObs===S.baseline;
+  rows.unshift(["Toroidal angle usable as a clock here",S.flow.thetaClock?'<span class="ok">yes: it never steps backward</span>':'<span class="warn">no: the pull or the flip steps it backward at passes</span>']);
+  rows.unshift(["Shutter runs on",clockName+(p.clock==="own"||p.warp===0?"":` · count ${cls.nObs} vs ${S.baseline} with no outside clock: `+(sameCount?'<span class="ok">same</span>':'<span class="warn">different</span>'))]);
   if(S.capped) rows.unshift(["Note",`<span class="warn">Run shortened to ${fx(S.Teff,1)} turns (frame limit ${MAXF}).</span>`]);
   $("diag").innerHTML=rows.map(([a,b])=>`<div><dt>${a}</dt><dd>${b}</dd></div>`).join("");
 }
@@ -741,10 +875,11 @@ const binds=[
   ["th0",v=>v,v=>+v,v=>fx(v,3)],
   ["ph0",v=>v,v=>+v,v=>fx(v,3)],
   ["T",LR.to,LR.from,v=>String(Math.round(v))],
+  ["warp",v=>v,v=>+v,v=>fx(v,2)],
 ];
 function syncUI(){
   for(const [id,to,,fmt] of binds){$(id).value=to(P[id]);$(id+"O").textContent=fmt(P[id]);}
-  $("lock").checked=P.lock;$("settle").checked=P.settle;$("decouple").checked=P.decouple;$("flip").value=P.flip;$("metric").value=P.metric;
+  $("lock").checked=P.lock;$("settle").checked=P.settle;$("clock").value=P.clock;$("warp").disabled=P.clock==="own";$("decouple").checked=P.decouple;$("flip").value=P.flip;$("metric").value=P.metric;
   $("dt").disabled=!P.decouple;$("cK").disabled=!P.lock;
   $("dtNote").textContent=P.decouple?"Separate now. Try Δt = 1 or 3 with ω = 1/3 to see the stroboscope.":"Coupled now: Δt = δ / |v|, so a frame step covers a distance g = δ.";
   $("epsShape").textContent=shapeName(P.eps);
@@ -757,6 +892,7 @@ $("settle").addEventListener("change",e=>{P.settle=e.target.checked;onParams();}
 $("decouple").addEventListener("change",e=>{P.decouple=e.target.checked;if(P.decouple)P.dt=P.delta/Math.hypot(1,P.omega);onParams();});
 $("flip").addEventListener("change",e=>{P.flip=e.target.value;onParams();});
 $("metric").addEventListener("change",e=>{P.metric=e.target.value;onParams();});
+$("clock").addEventListener("change",e=>{P.clock=e.target.value;onParams();});
 document.querySelectorAll("[data-om]").forEach(b=>b.addEventListener("click",()=>{P.omega=omPreset(b.dataset.om);onParams();}));
 $("align").addEventListener("click",()=>{const t1=fr(0.5-P.ph0)/P.omega;P.th0=fr(-t1);onParams();});
 $("resetView").addEventListener("click",()=>{view.yaw=-0.55;view.pitch=1.0;requestDraw();});
@@ -773,7 +909,7 @@ function frame(ts){
     sim=simulate(P);cls=classify(sim);simDirty=false;play.idx=(play.on||!atEnd)?Math.round(frac*sim.N):sim.N;updateDiag(sim);}
   if(play.on){const dtms=lastTs?Math.min(50,ts-lastTs):16;lastTs=ts;play.idx=Math.min(sim.N,play.idx+Math.max(1,Math.round(sim.N*dtms/12000)));
     if(play.idx>=sim.N)stopPlay();else requestDraw();}
-  draw3D(sim,play);drawFlat(sim,play);drawTimeline(sim,play);updateReadouts(sim,play);if(!play.on)drawStair(P);
+  draw3D(sim,play);drawFlat(sim,play);drawTimeline(sim,play);updateReadouts(sim,play);if(!play.on){drawStair(P);drawEv();}
 }
 function stopPlay(){play.on=false;lastTs=0;$("play").textContent="▶ Play";$("play").setAttribute("aria-pressed","false");}
 $("play").addEventListener("click",()=>{if(play.on){stopPlay();requestDraw();return;}
