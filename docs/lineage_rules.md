@@ -1,59 +1,34 @@
-# Rules of the lineage (draft 1)
+# Rules of the lineage (draft 2, in the author's terms)
 
-A precise statement of the parent → child → grandparent picture, so that every
-configuration that spawns and closes can be listed by a program.
+## The rules
 
-## Objects
+1. **A horn torus is a continuous phase relation**, for example between time and state.
+2. **A vortex is a place of localized phase change** on a torus's surface. Its charge can be
+   whole or fractional.
+3. **Every vortex spawns a child** horn torus. A tube leaves the vortex along the surface
+   normal and arrives along the child's toroidal axis, into its horn point.
+4. **Charge balance.** The vortex charges on each torus sum to zero. So every torus has at
+   least two vortices, and therefore at least two children.
+5. **The grandparent rule.** Every child must reconnect to its grandparent through its own
+   offspring: if G spawned P and P spawned X, then X spawns G.
+6. **Closure.** Spawning must eventually stop, so children are tori already in the family.
+   A torus is never its own child, and one torus spawns another at most once.
 
-* **Parent.** A torus with two loops: `a` (toroidal, around the big circle) and
-  `b` (poloidal, through the hole).
-* **Vortices.** Points on the parent. A vortex of charge `p/t` (lowest terms)
-  is a place where the phase turns `p/t` of the wheel on one trip around it.
-* **Children.** The lineage has `d` children in total. Each child is one sheet
-  lying over the parent: every point of the parent has `d` children above it.
-* **Spikes.** Each vortex joins the children above it into cycles. A cycle of
-  length `t` is one child horn torus of winding `(t, p)`: it closes after `t`
-  trips around the vortex, having turned the phase `p` times.
+## How the program reads them
 
-## Moves
+A family is a directed graph on n tori, with an edge u → v when a vortex on u spawns v. Rules
+4–6 become: every torus has out-degree at least 2 and in-degree at least 1; there are no
+self-loops; and G → P → X forces X → G. Charges are numbers on the edges: those leaving a
+torus sum to zero (rule 4), and optionally those arriving at a torus sum to zero too
+(balance at the horn point).
 
-Walking once along a loop of the parent carries each child to some child. So
-every loop gives a shuffle (a permutation) of the `d` children:
+For comparison the program also runs the **great-grandparent rule**: G → P → X → Y forces
+Y → G.
 
-* `A` for the toroidal loop `a`, `B` for the poloidal loop `b`,
-* `S_i` for the small loop around vortex `i`.
+Code: `torus_count/lineage.py`. Results: `results/lineage_closure.md`.
 
-A vortex of charge `p/t` with a single child of winding `(t, p)` shuffles `t`
-children in a cycle and leaves the other `d − t` alone.
+## Earlier draft
 
-## When a configuration closes
-
-Going around all the vortices together is the same as going around the parent's
-two loops forward and then backward (on a torus that big loop is the rim
-`a b a⁻¹ b⁻¹`). The lineage **closes** when doing all of it returns every child
-to itself:
-
-    A B A⁻¹ B⁻¹ · S₁ S₂ ⋯ S_k = do nothing
-
-and it is **one family** when every child can be reached from every other by
-these moves.
-
-Two configurations are the same if they differ only by renaming the children.
-
-## Two versions of the shuffles
-
-* **Phase-wheel version.** The children are the `d` phase offsets
-  `0, 1/d, …, (d−1)/d`, and every move rotates them (a charge `q` shifts every
-  child by `q`). All moves commute.
-* **General version.** Any shuffles at all, as long as each vortex's shuffle has
-  the cycle lengths its charges call for.
-
-## What gets counted
-
-For each choice of `d` and vortex types, the number of closed families, each
-weighted by 1 / (number of renamings that leave it unchanged). This is the
-standard way to count covers, called a Hurwitz number, so the results can be
-compared with known mathematics.
-
-The total number of holes of a closed lineage follows from the Riemann–Hurwitz
-formula over a torus: `2g − 2 = Σ_i (d − number of cycles of S_i)`.
+Draft 1 read the children as sheets of a branched cover of a single parent (Hurwitz
+counting). Its results are kept in `results/lineage_enumeration.md`. That reading is a
+different question from the one above.
