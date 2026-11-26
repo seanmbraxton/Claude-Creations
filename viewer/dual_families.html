@@ -65,7 +65,7 @@ td.c{text-align:right;font-family:var(--f-mono)}
     <div class="card">
       <canvas id="cv" aria-label="Two dual sets of horn tori joined by charged tubes"></canvas>
       <div class="legend">
-        <span><i class="sw" style="background:var(--setA)"></i>set A</span><span><i class="sw" style="background:var(--setB)"></i>set B</span>
+        <span><i class="sw" style="background:var(--setA)"></i>set A (the upward tetrahedron, for 2 children)</span><span><i class="sw" style="background:var(--setB)"></i>set B (the downward tetrahedron)</span>
         <span><i class="sw" style="background:var(--plus)"></i>positive tube</span><span><i class="sw" style="background:var(--minus)"></i>negative tube</span>
         <span><i class="sw" style="background:var(--sel)"></i>selected torus</span>
       </div>
@@ -93,7 +93,7 @@ td.c{text-align:right;font-family:var(--f-mono)}
       <li>A torus with k children has k parents, and no torus is the child of its own child, so it is linked to 2k different tori.</li>
       <li>All of them are in the other set, so each set needs at least 2k tori, and the family needs at least 4k.</li>
       <li>The family shown reaches that bound for every k. Every torus is linked to every torus of the other set: k as its children and k as its parents.</li>
-      <li>For k = 2 this is your dual tetrahedron: 8 tori at the corners of a cube, each linked to the four corners of the other tetrahedron.</li>
+      <li>For k = 2 this is your star tetrahedron: two dual tetrahedra, one pointing up and one down, with 8 tori at their points. Each torus is linked to all four points of the other tetrahedron. The tube to the opposite point runs straight through the center.</li>
     </ul>
     <h2>Charges</h2>
     <ul>
@@ -109,7 +109,7 @@ td.c{text-align:right;font-family:var(--f-mono)}
 const TAU=Math.PI*2,$=id=>document.getElementById(id);
 const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 let k=2,sel=null,clock=0;
-const view={yaw:0.6,pitch:0.45};
+const view={yaw:0.6,pitch:0.12};
 let C={};
 function readColors(){const cs=getComputedStyle(document.documentElement);for(const c of ["bg","panel","ink","muted","line","setA","setB","plus","minus","ok","sel"])C[c]=cs.getPropertyValue("--"+c).trim();}
 const rgb=h=>{const v=parseInt(h.replace("#",""),16);return [(v>>16)&255,(v>>8)&255,v&255];};
@@ -132,7 +132,9 @@ function build(){
   for(let b=0;b<m;b++)for(let d=1;d<=k;d++)edges.push({u:id("B",b),v:id("A",b+d),q:chargeOf("B",d)});
   // positions: k = 2 -> the two tetrahedra of a cube; otherwise two staggered rings
   const pos=[];
-  if(k===2){const T=[[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]].map(v=>v.map(x=>x/Math.sqrt(3)));
+  if(k===2){const u=norm([1,1,1]),zA=[0,0,1],ax=norm(cross(u,zA)),ang=Math.acos(dot(u,zA));
+    const rot=v=>{const c=Math.cos(ang),sn=Math.sin(ang),d=dot(ax,v),cr=cross(ax,v);return [0,1,2].map(i=>v[i]*c+cr[i]*sn+ax[i]*d*(1-c));};
+    const T=[[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]].map(v=>rot(norm(v)));
     for(let i=0;i<4;i++)pos.push(T[i]);for(let i=0;i<4;i++)pos.push(mul(T[i],-1));}
   else{const h=0.42,R=Math.sqrt(1-h*h);for(let i=0;i<m;i++)pos.push([R*Math.cos(TAU*i/m),R*Math.sin(TAU*i/m),h]);
     for(let i=0;i<m;i++)pos.push([R*Math.cos(TAU*(i+0.5)/m),R*Math.sin(TAU*(i+0.5)/m),-h]);}
@@ -160,7 +162,7 @@ function update(){
   document.querySelectorAll("[data-k]").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.k===k)));
   $("nT").textContent=4*k;
   const o=F.edges.filter(e=>e.u===0).map(e=>fs(e.q));$("chg").textContent="("+o.join(", ")+")";
-  $("arr").textContent=k===2?"two tetrahedra in a cube":`two rings of ${2*k}`;
+  $("arr").textContent=k===2?"star tetrahedron (two dual tetrahedra)":`two rings of ${2*k}`;
   $("rules").innerHTML=checks().map(([t,ok])=>`<tr><td>${t}</td><td class="c ${ok?"ok":"bad"}">${ok?"✓":"✗"}</td></tr>`).join("");
   const s=sel===null?0:sel,nm=i=>F.nodes[i].set+(F.nodes[i].i+1);
   const rows=[...F.edges.filter(e=>e.v===s).map(e=>["parent ("+(e.q.v>0?"mother's side":"father's side")+")",nm(e.u),fs(e.q)]),...F.edges.filter(e=>e.u===s).map(e=>["child",nm(e.v),fs(e.q)])];
@@ -176,6 +178,11 @@ function draw(){
   const cyw=Math.cos(view.yaw),syw=Math.sin(view.yaw),cp=Math.cos(view.pitch),sp=Math.sin(view.pitch);
   const P=p=>{const X=p[0]*cyw-p[1]*syw,Y=p[0]*syw+p[1]*cyw;return [cx+X*sc,cy-(Y*sp+p[2]*cp)*sc,Y*cp-p[2]*sp];};
   const items=[],s=sel===null?0:sel,RH=k>3?0.07:0.09;drawn=[];
+  if(k===2){for(const [set,col] of [["A",C.setA],["B",C.setB]]){const V=F.pos.filter((_,i)=>F.nodes[i].set===set);
+      for(const tri of [[0,1,2],[0,1,3],[0,2,3],[1,2,3]]){const q=tri.map(i=>P(V[i])),dd=(q[0][2]+q[1][2]+q[2][2])/3;
+        items.push({d:dd+0.02,f:()=>{ctx.fillStyle=rgba(col,0.13);ctx.beginPath();q.forEach((p,j)=>j?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.fill();}});}
+      for(let i=0;i<4;i++)for(let j=i+1;j<4;j++){const p0=P(V[i]),p1=P(V[j]);
+        items.push({d:(p0[2]+p1[2])/2+0.01,f:()=>{ctx.strokeStyle=rgba(col,0.85);ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(p0[0],p0[1]);ctx.lineTo(p1[0],p1[1]);ctx.stroke();}});}}}
   // tubes: bowed outward, tapering toward the child
   for(const e of F.edges){const a=F.pos[e.u],b=F.pos[e.v],sm=add(a,b),L=Math.hypot(...sm);
     // a tube between opposite corners passes straight through the centre (a long diagonal); all others bow outward
@@ -198,7 +205,7 @@ function draw(){
   items.sort((x,y)=>y.d-x.d);for(const it of items)it.f();
 }
 
-document.querySelectorAll("[data-k]").forEach(b=>b.addEventListener("click",()=>{k=+b.dataset.k;sel=null;F=build();update();}));
+document.querySelectorAll("[data-k]").forEach(b=>b.addEventListener("click",()=>{k=+b.dataset.k;sel=null;F=build();view.pitch=k===2?0.12:0.45;update();}));
 const cv=$("cv");let drag=null,moved=false;
 cv.addEventListener("pointerdown",e=>{drag={x:e.clientX,y:e.clientY,yaw:view.yaw,pitch:view.pitch};moved=false;cv.setPointerCapture(e.pointerId);});
 cv.addEventListener("pointermove",e=>{if(!drag)return;if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)>5)moved=true;view.yaw=drag.yaw+(e.clientX-drag.x)*0.01;view.pitch=Math.max(-1.5,Math.min(1.5,drag.pitch-(e.clientY-drag.y)*0.01));});
