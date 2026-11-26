@@ -62,7 +62,7 @@ td.num{font-family:var(--f-mono);text-align:right}
   <header>
     <div class="eyebrow">a balanced pair on every torus · four generations</div>
     <h1>Vortex Lineage</h1>
-    <p class="lede">Four horn tori sit at the corners of a tetrahedron. Each carries a balanced pair: a +1 vortex and a −1 antivortex. The +1 spike curves forward into the next torus's horn point. The −1 spike does the same in the opposite direction, so each horn point receives one of each, through its two sides. Both loops close after four generations.</p>
+    <p class="lede">Four horn tori sit at the corners of a tetrahedron. Each carries a balanced pair at two separate points on its surface: a +1 vortex on top of the tube and a −1 antivortex underneath. Each spike leaves straight out along the surface normal, curves outward, and arrives along the child's axis into its horn point. The +1 goes forward around the loop and the −1 backward, and both close after four generations.</p>
   </header>
 
   <div class="grid">
@@ -73,22 +73,22 @@ td.num{font-family:var(--f-mono);text-align:right}
         <span><i class="sw" style="background:var(--minus)"></i>−1 antivortex and its spike (clockwise)</span>
         <span><i class="sw" style="background:var(--flow)"></i><i class="sw" style="background:var(--flowm)"></i>one unit of each charge travelling</span>
       </div>
-      <p class="hint">Drag to turn it. Each spike is thick where it leaves its vortex and comes to a sharp point in a horn point. The +1 and −1 spikes between two tori run in separate lanes, in opposite directions.</p>
+      <p class="hint">Drag to turn it. Each spike is thick where it leaves its vortex and narrows to a point at the next horn point. The thin line through each torus is its axis: the +1 arrives along it from one end and the −1 from the other.</p>
     </div>
     <div class="card">
-      <div class="ctl"><label for="bow">bow of the spikes (0 = straight edges, 1 = arcs on the sphere)</label><output id="bowO"></output><input type="range" id="bow" min="0" max="1" step="0.01"></div>
+      <div class="ctl"><label for="bow">how far the spikes bow outward</label><output id="bowO"></output><input type="range" id="bow" min="0" max="1" step="0.01"></div>
       <div class="status">
-        <div class="tile"><div class="k">Corner angle</div><div class="v" id="corner"></div><div class="s">between two edges at a corner</div></div>
+        <div class="tile"><div class="k">Leaves off the normal by</div><div class="v" id="dep"></div><div class="s">both charges</div></div>
+        <div class="tile"><div class="k">Arrives off the child's axis by</div><div class="v" id="arr"></div><div class="s">both charges</div></div>
         <div class="tile"><div class="k">Center angle</div><div class="v">109.47°</div><div class="s">between two corners</div></div>
-        <div class="tile"><div class="k">Bows out to</div><div class="v" id="bowR"></div><div class="s">of the sphere's radius</div></div>
       </div>
       <div class="gen" id="gen"></div>
       <div class="row"><button id="step">Follow one spike of each</button><button id="play">Play</button><button id="reset">Back to the parent</button></div>
       <table><thead><tr><th>On every torus</th><th style="text-align:right">Charge</th></tr></thead><tbody>
-        <tr><td>+1 vortex (sends forward)</td><td class="num">+1</td></tr>
-        <tr><td>−1 antivortex (sends backward)</td><td class="num">−1</td></tr>
+        <tr><td>+1 vortex, top of the tube (sends forward)</td><td class="num">+1</td></tr>
+        <tr><td>−1 antivortex, underneath (sends backward)</td><td class="num">−1</td></tr>
         <tr><td>Surface total</td><td class="num">0</td></tr>
-        <tr><td>Horn point receives +1 and −1</td><td class="num">0</td></tr>
+        <tr><td>Arriving along the axis: +1 from one end, −1 from the other</td><td class="num">0</td></tr>
       </tbody></table>
     </div>
   </div>
@@ -96,10 +96,10 @@ td.num{font-family:var(--f-mono);text-align:right}
   <section class="card notes">
     <h2>What this shows</h2>
     <ul>
-      <li><b>Every torus is balanced on its own.</b> Its surface holds one vortex and one antivortex, so the charges add to zero, as a torus requires. Its horn point also receives one of each.</li>
+      <li><b>Every torus is balanced on its own.</b> Its surface holds one vortex and one antivortex at two separate points, so the charges add to zero without the pair cancelling. Each spike leaves along the surface normal at its own vortex.</li>
       <li><b>The −1 spikes trace the same family backward.</b> Following the +1 spikes you go parent → child → grandchild → great-grandchild → parent. Following the −1 spikes from the parent you go parent → great-grandchild → grandchild → child → parent. The opposite charge visits the same lineage in reverse order.</li>
-      <li><b>Each charge has its own side of the horn.</b> A horn point is two cones meeting tip to tip. The +1 spike enters through one cone and the −1 spike through the other.</li>
-      <li><b>The angles.</b> From the center, two corners are 109.47° apart. At a corner, two edges meet at 60° when the spikes are straight and at 120° when they bow out onto the sphere.</li>
+      <li><b>Arrival is along the child's axis.</b> Each child's axis lies along the direction of the loop. The +1 comes in traveling forward along it and the −1 traveling backward, so they enter the horn point through its two opposite cones.</li>
+      <li><b>The angles.</b> From the center, any two corners are 109.47° apart. The readouts measure how closely each spike leaves along its surface normal and arrives along its child's axis.</li>
     </ul>
   </section>
 </div>
@@ -113,7 +113,7 @@ const s3=1/Math.sqrt(3);
 const V=[[1,1,1],[1,-1,-1],[-1,1,-1],[-1,-1,1]].map(v=>v.map(x=>x*s3));
 const NAMES=["parent","child","grandchild","great-grandchild"];
 const RH=0.13,LANE=0.07;
-let bow=1,k=0,anim=null,auto=false,clock=0;
+let bow=0.5,k=0,anim=null,auto=false,clock=0;
 const view={yaw:0.55,pitch:0.35};
 let C={};
 function readColors(){const cs=getComputedStyle(document.documentElement);for(const c of ["bg","panel","ink","muted","line","torus","plus","minus","flow","flowm"])C[c]=cs.getPropertyValue("--"+c).trim();}
@@ -124,27 +124,31 @@ const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],len=a=>Math.hypot(...a),norm=a=>m
 const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
 const nxt=j=>(j+1)%4,prv=j=>(j+3)%4;
 
-/* edge centre line between corners i and j: straight edge blended with the great-circle arc */
-const OM=Math.acos(-1/3);
-function arc(i,j,s){const a=V[i],b=V[j],line=add(mul(a,1-s),mul(b,s)),sl=add(mul(a,Math.sin((1-s)*OM)/Math.sin(OM)),mul(b,Math.sin(s*OM)/Math.sin(OM)));return add(mul(line,1-bow),mul(sl,bow));}
-/* each spike runs in its own lane: offset sideways, so i→j and j→i sit on opposite sides */
-function lane(i,j,s){const p=arc(i,j,s),t=sub(arc(i,j,Math.min(1,s+0.01)),arc(i,j,Math.max(0,s-0.01))),n=norm(cross(t,p));return add(p,mul(n,LANE*Math.sin(Math.PI*s)));}
-const tanEnd=(i,j)=>norm(sub(lane(i,j,1),lane(i,j,0.99)));
-const tanStart=(i,j)=>norm(sub(lane(i,j,0.01),lane(i,j,0)));
+/* each torus: axis along the loop, the +1 vortex on top of the tube (normal = +axis), the −1 underneath */
+function axisOf(j){const d=sub(V[nxt(j)],V[prv(j)]),t=sub(d,mul(V[j],dot(d,V[j])));return norm(t);}
 function frame(a){const h=Math.abs(a[2])<0.9?[0,0,1]:[1,0,0],e1=norm(cross(a,h));return [e1,cross(a,e1)];}
-/* torus j: axis bisects the two incoming directions, so +1 enters one cone of the horn and −1 the other */
-function torusInfo(j){
-  const dPlus=tanEnd(prv(j),j),dMinus=tanEnd(nxt(j),j),a=norm(sub(dPlus,dMinus));
-  const place=out=>{const dp=norm(sub(out,mul(a,dot(out,a))));return add(V[j],mul(dp,2*RH*1.02));};
-  return {a,srcPlus:place(tanStart(j,nxt(j))),srcMinus:place(tanStart(j,prv(j)))};}
-function spikePlus(j,s){const t=torusInfo(j);return add(lane(j,nxt(j),s),mul(sub(t.srcPlus,V[j]),Math.pow(1-s,3)));}
-function spikeMinus(j,s){const t=torusInfo(j);return add(lane(j,prv(j),s),mul(sub(t.srcMinus,V[j]),Math.pow(1-s,3)));}
+function torusInfo(j){const a=axisOf(j),out=V[j];   // V[j] is already perpendicular to the axis
+  return {a,srcPlus:add(V[j],mul(add(out,a),RH)),srcMinus:add(V[j],mul(sub(out,a),RH))};}
+/* a spike: leaves along the surface normal, bulges outward, arrives along the child's axis */
+const L1=0.34,L2=0.34;
+function bez(P0,P1,P2,P3,s){const u=1-s;return [0,1,2].map(i=>u*u*u*P0[i]+3*u*u*s*P1[i]+3*u*s*s*P2[i]+s*s*s*P3[i]);}
+function spikeGen(j,dir,s){
+  const t=torusInfo(j),m=dir>0?nxt(j):prv(j),am=axisOf(m);
+  const P0=dir>0?t.srcPlus:t.srcMinus,n0=mul(t.a,dir),P3=V[m],arrive=mul(am,dir);
+  const P1=add(P0,mul(n0,L1)),P2=sub(P3,mul(arrive,L2));
+  const base=bez(P0,P1,P2,P3,s),mid=norm(add(V[j],V[m]));
+  return add(base,mul(mid,bow*0.32*16*s*s*(1-s)*(1-s)));}   // bulge vanishes with its slope at both ends
+const spikePlus=(j,s)=>spikeGen(j,1,s),spikeMinus=(j,s)=>spikeGen(j,-1,s);
+const arc=(i,j,s)=>{const a=V[i],b=V[j],OM=Math.acos(-1/3);return add(mul(a,Math.sin((1-s)*OM)/Math.sin(OM)),mul(b,Math.sin(s*OM)/Math.sin(OM)));};
 
 function update(){
   $("bowO").textContent=bow.toFixed(2);
-  const e1=norm(sub(arc(0,1,0.001),arc(0,1,0))),e2=norm(sub(arc(0,3,0.001),arc(0,3,0)));
-  $("corner").textContent=(Math.acos(Math.max(-1,Math.min(1,dot(e1,e2))))*180/Math.PI).toFixed(1)+"°";
-  $("bowR").textContent=len(arc(0,1,0.5)).toFixed(3);
+  const ang=(u,v)=>Math.acos(Math.max(-1,Math.min(1,dot(norm(u),norm(v)))))*180/Math.PI;
+  let dep=0,arr=0;
+  for(let j=0;j<4;j++)for(const dir of [1,-1]){const t=torusInfo(j),m=dir>0?nxt(j):prv(j);
+    dep=Math.max(dep,ang(sub(spikeGen(j,dir,1e-4),spikeGen(j,dir,0)),mul(t.a,dir)));
+    arr=Math.max(arr,ang(sub(spikeGen(j,dir,1),spikeGen(j,dir,1-1e-4)),mul(axisOf(m),dir)));}
+  $("dep").textContent=dep.toFixed(2)+"°";$("arr").textContent=arr.toFixed(2)+"°";
   const g=((k%4)+4)%4,gm=((-k%4)+4)%4;
   $("gen").innerHTML=k===0?"Both charges start at the parent."
     :(g===0?`After ${k} spikes both charges are back at the parent.`:`After ${k} spike${k>1?"s":""}: the +1 charge is at the <b>${NAMES[g]}</b>, the −1 charge at the <b>${NAMES[gm]}</b>.`);
@@ -175,6 +179,7 @@ function draw(){
       items.push({d:(A[2]+B[2]+D[2]+E[2])/4,f:()=>{ctx.fillStyle=fill;ctx.beginPath();ctx.moveTo(A[0],A[1]);ctx.lineTo(B[0],B[1]);ctx.lineTo(D[0],D[1]);ctx.lineTo(E[0],E[1]);ctx.closePath();ctx.fill();}});}
     for(const [src,sg,c] of [[t.srcPlus,1,C.plus],[t.srcMinus,-1,C.minus]]){const vs=P(src);
       items.push({d:vs[2]-0.02,f:()=>{ctx.strokeStyle=c;ctx.lineWidth=2;ctx.beginPath();for(let q=0;q<=40;q++){const an=sg*(q/40*TAU*1.6+clock*2),rr=1.5+q/40*5,x=vs[0]+rr*Math.cos(an),y=vs[1]+rr*Math.sin(an);q?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();}});}
+    {const A1=P(add(c0,mul(t.a,RH*2.2))),A2=P(sub(c0,mul(t.a,RH*2.2)));items.push({d:(A1[2]+A2[2])/2-0.01,f:()=>{ctx.strokeStyle=rgba(C.ink,0.55);ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(A1[0],A1[1]);ctx.lineTo(A2[0],A2[1]);ctx.stroke();}});}
     const hp=P(c0),lab=P(mul(c0,1.32));
     items.push({d:hp[2]-0.03,f:()=>{ctx.fillStyle=C.panel;ctx.strokeStyle=C.ink;ctx.lineWidth=1.6;ctx.beginPath();ctx.arc(hp[0],hp[1],3.5,0,TAU);ctx.fill();ctx.stroke();}});
     items.push({d:-9,f:()=>{ctx.font="600 12px "+font;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillStyle=C.ink;ctx.fillText(NAMES[j],lab[0],lab[1]);}});}
