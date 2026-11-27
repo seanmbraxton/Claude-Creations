@@ -99,3 +99,18 @@ Result (torus_count/interference.py, tests/test_interference.py): with evenly pl
 the sum is exactly 1 in size when k divides M and exactly 0 otherwise. A prime imbalance
 survives only whole or as all ones. The clean pattern needs each unit to wind the phase a whole
 number of times; children whose arcs are sized by their charge never cancel.
+
+## Draft 7: opposite parents, every pairing at once
+
+Dropped from draft 6: the phase rule (charge times angle), even spacing and whole units.
+Kept: charge is an amount of turning, followed continuously (whole windings are remembered,
+the fractional mismatch is a seam). Seams end at vortices; overlapping seams make new seams and
+vortices, which spawn children. Parents have opposite signs (mother +, father -), so their
+seams partly cancel and the child carries the difference. Every pairing happens at once.
+Neutral = a child born at exactly 0.
+
+Result (torus_count/superposed_pairing.py, tests/test_superposed_pairing.py,
+viewer/seams_and_tones.html): neutral iff a/b is rational; depends only on the reduced ratio
+p/q; comparable parents resolve in about 1.13 log2(q) + 2 generations versus up to q along a
+single subtract-the-smaller path; a parent 1/m of the other still needs about m generations;
+prime and composite q of similar size show no difference (mean residual 0.02 vs -0.005).

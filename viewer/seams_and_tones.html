@@ -1,0 +1,210 @@
+<title>Seams and Tones</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* Layout: parents set at top; the fabric (phase as colour, seams as dark lines) and the tones
+   (newborn children per generation, playable) are two views of the same lineage; the
+   closest-approach plot shows how near any seam has come to meeting its exact opposite. */
+:root{
+  --bg:#f3f5f8; --panel:#ffffff; --ink:#17202b; --muted:#5a6676; --line:#d9dee6; --chip:#eef1f6;
+  --plus:#c27c00; --minus:#2459c4; --ok:#13875a; --accent:#2459c4;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
+  --plus:#f0b033; --minus:#6f9fff; --ok:#3fcf8e; --accent:#6f9fff; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
+  --plus:#f0b033; --minus:#6f9fff; --ok:#3fcf8e; --accent:#6f9fff; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 28px}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.7rem,4.5vw,2.3rem);line-height:1.1}
+h2{font-size:1.05rem}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--muted);max-width:70ch;margin-top:6px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+canvas{display:block;width:100%;border-radius:6px;background:var(--bg)}
+#fabric{aspect-ratio:4/5}
+#approach{height:140px}
+.ctl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center}
+.ctl label{font-size:.86rem}
+.ctl output{font-family:var(--f-mono);font-size:.84rem}
+.ctl input{grid-column:1/-1;width:100%;accent-color:var(--accent);height:26px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+button{font:inherit;font-size:.84rem;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer}
+button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:500}
+button:hover{border-color:var(--muted)}
+button.primary{background:var(--accent);color:var(--panel);border-color:var(--accent);font-weight:500}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.verdict{font-size:1rem;font-weight:500}
+.hint{font-size:.8rem;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tile{border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+.tile .k{font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.tile .v{font-family:var(--f-mono);font-size:1rem;font-weight:500;overflow-wrap:anywhere}
+.gens{display:flex;flex-direction:column;gap:4px;max-height:340px;overflow:auto;font-family:var(--f-mono);font-size:.78rem}
+.gen{display:grid;grid-template-columns:4.6em minmax(0,1fr);gap:6px;align-items:start;padding:3px 4px;border-radius:5px}
+.gen.on{background:var(--chip)}
+.gen>span:first-child{white-space:nowrap}
+.gen .tones{display:flex;flex-wrap:wrap;gap:3px}
+.t{padding:0 5px;border-radius:4px;border:1px solid var(--line)}
+.t.p{color:var(--plus)} .t.n{color:var(--minus)} .t.z{color:var(--ok);border-color:var(--ok);font-weight:500}
+.more{color:var(--muted)}
+.notes{font-size:.9rem;max-width:75ch;display:flex;flex-direction:column;gap:8px}
+.notes ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:5px}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">opposite parents · every pairing at once · seams as colour, children as tones</div>
+    <h1>Seams and Tones</h1>
+    <p class="lede">A mother seam turns counterclockwise by <i>a</i>, a father seam clockwise by <i>b</i>. Every generation, every counterclockwise seam meets every clockwise seam, and each meeting has a child carrying the difference. Parents keep sounding. The family becomes neutral when a child is born at exactly zero: a seam has met its exact opposite.</p>
+  </header>
+
+  <div class="card">
+    <div class="row" id="presets"></div>
+    <div class="grid">
+      <div class="ctl"><label for="a">mother, counterclockwise (+)</label><output id="aO"></output><input type="range" id="a" min="0.01" max="1" step="0.001"></div>
+      <div class="ctl"><label for="b">father, clockwise (−)</label><output id="bO"></output><input type="range" id="b" min="0.01" max="1" step="0.001"></div>
+    </div>
+    <p class="verdict" id="verdict"></p>
+    <div class="stats">
+      <div class="tile"><div class="k">Generations, every pairing at once</div><div class="v" id="tSup"></div></div>
+      <div class="tile"><div class="k">Generations, one path (subtract the smaller)</div><div class="v" id="tOne"></div></div>
+      <div class="tile"><div class="k">Their ratio</div><div class="v" id="tRat"></div></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>The fabric</h2>
+      <canvas id="fabric" aria-label="Phase around the child (across) against generation (down); hue is phase, dark lines are seams where the waves cancel"></canvas>
+      <p class="hint">Across: once around the child. Down: generations. Each seam present winds the phase by its own amount; hue is the combined phase, and the dark threads are seams where the waves cancel. Below the green line the family has a neutral child.</p>
+    </div>
+    <div class="card">
+      <h2>The tones</h2>
+      <div class="row"><button class="primary" id="play">▶ Play the lineage</button><button id="cancel">Hear the meeting</button></div>
+      <p class="hint" id="audioNote">Each seam is a tone: pitch from its size, counterclockwise and clockwise half a cycle apart. A meeting of two tones sounds their difference, the child. When a tone meets its exact opposite, they cancel to silence.</p>
+      <div class="gens" id="gens"></div>
+      <h2>Closest any seam has come to its opposite</h2>
+      <canvas id="approach" aria-label="Smallest leftover between a counterclockwise and a clockwise seam, by generation, log scale"></canvas>
+    </div>
+  </div>
+
+  <section class="card notes">
+    <h2>What the lineage shows</h2>
+    <ul>
+      <li><b>Neutral exactly when the ratio is a fraction.</b> Seams built from <i>a</i> and <i>b</i> can only meet their exact opposite if <i>a</i>/<i>b</i> is a ratio of whole numbers. Otherwise they come closer and closer forever and never cancel. Try the golden ratio or √2.</li>
+      <li><b>Every pairing at once is much faster than one path.</b> Subtracting the smaller from the larger along a single line can take as many generations as the denominator. With every pairing present, comparable parents find their opposite in about log₂ of the denominator.</li>
+      <li><b>Lopsided parents are still slow.</b> If one parent is a twelfth of the other, it takes about twelve generations whatever else happens: the weak parent can only chip away.</li>
+      <li><b>Primes don't show up here.</b> Prime and composite denominators of the same size resolve in the same number of generations, on average to within 0.02 of a generation.</li>
+      <li><b>The slider is always rational.</b> Its steps are thousandths, so slider values always resolve eventually. The irrational presets are the ones that never do.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(function(){
+"use strict";
+const TAU=Math.PI*2,$=id=>document.getElementById(id),CAP=30,MAXT=3000,TOL=1e-11;
+const PHI=(Math.sqrt(5)-1)/2;
+const PRESETS=[["2/3 and 1",2/3,1],["5/8 and 1",5/8,1],["1/12 and 1",1/12,1],["7/11 and 1",7/11,1],["golden and 1",PHI,1],["1/√2 and 1",Math.SQRT1_2,1]];
+let S={a:2/3,b:1,preset:0},C={},R=null,playing=null,actx=null;
+function readColors(){const cs=getComputedStyle(document.documentElement);for(const c of ["bg","panel","ink","muted","line","plus","minus","ok","accent"])C[c]=cs.getPropertyValue("--"+c).trim();}
+const font=()=>getComputedStyle(document.body).fontFamily;
+
+/* run: all opposite-sign pairs collide each generation; children carry the sum */
+function run(a,b){
+  const all=new Map([[a.toFixed(11),a],[(-b).toFixed(11),-b]]),gens=[{born:[a,-b]}];let neutral=null,approach=[];
+  for(let g=1;g<=CAP;g++){
+    const vals=[...all.values()],pos=vals.filter(x=>x>0),neg=vals.filter(x=>x<0),born=new Map();let best=Infinity;
+    for(const x of pos)for(const y of neg){const s=x+y,k=s.toFixed(11);best=Math.min(best,Math.abs(s));
+      if(Math.abs(s)<TOL){if(neutral===null)neutral={g,x,y};continue;}
+      if(!all.has(k)&&!born.has(k))born.set(k,s);}
+    approach.push(best);
+    for(const [k,v] of born)all.set(k,v);
+    gens.push({born:[...born.values()].sort((u,v)=>Math.abs(v)-Math.abs(u)),neutral:neutral&&neutral.g===g?neutral:null});
+    if(neutral||all.size>MAXT)break;}
+  return {gens,neutral,approach,size:all.size,tones:[...all.values()]};
+}
+function cf(x,n=8){const out=[];for(let i=0;i<n;i++){const f=Math.floor(x+1e-12);out.push(f);const r=x-f;if(r<1e-9)break;x=1/r;}return out;}
+function ratioText(a,b){const r=a/b;for(let q=1;q<=1000;q++){const p=Math.round(r*q);if(Math.abs(p/q-r)<1e-9)return {p,q,txt:`${p}/${q}`};}return {txt:"not a fraction",p:null,q:null};}
+function euclid(p,q){let n=0;while(q){n+=Math.floor(p/q);[p,q]=[q,p%q];}return n;}
+
+function update(){
+  $("aO").textContent=S.preset>=0?PRESETS[S.preset][0].split(" and ")[0]:S.a.toFixed(3);$("bO").textContent=S.b.toFixed(3);
+  [...$("presets").children].forEach((el,i)=>el.setAttribute("aria-pressed",i===S.preset));
+  R=run(S.a,S.b);const rt=ratioText(Math.min(S.a,S.b),Math.max(S.a,S.b));
+  $("tRat").textContent=rt.txt;
+  $("tSup").textContent=R.neutral?`${R.neutral.g}`:`none in ${R.gens.length-1}`;
+  $("tOne").textContent=rt.q?`${euclid(rt.q,rt.p)}`:"never";
+  $("verdict").innerHTML=R.neutral?`<span style="color:var(--ok)">Neutral in generation ${R.neutral.g}.</span> The seam ${fmt(R.neutral.x)} met its exact opposite ${fmt(R.neutral.y)}.`
+    :`<span style="color:var(--muted)">Never neutral.</span> ${rt.q?"":"The ratio isn't a fraction, so no seam can meet its exact opposite. They only come ever closer."}${R.size>MAXT?" (Stopped: too many tones to follow.)":""}`;
+  renderGens(-1);drawFabric();drawApproach();}
+const fmt=v=>(v>0?"+":"−")+Math.abs(v).toFixed(4).replace(/0+$/,"").replace(/\.$/,"");
+function renderGens(on){const el=$("gens");el.innerHTML="";R.gens.forEach((g,i)=>{const d=document.createElement("div");d.className="gen"+(i===on?" on":"");
+  const show=g.born.slice(0,18);d.innerHTML=`<span>${i===0?"parents":"gen "+i}</span><span class="tones">${show.map(v=>`<span class="t ${v>0?"p":"n"}">${fmt(v)}</span>`).join("")}${g.born.length>18?`<span class="more">+${g.born.length-18} more</span>`:""}${g.neutral?`<span class="t z">0 · neutral</span>`:""}</span>`;el.appendChild(d);});
+  if(on>=0){const c=el.children[on];if(c)el.scrollTop=c.offsetTop-el.offsetTop-40;}}
+
+function hsl2rgb(h,s,l){const f=n=>{const k=(n+h*12)%12,a=s*Math.min(l,1-l);return l-a*Math.max(-1,Math.min(k-3,9-k,1));};return [f(0),f(8),f(4)];}
+function drawFabric(){const cv=$("fabric"),r=cv.getBoundingClientRect(),W=Math.max(60,Math.round(r.width)),H=Math.max(60,Math.round(r.height));
+  if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H;}const ctx=cv.getContext("2d"),img=ctx.createImageData(W,H),G=R.gens.length;
+  const dark=matchMedia("(prefers-color-scheme: dark)").matches&&document.documentElement.dataset.theme!=="light"||document.documentElement.dataset.theme==="dark";
+  // tones present at each generation, in order of birth; scaled so the largest parent winds 6 times round
+  const present=[];let acc=[];R.gens.forEach(g=>{acc=acc.concat(g.born);present.push(acc.slice(0,400));});const K=6/Math.max(S.a,S.b);
+  const bands=present.map(tones=>{const re=new Float64Array(W),im=new Float64Array(W),w=1/Math.sqrt(tones.length);
+    for(const c of tones){const sgn=c>0?0:Math.PI,k=TAU*K*c/W;for(let x=0;x<W;x++){const ph=k*x+sgn;re[x]+=w*Math.cos(ph);im[x]+=w*Math.sin(ph);}}return [re,im];});
+  for(let y=0;y<H;y++){const gi=Math.min(G-1,Math.floor(y/H*G)),[re,im]=bands[gi];
+    for(let x=0;x<W;x++){const amp=Math.min(1,Math.hypot(re[x],im[x])/1.2),hue=(Math.atan2(im[x],re[x])/TAU+1)%1;
+      const [rr,gg,bb]=hsl2rgb(hue,dark?0.55:0.6,dark?0.14+0.42*amp:0.97-0.47*amp),i=(y*W+x)*4;img.data[i]=rr*255;img.data[i+1]=gg*255;img.data[i+2]=bb*255;img.data[i+3]=255;}}
+  ctx.putImageData(img,0,0);
+  ctx.strokeStyle=C.line;ctx.lineWidth=1;for(let g=1;g<G;g++){const y=Math.round(g/G*H)+.5;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  if(R.neutral){const y=Math.round(R.neutral.g/G*H)-1;ctx.strokeStyle=C.ok;ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  ctx.fillStyle=C.ink;ctx.font="11px "+font();ctx.textBaseline="top";ctx.fillText("parents",4,3);}
+function drawApproach(){const cv=$("approach"),r=cv.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2.5);cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);
+  const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);const w=r.width,h=r.height,ml=38,mb=18,Wd=w-ml-8,Hd=h-mb-8,lo=-12,hi=0;
+  const Y=v=>8+Hd*(1-(Math.log10(Math.max(v,1e-12))-lo)/(hi-lo)),n=Math.max(R.approach.length,2),X=i=>ml+Wd*i/(n-1);
+  ctx.font="10px "+font();ctx.fillStyle=C.muted;ctx.textAlign="right";ctx.textBaseline="middle";
+  for(const d of [1,1e-4,1e-8,1e-12]){ctx.strokeStyle=C.line;ctx.beginPath();ctx.moveTo(ml,Y(d));ctx.lineTo(ml+Wd,Y(d));ctx.stroke();ctx.fillText(d===1?"1":d===1e-12?"0":d.toExponential(0),ml-4,Y(d));}
+  ctx.textAlign="center";ctx.textBaseline="top";ctx.fillText("generation →",ml+Wd/2,h-mb+3);
+  ctx.strokeStyle=C.accent;ctx.lineWidth=2;ctx.beginPath();R.approach.forEach((v,i)=>{i?ctx.lineTo(X(i),Y(v)):ctx.moveTo(X(i),Y(v));});ctx.stroke();
+  R.approach.forEach((v,i)=>{ctx.fillStyle=v<TOL?C.ok:C.accent;ctx.beginPath();ctx.arc(X(i),Y(v),3,0,TAU);ctx.fill();});}
+
+/* tones: pitch proportional to seam size (so a child is the difference tone); − is half a cycle behind */
+const F0=660;
+function ensureAudio(){if(!actx){const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return null;actx=new AC();}if(actx.state==="suspended")actx.resume();return actx;}
+function tone(ctx,c,t0,dur,gain){const f=F0*Math.abs(c);if(f<40)return;const o=ctx.createOscillator(),g=ctx.createGain();
+  const real=new Float32Array([0,0]),imag=new Float32Array([0,1]);if(c<0){imag[1]=-1;}o.setPeriodicWave(ctx.createPeriodicWave(real,imag,{disableNormalization:true}));
+  o.frequency.value=f;g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(gain,t0+0.03);g.gain.setValueAtTime(gain,t0+dur-0.06);g.gain.linearRampToValueAtTime(0,t0+dur);o.connect(g).connect(ctx.destination);o.start(t0);o.stop(t0+dur+0.02);}
+function stop(){if(playing){playing.forEach(clearTimeout);playing=null;}$("play").textContent="▶ Play the lineage";renderGens(-1);}
+$("play").addEventListener("click",()=>{if(playing){stop();return;}const ctx=ensureAudio();if(!ctx){$("audioNote").textContent="This browser can't play sound.";return;}
+  const dur=0.7;let t=ctx.currentTime+0.05;playing=[];$("play").textContent="■ Stop";
+  R.gens.forEach((g,i)=>{const notes=g.born.filter(v=>F0*Math.abs(v)>=40).slice(0,8),gain=0.18/Math.sqrt(Math.max(1,notes.length));notes.forEach(v=>tone(ctx,v,t,dur,gain));
+    playing.push(setTimeout(()=>renderGens(i),(t-ctx.currentTime)*1000));t+=dur+0.08;});
+  if(R.neutral){const {x,y}=R.neutral;tone(ctx,x,t,1.2,0.16);tone(ctx,y,t,1.2,0.16);playing.push(setTimeout(()=>renderGens(R.gens.length-1),(t-ctx.currentTime)*1000));t+=1.3;}
+  playing.push(setTimeout(stop,(t-ctx.currentTime)*1000+100));});
+$("cancel").addEventListener("click",()=>{const ctx=ensureAudio();if(!ctx)return;const v=R.neutral?R.neutral.x:Math.max(S.a,S.b);let t=ctx.currentTime+0.05;
+  tone(ctx,v,t,0.9,0.18);t+=1.0;tone(ctx,-v,t,0.9,0.18);t+=1.0;tone(ctx,v,t,1.4,0.18);tone(ctx,-v,t,1.4,0.18);
+  $("audioNote").textContent=`Played the seam ${fmt(v)} alone, then its opposite alone, then both together. Together they cancel: ${R.neutral?"that silence is the neutral child.":"this ratio never produces such a meeting by itself, so this pair was set up by hand."}`;});
+
+PRESETS.forEach(([name,a,b],i)=>{const bt=document.createElement("button");bt.textContent=name;bt.addEventListener("click",()=>{stop();S={a,b,preset:i};$("a").value=a;$("b").value=b;update();});$("presets").appendChild(bt);});
+let raf=0;for(const id of ["a","b"])$(id).addEventListener("input",e=>{stop();S[id]=+e.target.value;S.preset=-1;cancelAnimationFrame(raf);raf=requestAnimationFrame(update);});
+window.__R=()=>R;window.__set=(o)=>{Object.assign(S,o);update();};
+readColors();
+const onTheme=()=>{readColors();update();},mq=matchMedia("(prefers-color-scheme: dark)");
+mq.addEventListener?mq.addEventListener("change",onTheme):mq.addListener(onTheme);
+new MutationObserver(onTheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+let rt;new ResizeObserver(()=>{clearTimeout(rt);rt=setTimeout(()=>{if(R){drawFabric();drawApproach();}},120);}).observe(document.querySelector(".wrap"));
+$("a").value=S.a;$("b").value=S.b;update();
+})();
+</script>
