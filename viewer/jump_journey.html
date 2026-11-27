@@ -62,7 +62,7 @@ button.primary{background:var(--accent);color:var(--panel);border-color:var(--ac
   <header>
     <div class="eyebrow">an instant for the parent · an era for the children</div>
     <h1>Jump Journey</h1>
-    <p class="lede">The parent's phase climbs and then jumps back: a hard seam. Seen from the parent, the jump is instant. Seen from the children, it's a journey down through generation after generation until a child is born neutral, and back up again. Colour on each torus is phase; a hard line is a seam; the flow of colour is the winding direction, the arrow of time for that torus.</p>
+    <p class="lede">The parent's phase climbs and then jumps back: a hard seam. Seen from the parent, the jump is instant. Seen from the children, it's a journey down through generation after generation until a child is born neutral, and back up again. Colour on each torus is phase. A seam is an open hard line running from a counterclockwise vortex to a clockwise one. The colour turning around each vortex is the winding direction, the arrow of time for that torus.</p>
   </header>
 
   <div class="card">
@@ -88,10 +88,10 @@ button.primary{background:var(--accent);color:var(--panel);border-color:var(--ac
   <section class="card notes">
     <h2>Reading it</h2>
     <ul>
-      <li><b>A seam is a hard colour line.</b> A torus whose phase winds a fraction of a turn can't meet itself, so the colour jumps where the winding closes.</li>
+      <li><b>A seam is an open line with a direction.</b> It runs from a counterclockwise vortex (gold ring) to a clockwise one (blue ring), and the colour jumps only across it. Each torus is twisted locally, around its two vortices, but untwisted as a whole: a loop around one end climbs out of the surface by the seam's mismatch, while a loop around the whole seam picks up nothing.</li>
       <li><b>Down the line the seams get finer.</b> Each child carries the difference between a mother seam and a father seam, so finer and finer windings appear, roughly an octave per generation. Not every single step is smaller, because a child can meet a larger partner, but the detail being resolved keeps getting finer.</li>
       <li><b>The neutral child is still.</b> Born at exactly zero, it has no winding, no seam and no flow. Its time stops, and the journey turns back.</li>
-      <li><b>What comes back is a unit, and the seams vanish.</b> Switch to the found unit's frame: every torus in the family now winds a whole number of times. The hard lines disappear. The discontinuity the parent saw was never really there; it was a whole winding seen in the wrong frame. The whole windings are the counts the journey brings back.</li>
+      <li><b>What comes back is a unit, and the seams vanish.</b> Switch to the found unit's frame: every torus in the family now winds a whole number of times around its vortices. The hard lines disappear and only the vortices remain. The discontinuity the parent saw was never really there; it was a whole winding seen in the wrong frame. The whole windings are the counts the journey brings back.</li>
       <li><b>Irrational parents never return.</b> Try the golden ratio or √2: the seams get finer forever, no child is born neutral, and the parent's jump never gets its answer.</li>
     </ul>
   </section>
@@ -127,10 +127,18 @@ function lineage(a,b){
   return {levels,neutral,unit};
 }
 
-/* torus with phase colour: hue = frac(W*u + flow); seam where the winding closes (u = 0) */
-const NU=56,NV=22,RR=1,rr=0.42,TILT=1.05;
+/* torus with phase colour. The seam is an OPEN line on the surface from vortex A to vortex B:
+   phase = W * (arg(p - A) - arg(p - B)) / 2pi, summed over periodic images so it wraps cleanly.
+   Crossing the segment the phase jumps by W; anywhere else it is continuous. A carries +W, B -W. */
+const NU=72,NV=28,RR=1,rr=0.42,TILT=1.05,UC=0.75,VC=0.92,HALF=0.09;
+const LX=TAU*RR,LY=TAU*rr;let DELTA=null;
+function precompute(){DELTA=new Float64Array(NU*NV);const d=HALF*LX;
+  for(let i=0;i<NU;i++)for(let j=0;j<NV;j++){let du=(i+.5)/NU-UC;du-=Math.round(du);let dv=(j+.5)/NV-VC;dv-=Math.round(dv);
+    const x=du*LX,y=dv*LY;let D=0;for(let kx=-1;kx<=1;kx++)for(let ky=-6;ky<=6;ky++){const X=x+kx*LX,Y=y+ky*LY;D+=Math.atan2(Y,X+d)-Math.atan2(Y,X-d);}
+    DELTA[i*NV+j]=D/TAU;}}
 function hsl(h,s,l){const f=n=>{const k=(n+h*12)%12,a=s*Math.min(l,1-l);return l-a*Math.max(-1,Math.min(k-3,9-k,1));};return `rgb(${Math.round(f(0)*255)},${Math.round(f(8)*255)},${Math.round(f(4)*255)})`;}
 function drawTorus(cv,W,flow,dim){
+  if(!DELTA)precompute();
   const r=cv.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2),w=r.width,h=r.height;if(w<2)return;
   if(cv.width!==Math.round(w*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);}
   const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
@@ -138,21 +146,22 @@ function drawTorus(cv,W,flow,dim){
   const P=(u,v)=>{const a=TAU*u,b=TAU*v,x=(RR+rr*Math.cos(b))*Math.cos(a),y=(RR+rr*Math.cos(b))*Math.sin(a),z=rr*Math.sin(b);
     const y2=y*ct-z*st,z2=y*st+z*ct;return [cx+x*sc,cy+y2*sc,z2];};
   const N=(u,v)=>{const a=TAU*u,b=TAU*v,nx=Math.cos(b)*Math.cos(a),ny=Math.cos(b)*Math.sin(a),nz=Math.sin(b);return [nx,ny*ct-nz*st,ny*st+nz*ct];};
-  const quads=[];const still=Math.abs(W)<1e-9,frac=((W%1)+1)%1,hasSeam=!still&&frac>1e-6&&frac<1-1e-6;
-  for(let i=0;i<NU;i++)for(let j=0;j<NV;j++){const u0=i/NU,u1=(i+1)/NU,v0=j/NV,v1=(j+1)/NV,uc=(i+.5)/NU,vc=(j+.5)/NV;
-    const ps=[P(u0,v0),P(u1,v0),P(u1,v1),P(u0,v1)],z=(ps[0][2]+ps[1][2]+ps[2][2]+ps[3][2])/4,n=N(uc,vc);
-    const lum=0.55+0.45*Math.max(0,-n[1]*0.5-n[2]*0.85+0.2);
-    let col;if(still)col=dark?`rgba(140,150,165,${0.45*lum+0.2})`:`rgba(150,158,170,${0.5*lum+0.25})`;
-    else{const hue=((W*uc+flow)%1+1)%1;col=hsl(hue,dark?0.62:0.68,(dark?0.3:0.42)+0.26*lum);}
-    quads.push({ps,z,col,seam:hasSeam&&i===NU-1});}
+  const still=Math.abs(W)<1e-9,frac=((W%1)+1)%1,hasSeam=!still&&frac>1e-6&&frac<1-1e-6,quads=[];
+  for(let i=0;i<NU;i++)for(let j=0;j<NV;j++){const u0=i/NU,u1=(i+1)/NU,v0=j/NV,v1=(j+1)/NV;
+    const ps=[P(u0,v0),P(u1,v0),P(u1,v1),P(u0,v1)],z=(ps[0][2]+ps[1][2]+ps[2][2]+ps[3][2])/4,n=N((i+.5)/NU,(j+.5)/NV);
+    const lum=0.55+0.45*Math.max(0,-n[1]*0.5-n[2]*0.85+0.2);let col;
+    if(still)col=dark?`rgba(140,150,165,${0.45*lum+0.2})`:`rgba(150,158,170,${0.5*lum+0.25})`;
+    else{const hue=((W*DELTA[i*NV+j]+flow)%1+1)%1;col=hsl(hue,dark?0.62:0.68,(dark?0.3:0.42)+0.26*lum);}
+    quads.push({ps,z,col});}
   quads.sort((p,q)=>q.z-p.z);ctx.globalAlpha=dim?0.85:1;
-  for(const q of quads){ctx.beginPath();q.ps.forEach(([x,y],k)=>k?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.fillStyle=q.col;ctx.fill();ctx.strokeStyle=q.col;ctx.lineWidth=0.6;ctx.stroke();
-    if(q.seam){ctx.strokeStyle=C.seam;ctx.lineWidth=2.4;ctx.beginPath();ctx.moveTo(q.ps[1][0],q.ps[1][1]);ctx.lineTo(q.ps[2][0],q.ps[2][1]);ctx.stroke();}}
-  ctx.globalAlpha=1;
-  // winding arrow: counterclockwise for +, clockwise for −
-  if(!still){ctx.strokeStyle=W>0?C.plus:C.minus;ctx.lineWidth=2;const ry=sc*ct*1.55,rx=sc*1.55,a0=W>0?0.15:Math.PI-0.15,a1=W>0?0.85:Math.PI-0.85;
-    ctx.beginPath();ctx.ellipse(cx,cy,rx,ry,0,-a1,-a0,W<0);ctx.stroke();const ang=-a1,ex=cx+rx*Math.cos(ang),ey=cy+ry*Math.sin(ang),dir=W>0?-1:1;
-    const tx=-rx*Math.sin(ang)*dir,ty=ry*Math.cos(ang)*dir,tl=Math.hypot(tx,ty);ctx.fillStyle=W>0?C.plus:C.minus;ctx.beginPath();ctx.moveTo(ex+tx/tl*7,ey+ty/tl*7);ctx.lineTo(ex-ty/tl*4,ey+tx/tl*4);ctx.lineTo(ex+ty/tl*4,ey-tx/tl*4);ctx.fill();}
+  for(const q of quads){ctx.beginPath();q.ps.forEach(([x,y],k)=>k?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.fillStyle=q.col;ctx.fill();ctx.strokeStyle=q.col;ctx.lineWidth=0.6;ctx.stroke();}
+  ctx.globalAlpha=1;if(still)return;
+  // the open seam, directed from the + vortex to the − vortex, and the two vortices at its ends
+  const A=P(UC-HALF,VC),B=P(UC+HALF,VC),[from,to]=W>0?[A,B]:[B,A];
+  if(hasSeam){ctx.strokeStyle=C.seam;ctx.lineWidth=2.6;ctx.beginPath();const steps=16;for(let k=0;k<=steps;k++){const q=P(UC-HALF+2*HALF*k/steps,VC);k?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1]);}ctx.stroke();
+    const mx=(from[0]+to[0])/2,my=(from[1]+to[1])/2,dx=to[0]-from[0],dy=to[1]-from[1],l=Math.hypot(dx,dy)||1;
+    ctx.fillStyle=C.seam;ctx.beginPath();ctx.moveTo(mx+dx/l*6,my+dy/l*6);ctx.lineTo(mx-dx/l*3-dy/l*5,my-dy/l*3+dx/l*5);ctx.lineTo(mx-dx/l*3+dy/l*5,my-dy/l*3-dx/l*5);ctx.fill();}
+  for(const [pt,c] of [[from,C.plus],[to,C.minus]]){ctx.fillStyle=C.panel;ctx.strokeStyle=c;ctx.lineWidth=2.2;ctx.beginPath();ctx.arc(pt[0],pt[1],4.5,0,TAU);ctx.fill();ctx.stroke();}
 }
 
 function build(){
