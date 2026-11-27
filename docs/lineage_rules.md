@@ -82,3 +82,20 @@ backward. Charge therefore circulates on zigzag loops: forward along maternal li
 along paternal lines. A zigzag loop with f forward and b backward steps, carrying charge c,
 adds c × (f − b) to the family's total. Loops with f = b balance themselves; the rest must
 balance each other, and that sets the fractions.
+
+## Draft 6: splits in superposition
+
+Kept from the user's rules: horn torus as a continuous phase relation; a vortex spawns a child
+through a spike (leaves along the surface normal, arrives along the child's axis); sign = local
+direction of rotation; two parents, child starts at their sum; every child reconnects to its
+grandparent through its own offspring; only closed generational loops net zero; branching is
+addition.
+
+New: rule 7 ("scaling decides stability") is not chosen. A twisted torus splits its imbalance of
+M units among k children every way at once; child j sits where its vortex is, at angle theta_j,
+and carries phase e^{i m_j theta_j}. The splits interfere; stable forms are the survivors.
+
+Result (torus_count/interference.py, tests/test_interference.py): with evenly placed children,
+the sum is exactly 1 in size when k divides M and exactly 0 otherwise. A prime imbalance
+survives only whole or as all ones. The clean pattern needs each unit to wind the phase a whole
+number of times; children whose arcs are sized by their charge never cancel.

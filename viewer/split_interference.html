@@ -1,0 +1,183 @@
+<title>Split Interference</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* Layout: the survivor grid (charge down, number of children across) leads; tapping a cell shows
+   the phasor walk of every split of that charge among that many children, and one split drawn
+   as children around the parent. Gold = surviving, muted rings = cancelled. */
+:root{
+  --bg:#f3f5f8; --panel:#ffffff; --ink:#17202b; --muted:#5a6676; --line:#d9dee6; --chip:#eef1f6;
+  --live:#c27c00; --dead:#c3cad4; --sel:#2459c4; --walk:#2459c4; --ok:#13875a; --torus:#7a8899;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
+  --live:#f0b033; --dead:#3a434f; --sel:#6f9fff; --walk:#6f9fff; --ok:#3fcf8e; --torus:#8d9bb0; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
+  --live:#f0b033; --dead:#3a434f; --sel:#6f9fff; --walk:#6f9fff; --ok:#3fcf8e; --torus:#8d9bb0; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 28px}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.7rem,4.5vw,2.3rem);line-height:1.1}
+h2{font-size:1.05rem}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--muted);max-width:70ch;margin-top:6px}
+.grid{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+canvas{display:block;width:100%;border-radius:6px;background:var(--bg)}
+#surv{aspect-ratio:1/1;cursor:pointer;touch-action:manipulation}
+#walk{aspect-ratio:1/1}
+#dial{aspect-ratio:1/1;max-width:260px;align-self:center}
+.ctl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center}
+.ctl label{font-size:.86rem}
+.ctl output{font-family:var(--f-mono);font-size:.84rem}
+.ctl input{grid-column:1/-1;width:100%;accent-color:var(--sel);height:26px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+button{font:inherit;font-size:.84rem;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer}
+button[aria-pressed="true"]{border-color:var(--sel);color:var(--sel);font-weight:500}
+button:hover{border-color:var(--muted)}
+:focus-visible{outline:2px solid var(--sel);outline-offset:2px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.78rem;color:var(--muted)}
+.sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.hint{font-size:.8rem;color:var(--muted)}
+.verdict{font-size:1rem;font-weight:500}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tile{border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+.tile .k{font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.tile .v{font-family:var(--f-mono);font-size:1rem;font-weight:500;overflow-wrap:anywhere}
+.notes{font-size:.9rem;max-width:75ch;display:flex;flex-direction:column;gap:8px}
+.notes ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:5px}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">every split at once · phases pick the scaling</div>
+    <h1>Split Interference</h1>
+    <p class="lede">A twisted torus holds an imbalance of M units. It splits that among k children every possible way at once. Each child sits where its vortex is on the parent's surface and carries a phase: its charge times its angle. All the splits are added together. Most cancel. The ones left over are the stable forms, and nobody chose them.</p>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Which splits survive</h2>
+      <canvas id="surv" aria-label="Grid of imbalance M (down) against number of children k (across); filled where the splits survive"></canvas>
+      <div class="legend"><span><i class="sw" style="background:var(--live)"></i>survives</span><span><i class="sw" style="border:1.5px solid var(--dead)"></i>cancels to zero</span><span><i class="sw" style="border:2px solid var(--sel)"></i>selected (tap a cell)</span><span>▸ marks charges that only survive whole or as all ones</span></div>
+      <div class="ctl"><label for="s">phase turns per unit of charge going once around</label><output id="sO"></output><input type="range" id="s" min="0.25" max="3" step="0.05"></div>
+      <div class="row"><span class="hint">children placed</span>
+        <button id="pEq" aria-pressed="true">evenly around the parent</button>
+        <button id="pCh" aria-pressed="false">with arcs sized by charge</button></div>
+    </div>
+    <div class="card">
+      <p class="verdict" id="verdict"></p>
+      <div class="stats">
+        <div class="tile"><div class="k">Ways to split</div><div class="v" id="nWays"></div></div>
+        <div class="tile"><div class="k">Size of the sum</div><div class="v" id="amp"></div></div>
+        <div class="tile"><div class="k">Left after interference</div><div class="v" id="frac"></div></div>
+      </div>
+      <h2>All the splits, added tip to tail</h2>
+      <canvas id="walk" aria-label="Each split's phase arrow added tip to tail; the end point is the total"></canvas>
+      <p class="hint" id="walkNote"></p>
+      <h2>One split around the parent</h2>
+      <canvas id="dial" aria-label="The parent with its children at their angles, labelled with their charges"></canvas>
+      <div class="ctl"><label for="pick">which split</label><output id="pickO"></output><input type="range" id="pick" min="0" max="0" step="1"></div>
+    </div>
+  </div>
+
+  <section class="card notes">
+    <h2>What the grid shows</h2>
+    <ul>
+      <li><b>With children evenly placed and one phase turn per unit, the survivors are exactly the divisors.</b> M units split among k children survive only when k divides M, and then the sum is exactly 1 in size. Every other number of children cancels to exactly zero.</li>
+      <li><b>Primes are the charges with no stable middle.</b> A prime imbalance survives only whole (one child) or as all ones (M children). Every split in between cancels itself out.</li>
+      <li><b>The rule needs complete windings.</b> Slide the phase turns off a whole number and the cancellation goes ragged. The clean divisor pattern appears only when each unit of charge winds the phase all the way round.</li>
+      <li><b>Arcs sized by charge never cancel.</b> When each child's arc matches its charge, every split carries the same phase, so they all add and nothing is selected.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(function(){
+"use strict";
+const TAU=Math.PI*2,$=id=>document.getElementById(id),MAXM=24,WALKCAP=20000;
+let S={s:1,place:"eq",M:12,k:4,pick:0},C={},table=null;
+function readColors(){const cs=getComputedStyle(document.documentElement);for(const c of ["bg","panel","ink","muted","line","live","dead","sel","walk","ok","torus"])C[c]=cs.getPropertyValue("--"+c).trim();}
+const font=()=>getComputedStyle(document.body).fontFamily;
+function binom(n,r){if(r<0||r>n)return 0;let x=1;for(let i=1;i<=r;i++)x=x*(n-r+i)/i;return Math.round(x);}
+
+/* amplitude of M units split among k children: sum over splits of e^{i s sum m_j theta_j} */
+function amplitude(M,k){
+  if(S.place==="ch"){const n=binom(M-1,k-1),ph=Math.PI*S.s*M;return [n*Math.cos(ph),n*Math.sin(ph)];}
+  let re=new Float64Array(M+1),im=new Float64Array(M+1);re[0]=1;
+  for(let j=0;j<k;j++){const th=TAU*j/k,nr=new Float64Array(M+1),ni=new Float64Array(M+1);
+    for(let n=1;n<=M;n++)for(let m=1;m<=n;m++){const a=S.s*m*th,c=Math.cos(a),s=Math.sin(a),pr=re[n-m],pi=im[n-m];
+      if(pr===0&&pi===0)continue;nr[n]+=pr*c-pi*s;ni[n]+=pr*s+pi*c;}
+    re=nr;im=ni;}
+  return [re[M],im[M]];
+}
+function buildTable(){table=[];for(let M=1;M<=MAXM;M++){const row=[];for(let k=1;k<=M;k++){const [a,b]=amplitude(M,k);row.push(Math.hypot(a,b));}table.push(row);}}
+const alive=v=>v>1e-6;
+function onlyTrivial(M){const r=table[M-1];return M>1&&r.every((v,i)=>alive(v)===(i===0||i===M-1));}
+function angles(split){const k=split.length,M=split.reduce((a,b)=>a+b,0);
+  if(S.place==="eq")return split.map((_,j)=>TAU*j/k);
+  let acc=0;return split.map(m=>{const t=TAU*(acc+m/2)/M;acc+=m;return t;});}
+function* comps(M,k){if(k===1){yield [M];return;}for(let f=1;f<=M-k+1;f++)for(const r of comps(M-f,k-1))yield [f,...r];}
+function nthComp(M,k,idx){let i=0;for(const c of comps(M,k)){if(i===idx)return c;i++;}return null;}
+
+function fit(cv){const r=cv.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2.5),W=Math.round(r.width*dpr),H=Math.round(r.height*dpr);
+  if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H;}const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);return {ctx,w:r.width,h:r.height};}
+let geo={};
+function drawSurv(){const {ctx,w,h}=fit($("surv"));ctx.clearRect(0,0,w,h);const ml=24,mt=18,cell=Math.min((w-ml-4)/MAXM,(h-mt-4)/MAXM);geo={ml,mt,cell};
+  ctx.font="9px "+font();ctx.fillStyle=C.muted;ctx.textAlign="center";ctx.textBaseline="middle";
+  ctx.fillText("k",ml-10,mt/2);for(let k=1;k<=MAXM;k++)if(k===1||k%4===0)ctx.fillText(k,ml+(k-.5)*cell,mt/2);
+  ctx.textAlign="right";
+  for(let M=1;M<=MAXM;M++){const y=mt+(M-.5)*cell;ctx.fillStyle=onlyTrivial(M)?C.live:C.muted;ctx.fillText((onlyTrivial(M)?"▸":"")+M,ml-3,y);
+    for(let k=1;k<=M;k++){const x=ml+(k-.5)*cell,v=table[M-1][k-1],r=cell*0.34;ctx.beginPath();ctx.arc(x,y,r,0,TAU);
+      if(alive(v)){ctx.fillStyle=C.live;ctx.fill();}else{ctx.strokeStyle=C.dead;ctx.lineWidth=1;ctx.stroke();}}}
+    const x=ml+(S.k-.5)*cell,y=mt+(S.M-.5)*cell;ctx.strokeStyle=C.sel;ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,y,cell*0.5,0,TAU);ctx.stroke();}
+function drawWalk(){const {ctx,w,h}=fit($("walk"));ctx.clearRect(0,0,w,h);const pts=[[0,0]];let x=0,y=0,n=0;
+  for(const c of comps(S.M,S.k)){if(n>=WALKCAP)break;const th=angles(c);const a=S.s*c.reduce((acc,m,j)=>acc+m*th[j],0);x+=Math.cos(a);y+=Math.sin(a);pts.push([x,y]);n++;}
+  let ext=1;for(const [px,py] of pts)ext=Math.max(ext,Math.abs(px),Math.abs(py));const sc=(Math.min(w,h)/2-14)/ext,cx=w/2,cy=h/2;
+  ctx.strokeStyle=C.line;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,cy);ctx.lineTo(w,cy);ctx.moveTo(cx,0);ctx.lineTo(cx,h);ctx.stroke();
+  ctx.strokeStyle=C.walk;ctx.globalAlpha=0.75;ctx.lineWidth=1.2;ctx.beginPath();pts.forEach(([px,py],i)=>{const X=cx+px*sc,Y=cy-py*sc;i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);});ctx.stroke();ctx.globalAlpha=1;
+  ctx.fillStyle=C.muted;ctx.beginPath();ctx.arc(cx,cy,3.5,0,TAU);ctx.fill();
+  const [ex,ey]=pts[pts.length-1];ctx.fillStyle=alive(Math.hypot(ex,ey))?C.live:C.ink;ctx.beginPath();ctx.arc(cx+ex*sc,cy-ey*sc,5,0,TAU);ctx.fill();
+  $("walkNote").textContent=n>=WALKCAP?`Too many splits to draw: showing the first ${WALKCAP.toLocaleString()}, so the end point is not the total. The tiles above give the true total.`:"Grey dot: start. Gold dot: where all the splits end up together. "+(alive(Math.hypot(ex,ey))?"It doesn't come back, so something survives.":"Back at the start means everything cancelled.");}
+function drawDial(){const {ctx,w,h}=fit($("dial"));ctx.clearRect(0,0,w,h);const c=nthComp(S.M,S.k,S.pick);if(!c)return;const th=angles(c),cx=w/2,cy=h/2,R=Math.min(w,h)*0.3;
+  ctx.strokeStyle=C.torus;ctx.lineWidth=7;ctx.globalAlpha=.35;ctx.beginPath();ctx.arc(cx,cy,R,0,TAU);ctx.stroke();ctx.globalAlpha=1;
+  ctx.fillStyle=C.muted;ctx.font="10px "+font();ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("parent",cx,cy);
+  c.forEach((m,j)=>{const a=-Math.PI/2+th[j],x=cx+R*Math.cos(a),y=cy+R*Math.sin(a),xo=cx+R*1.32*Math.cos(a),yo=cy+R*1.32*Math.sin(a);
+    ctx.strokeStyle=C.sel;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(xo,yo);ctx.stroke();
+    ctx.fillStyle=C.panel;ctx.strokeStyle=C.sel;ctx.beginPath();ctx.arc(xo,yo,11,0,TAU);ctx.fill();ctx.stroke();
+    ctx.fillStyle=C.ink;ctx.font="500 11px "+font();ctx.fillText(m,xo,yo);});
+  const a=S.s*c.reduce((acc,m,j)=>acc+m*th[j],0);$("pickO").textContent=`(${c.join(", ")}) · phase ${((a/TAU)%1+1)%1===0?"0":(((a/TAU)%1+1)%1).toFixed(2)} turn`;}
+function update(){
+  $("sO").textContent=(+S.s).toFixed(2);$("pEq").setAttribute("aria-pressed",S.place==="eq");$("pCh").setAttribute("aria-pressed",S.place==="ch");
+  const ways=binom(S.M-1,S.k-1),v=table[S.M-1][S.k-1];
+  $("nWays").textContent=ways.toLocaleString();$("amp").textContent=v<1e-6?"0":v<1e4?v.toFixed(3).replace(/\.?0+$/,""):v.toExponential(2);
+  $("frac").textContent=v<1e-6?"nothing":(v/ways>0.9999?"all of it":`${(100*v/ways).toPrecision(2)}%`);
+  $("pick").max=Math.min(ways,WALKCAP)-1;if(S.pick>ways-1)S.pick=0;$("pick").value=S.pick;
+  const prime=onlyTrivial(S.M);
+  $("verdict").innerHTML=`${S.M} units among ${S.k} children: `+(alive(v)?'<span style="color:var(--ok)">survives.</span>':'<span style="color:var(--muted)">cancels to zero.</span>')+(S.place==="eq"&&Math.abs(S.s-1)<1e-9?` ${S.M%S.k===0?`${S.k} divides ${S.M}.`:`${S.k} does not divide ${S.M}.`}${prime?` ${S.M} survives only whole or as all ones.`:""}`:"");
+  drawSurv();drawWalk();drawDial();}
+$("surv").addEventListener("click",e=>{const r=e.currentTarget.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;
+  const k=Math.floor((x-geo.ml)/geo.cell)+1,M=Math.floor((y-geo.mt)/geo.cell)+1;if(M>=1&&M<=MAXM&&k>=1&&k<=M){S.M=M;S.k=k;S.pick=0;update();}});
+$("s").addEventListener("input",e=>{S.s=+e.target.value;buildTable();update();});
+$("pEq").addEventListener("click",()=>{S.place="eq";buildTable();update();});
+$("pCh").addEventListener("click",()=>{S.place="ch";buildTable();update();});
+$("pick").addEventListener("input",e=>{S.pick=+e.target.value;drawDial();});
+window.__amp=(M,k)=>table[M-1][k-1];window.__set=(o)=>{Object.assign(S,o);buildTable();update();};
+readColors();
+const onTheme=()=>{readColors();update();},mq=matchMedia("(prefers-color-scheme: dark)");
+mq.addEventListener?mq.addEventListener("change",onTheme):mq.addListener(onTheme);
+new MutationObserver(onTheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+new ResizeObserver(()=>update()).observe(document.querySelector(".grid"));
+$("s").value=S.s;buildTable();update();
+})();
+</script>
