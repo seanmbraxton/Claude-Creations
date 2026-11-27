@@ -1,0 +1,191 @@
+<title>Twist Resolution</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* Layout: the generation history (time runs down) and the ring of the current generation lead;
+   the rules as sliders and the verdict sit beside them. Twist uses a diverging scale: gold
+   counterclockwise excess, blue clockwise excess, neutral at zero. */
+:root{
+  --bg:#f3f5f8; --panel:#ffffff; --ink:#17202b; --muted:#5a6676; --line:#d9dee6; --chip:#eef1f6;
+  --plus:#c27c00; --minus:#2459c4; --zero:#e9edf2; --ok:#13875a; --bad:#cf3b30; --torus:#7a8899;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
+  --plus:#f0b033; --minus:#6f9fff; --zero:#222a34; --ok:#3fcf8e; --bad:#ff6a5c; --torus:#8d9bb0; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
+  --plus:#f0b033; --minus:#6f9fff; --zero:#222a34; --ok:#3fcf8e; --bad:#ff6a5c; --torus:#8d9bb0; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 28px}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.7rem,4.5vw,2.3rem);line-height:1.1}
+h2{font-size:1.05rem}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--muted);max-width:70ch;margin-top:6px}
+.grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+canvas{display:block;width:100%;border-radius:6px;background:var(--bg)}
+#ring{aspect-ratio:1/1;max-width:320px;align-self:center}
+#hist{aspect-ratio:1/1}
+#decay{height:120px}
+.verdict{font-size:1rem;font-weight:500}
+.ok{color:var(--ok)} .bad{color:var(--bad)}
+.ctl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center}
+.ctl label{font-size:.86rem}
+.ctl output{font-family:var(--f-mono);font-size:.84rem}
+.ctl input{grid-column:1/-1;width:100%;accent-color:var(--minus);height:26px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+button,select{font:inherit;font-size:.84rem;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer}
+button:hover,select:hover{border-color:var(--muted)}
+:focus-visible{outline:2px solid var(--minus);outline-offset:2px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.78rem;color:var(--muted)}
+.sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+.hint{font-size:.78rem;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tile{border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+.tile .k{font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.tile .v{font-family:var(--f-mono);font-size:1rem;font-weight:500}
+.notes{font-size:.9rem;max-width:75ch;display:flex;flex-direction:column;gap:8px}
+.notes ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:5px}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">local twist · global balance · resolved through children</div>
+    <h1>Twist Resolution</h1>
+    <p class="lede">Each torus re-emits what its parents gave it. The mother's share (+, counterclockwise) goes to its counterclockwise children and the father's share (−, clockwise) to its clockwise children, split by the scalings below. Its local twist is mother plus father. One torus starts twisted +2/3 and another −2/3, so the family as a whole is untwisted. Watch whether the twist resolves as it passes down through the children.</p>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Generations (time runs down)</h2>
+      <canvas id="hist" aria-label="Local twist of every torus, generation by generation"></canvas>
+      <div class="legend"><span><i class="sw" style="background:var(--plus)"></i>twisted counterclockwise</span><span><i class="sw" style="background:var(--zero);border:1px solid var(--line)"></i>untwisted</span><span><i class="sw" style="background:var(--minus)"></i>twisted clockwise</span></div>
+      <h2>Largest local twist over time</h2>
+      <canvas id="decay" aria-label="Largest local twist against generation, log scale"></canvas>
+    </div>
+    <div class="card">
+      <p class="verdict" id="verdict"></p>
+      <p class="hint" id="why"></p>
+      <div class="stats">
+        <div class="tile"><div class="k">Global twist</div><div class="v" id="glob"></div></div>
+        <div class="tile"><div class="k">Per generation, twist shrinks to</div><div class="v" id="rate"></div></div>
+        <div class="tile"><div class="k">Largest twist now</div><div class="v" id="maxt"></div></div>
+      </div>
+      <canvas id="ring" aria-label="The current generation around the ring"></canvas>
+      <div class="ctl"><label for="n">tori around the ring</label><output id="nO"></output><input type="range" id="n" min="3" max="24" step="1"></div>
+      <div class="row"><label for="G" style="font-size:.86rem">generations in the loop</label><select id="G"><option value="3">3: children reconnect to grandparents</option><option value="4">4: to great-grandparents</option></select></div>
+      <div class="ctl"><label for="k">children of each sign</label><output id="kO"></output><input type="range" id="k" min="1" max="4" step="1"></div>
+      <div class="ctl"><label for="a">step around the ring between counterclockwise children</label><output id="aO"></output><input type="range" id="a" min="1" max="12" step="1"></div>
+      <div class="ctl"><label for="b">step between clockwise children</label><output id="bO"></output><input type="range" id="b" min="1" max="12" step="1"></div>
+      <div class="ctl"><label for="skew">share kept by the first child (rest split evenly)</label><output id="skewO"></output><input type="range" id="skew" min="0.05" max="0.95" step="0.05"></div>
+      <div class="ctl"><label for="lam">total scaling (1 = conserves charge exactly)</label><output id="lamO"></output><input type="range" id="lam" min="0.8" max="1.2" step="0.01"></div>
+      <div class="ctl"><label for="shear">shear: extra step added each generation</label><output id="shearO"></output><input type="range" id="shear" min="0" max="6" step="1"></div>
+      <div class="row"><button id="reset">Back to defaults</button></div>
+    </div>
+  </div>
+
+  <section class="card notes">
+    <h2>What to look for</h2>
+    <ul>
+      <li><b>Resolution.</b> With charge conserved (total scaling 1) and at least two children of each sign, the local twist spreads until every torus is untwisted, but only if the step between children shares no factor with the number of tori around the ring.</li>
+      <li><b>Trapped twist.</b> If the step shares a factor with the ring size, the children only ever reach a sub-ring, the twist can't spread to the rest, and it never resolves. On a prime ring every step works.</li>
+      <li><b>Conservation is the knife edge.</b> Below 1 total scaling, charge leaks away; above 1, it grows without limit.</li>
+      <li><b>Loop length and shear don't matter.</b> Switching between 3 and 4 generations, or adding shear, only relabels which torus is which. The outcome depends only on the steps and the ring size.</li>
+      <li><b>Global twist never changes.</b> It starts at zero and stays there. Only local twist moves around.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(function(){
+"use strict";
+const TAU=Math.PI*2,$=id=>document.getElementById(id);
+const DEF={n:7,G:3,k:2,a:1,b:3,skew:0.5,lam:1,shear:0};
+let S=Object.assign({},DEF),C={},hist=[],maxes=[];
+const STEPS=90;
+function readColors(){const cs=getComputedStyle(document.documentElement);for(const c of ["bg","panel","ink","muted","line","plus","minus","zero","ok","bad","torus"])C[c]=cs.getPropertyValue("--"+c).trim();}
+const rgb=h=>{const v=parseInt(h.replace("#",""),16);return [(v>>16)&255,(v>>8)&255,v&255];};
+const gcd=(x,y)=>y?gcd(y,x%y):x;
+function mix(c1,c2,t){const a=rgb(c1),b=rgb(c2);return `rgb(${a.map((x,i)=>Math.round(x+(b[i]-x)*t)).join(",")})`;}
+function twistColor(v,scale){const t=Math.min(1,Math.abs(v)/scale);return v>=0?mix(C.zero,C.plus,Math.sqrt(t)):mix(C.zero,C.minus,Math.sqrt(t));}
+function shares(){const k=S.k;if(k===1)return [S.lam];const rest=(1-S.skew)/(k-1);return [S.skew,...Array(k-1).fill(rest)].map(x=>x*S.lam);}
+
+/* simulate: m[g][i] mother-share (+), f[g][i] father-share (−) of torus i in generation slot g (mod G) */
+function simulate(){
+  const n=S.n,sh=shares();hist=[];maxes=[];
+  let m=Array(n).fill(1),f=Array(n).fill(-1);
+  m[0]=5/3;f[Math.floor(n/2)]=-5/3;                         // mother excess +2/3 at torus 0, father excess −2/3 opposite; global 0
+  for(let t=0;t<STEPS;t++){
+    const tw=m.map((x,i)=>x+f[i]);hist.push(tw);maxes.push(Math.max(...tw.map(Math.abs)));
+    const off=S.shear*t,m2=Array(n).fill(0),f2=Array(n).fill(0);
+    for(let i=0;i<n;i++)for(let j=0;j<sh.length;j++){
+      m2[((i+j*S.a+off)%n+n)%n]+=sh[j]*m[i];
+      f2[((i+j*S.b+off)%n+n)%n]+=sh[j]*f[i];}
+    m=m2;f=f2;
+  }
+}
+function analysis(){
+  const n=S.n,ga=gcd(S.a,n),gb=gcd(S.b,n),k=S.k;
+  const last=maxes[maxes.length-1],prev=maxes[maxes.length-1-S.G*3]||maxes[0];
+  const rate=Math.pow(Math.max(last,1e-300)/Math.max(prev,1e-300),1/(S.G*3));
+  return {ga,gb,last,rate};
+}
+function update(){
+  for(const id of ["n","k","a","b","skew","lam","shear"]){$(id+"O").textContent=id==="skew"||id==="lam"?(+S[id]).toFixed(2):S[id];}
+  $("G").value=S.G;
+  simulate();const A=analysis();
+  const g0=hist[0].reduce((s,x)=>s+x,0),gl=hist[hist.length-1].reduce((s,x)=>s+x,0);
+  $("glob").textContent=Math.abs(gl)<1e-9?"0":gl.toFixed(3);
+  $("rate").textContent=A.rate.toFixed(3);$("maxt").textContent=A.last<1e-6?"≈ 0":A.last.toFixed(3);
+  let v,why;
+  if(Math.abs(S.lam-1)>1e-9){v=S.lam<1?'<span class="bad">Leaks.</span> Charge is not conserved, so everything shrinks, not just the twist.':'<span class="bad">Grows without limit.</span> Charge is not conserved.';why="Set total scaling to 1 to conserve charge.";}
+  else if(S.k<2){v='<span class="bad">Never resolves.</span> With one child of each sign the twist just moves around the ring unchanged.';why="A single child carries everything it receives, so nothing spreads.";}
+  else if(A.last<1e-4){v='<span class="ok">Resolves.</span> The local twist spreads through the children until every torus is untwisted.';why=`The steps (${S.a} and ${S.b}) share no factor with ${S.n}${S.shear?" once the shear is included":""}, so the children reach every torus.`;}
+  else if(A.ga===1&&A.gb===1){v='<span class="ok">Resolving, slowly.</span> The twist is still shrinking every generation.';why=`The steps share no factor with ${S.n}, so it will resolve; a lopsided split just slows it down.`;}
+  else{v='<span class="bad">Twist is trapped.</span> It moves around but never resolves.';
+    why=(A.ga>1||A.gb>1)?`A step shares a factor with ${S.n} (common factor ${Math.max(A.ga,A.gb)}), so the children only reach a sub-ring of ${S.n/Math.max(A.ga,A.gb)} tori and the twist can't spread to the rest.`:"The twist settles into a pattern that repeats.";}
+  $("verdict").innerHTML=v;$("why").textContent=why+` Global twist stays ${Math.abs(g0)<1e-9?"0":g0.toFixed(3)} throughout.`;
+  drawHist();drawDecay();drawRing();
+}
+function fit(cv){const r=cv.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2.5),W=Math.round(r.width*dpr),H=Math.round(r.height*dpr);
+  if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H;}const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);return {ctx,w:r.width,h:r.height};}
+function drawHist(){const {ctx,w,h}=fit($("hist"));ctx.clearRect(0,0,w,h);const n=S.n,rows=Math.min(hist.length,60),cw=w/n,ch=h/rows;
+  for(let t=0;t<rows;t++)for(let i=0;i<n;i++){ctx.fillStyle=twistColor(hist[t][i],2/3);ctx.fillRect(i*cw,t*ch,cw+0.5,ch+0.5);}
+  ctx.strokeStyle=C.line;ctx.lineWidth=1;for(let t=S.G;t<rows;t+=S.G){ctx.beginPath();ctx.moveTo(0,t*ch);ctx.lineTo(w,t*ch);ctx.stroke();}}
+function drawDecay(){const {ctx,w,h}=fit($("decay"));ctx.clearRect(0,0,w,h);const ml=34,mb=16,W=w-ml-6,H=h-mb-6;
+  const lo=-8,hi=1,Y=v=>6+H*(1-(Math.log10(Math.max(v,1e-8))-lo)/(hi-lo));
+  ctx.fillStyle=C.muted;ctx.font="10px "+getComputedStyle(document.body).fontFamily;ctx.textAlign="right";ctx.textBaseline="middle";
+  for(const d of [1,1e-4,1e-8]){ctx.fillText(d===1?"1":d.toExponential(0),ml-4,Y(d));ctx.strokeStyle=C.line;ctx.beginPath();ctx.moveTo(ml,Y(d));ctx.lineTo(ml+W,Y(d));ctx.stroke();}
+  ctx.textAlign="center";ctx.textBaseline="top";ctx.fillText("generations →",ml+W/2,h-mb+2);
+  ctx.strokeStyle=C.minus;ctx.lineWidth=2;ctx.beginPath();maxes.forEach((v,t)=>{const x=ml+W*t/(maxes.length-1),y=Y(v);t?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();}
+function drawRing(){const {ctx,w,h}=fit($("ring"));ctx.clearRect(0,0,w,h);const n=S.n,cx=w/2,cy=h/2,R=Math.min(w,h)*0.36,tw=hist[Math.min(hist.length-1,S.G*2)];
+  const pos=i=>[cx+R*Math.cos(-Math.PI/2+TAU*i/n),cy+R*Math.sin(-Math.PI/2+TAU*i/n)];
+  // tubes from torus 0 to its children (one generation)
+  for(const [step,col] of [[S.a,C.plus],[S.b,C.minus]])for(let j=0;j<S.k;j++){const [x0,y0]=pos(0),[x1,y1]=pos((j*step)%n);
+    if(j===0){ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();ctx.arc(x0,y0,14,0,TAU);ctx.stroke();continue;}
+    ctx.strokeStyle=col;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x0,y0);ctx.quadraticCurveTo(cx,cy,x1,y1);ctx.stroke();}
+  for(let i=0;i<n;i++){const [x,y]=pos(i);ctx.fillStyle=twistColor(tw[i],2/3);ctx.strokeStyle=C.torus;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(x,y,9,0,TAU);ctx.fill();ctx.stroke();
+    ctx.fillStyle=C.muted;ctx.font="10px "+getComputedStyle(document.body).fontFamily;ctx.textAlign="center";ctx.textBaseline="middle";const [lx,ly]=[cx+R*1.2*Math.cos(-Math.PI/2+TAU*i/n),cy+R*1.2*Math.sin(-Math.PI/2+TAU*i/n)];ctx.fillText(String(i),lx,ly);}
+  ctx.fillStyle=C.muted;ctx.font="11px "+getComputedStyle(document.body).fontFamily;ctx.textAlign="center";ctx.fillText(`ring after ${Math.min(hist.length-1,S.G*2)} generations; arcs: torus 0's children`,cx,h-8);}
+for(const id of ["n","k","a","b","skew","lam","shear"])$(id).addEventListener("input",e=>{S[id]=+e.target.value;update();});
+$("G").addEventListener("change",e=>{S.G=+e.target.value;update();});
+$("reset").addEventListener("click",()=>{S=Object.assign({},DEF);syncInputs();update();});
+function syncInputs(){for(const id of ["n","k","a","b","skew","lam","shear"])$(id).value=S[id];}
+readColors();
+const mq=matchMedia("(prefers-color-scheme: dark)"),onTheme=()=>{readColors();update();};
+mq.addEventListener?mq.addEventListener("change",onTheme):mq.addListener(onTheme);
+new MutationObserver(onTheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+new ResizeObserver(()=>{drawHist();drawDecay();drawRing();}).observe(document.querySelector(".grid"));
+syncInputs();update();
+})();
+</script>
