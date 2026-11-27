@@ -130,3 +130,14 @@ instant. Grazing: climbs the walls into the child behind the seam. Zooming into 
 eps gives tan(theta') = tan(theta)/eps, so depth is about log(1/theta)/log(1/eps). A neutral
 child ends the climb. Parent's clock sees at most about eps; the deepest level lives that as
 eps^(-depth) times as long. Each climb appends a branch, seen by the observer as one more hole.
+
+## The embedding space (viewer/lineage_disk.html)
+
+The rules embed in the hyperbolic plane, drawn as the Poincare disk: exponential room for
+branching; depth = scale = generation; the edge infinitely far yet drawn finite (aeon inside an
+instant). Farey triangles = families (synchronous parents p/q, r/s with ps - qr = 1; child the
+mediant). A relation is a direction from the centre; the single line of descent toward x is the
+Stern-Brocot / Euclid path. Rationals end in their Ford (resting) circle after finitely many
+generations; irrationals never do. Checked: hyperbolic distance to the resting circle does NOT
+track the superposed-pairing generation counts (correlation 0.10), so the disk shows the single
+path only.

@@ -1,0 +1,213 @@
+<title>Lineage Disk</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* Layout: the hyperbolic disk leads (fraction triangles, resting circles, the lineage path);
+   beside it the controls, the family of the tapped triangle, and the path's generations. */
+:root{
+  --bg:#f3f5f8; --panel:#ffffff; --ink:#17202b; --muted:#5a6676; --line:#c9d0da; --faint:#e3e7ed; --chip:#eef1f6;
+  --plus:#c27c00; --minus:#2459c4; --ok:#13875a; --accent:#2459c4; --path:#d11f5d; --fill:rgba(209,31,93,.13); --sel:rgba(36,89,196,.22); --rest:rgba(19,135,90,.11);
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#3a4452; --faint:#232a33; --chip:#1e252e;
+  --plus:#f0b033; --minus:#6f9fff; --ok:#3fcf8e; --accent:#6f9fff; --path:#ff5c93; --fill:rgba(255,92,147,.16); --sel:rgba(111,159,255,.25); --rest:rgba(63,207,142,.11); color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#3a4452; --faint:#232a33; --chip:#1e252e;
+  --plus:#f0b033; --minus:#6f9fff; --ok:#3fcf8e; --accent:#6f9fff; --path:#ff5c93; --fill:rgba(255,92,147,.16); --sel:rgba(111,159,255,.25); --rest:rgba(63,207,142,.11); color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 28px}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.7rem,4.5vw,2.3rem);line-height:1.1}
+h2{font-size:1.05rem}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--muted);max-width:70ch;margin-top:6px}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+canvas{display:block;width:100%}
+#disk{aspect-ratio:1/1;cursor:pointer;touch-action:manipulation}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+button{font:inherit;font-size:.84rem;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer}
+button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:500}
+button:hover{border-color:var(--muted)}
+button.primary{background:var(--accent);color:var(--panel);border-color:var(--accent);font-weight:500}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ctl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center}
+.ctl label{font-size:.86rem}
+.ctl output{font-family:var(--f-mono);font-size:.84rem}
+.ctl input{grid-column:1/-1;width:100%;accent-color:var(--accent);height:26px}
+.verdict{font-size:1rem;font-weight:500}
+.hint{font-size:.8rem;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tile{border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+.tile .k{font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.tile .v{font-family:var(--f-mono);font-size:.95rem;font-weight:500;overflow-wrap:anywhere}
+.fam{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.who{border:1px solid var(--line);border-radius:8px;padding:8px;text-align:center;min-width:0}
+.who .r{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.who .f{font-family:var(--f-mono);font-size:1.25rem;font-weight:500}
+.who.m .f{color:var(--plus)} .who.d .f{color:var(--minus)} .who.c .f{color:var(--path)}
+.gens{display:flex;flex-wrap:wrap;gap:4px;font-family:var(--f-mono);font-size:.78rem}
+.g{padding:1px 6px;border-radius:4px;border:1px solid var(--line);cursor:pointer}
+.g.on{border-color:var(--accent);color:var(--accent)}
+.g.rest{border-color:var(--ok);color:var(--ok)}
+.notes{font-size:.9rem;max-width:75ch;display:flex;flex-direction:column;gap:8px}
+.notes ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:5px}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">the space that holds it · hyperbolic disk · fractions on the edge</div>
+    <h1>Lineage Disk</h1>
+    <p class="lede">An infinite, negatively curved space drawn inside a finite circle. Its edge is infinitely far away, yet you can see all of it. The space is tiled by triangles whose corners sit on the edge at the fractions. Each triangle is a family: two synchronous parents and the child born between them. Every relation is a direction from the centre. Head that way and you pass through generation after generation of families. A fraction ends in its own resting circle; an irrational never arrives.</p>
+  </header>
+
+  <div class="grid">
+    <div class="card">
+      <canvas id="disk" aria-label="Hyperbolic disk tiled by fraction triangles, with resting circles at each fraction and the lineage path from the centre"></canvas>
+      <p class="hint">Tap any triangle to see its family. Fractions sit around the edge: 0 at the left, 1 at the top, ∞ at the right, and negatives below. The green discs are resting circles, one per fraction, smaller for larger denominators.</p>
+    </div>
+    <div class="card">
+      <div class="row" id="presets"></div>
+      <div class="ctl"><label for="x">relation between mother and father</label><output id="xO"></output><input type="range" id="x" min="0.001" max="0.999" step="0.001"></div>
+      <div class="row"><button class="primary" id="go">▶ Follow the lineage</button></div>
+      <p class="verdict" id="verdict"></p>
+      <div class="stats">
+        <div class="tile"><div class="k">Direction from the centre</div><div class="v" id="sAng"></div></div>
+        <div class="tile"><div class="k">Generations passed</div><div class="v" id="sGen"></div></div>
+        <div class="tile"><div class="k">Continued fraction</div><div class="v" id="sCf"></div></div>
+      </div>
+      <h2>Generations along the path</h2>
+      <div class="gens" id="gens"></div>
+      <h2 id="famTitle">The family</h2>
+      <div class="fam">
+        <div class="who m"><div class="r">mother</div><div class="f" id="fM"></div></div>
+        <div class="who d"><div class="r">father</div><div class="f" id="fF"></div></div>
+        <div class="who c"><div class="r">child</div><div class="f" id="fC"></div></div>
+      </div>
+      <p class="hint" id="famNote"></p>
+    </div>
+  </div>
+
+  <section class="card notes">
+    <h2>How the rules sit in this space</h2>
+    <ul>
+      <li><b>Room to branch.</b> The space grows exponentially outward, as fast as a lineage that keeps branching. In flat space the branches would crowd together.</li>
+      <li><b>Every triangle is a family.</b> Its two parents p/q and r/s are synchronous: p·s − q·r = ±1, so their clocks line up. The child born between them is (p + r)/(q + s): counts add.</li>
+      <li><b>Depth is scale.</b> Each step toward the edge is one generation, a finer layer. The edge itself is infinitely far: a journey there is endless inside, yet the whole thing fits in the circle you see. That's an aeon inside an instant.</li>
+      <li><b>A direction is a relation.</b> The angle you set out at from the centre decides where you land on the edge. A fraction ends inside its own resting circle after finitely many generations: the neutral child. An irrational slips between resting circles forever.</li>
+      <li><b>The path here is the single line of descent.</b> It's the subtract-the-smaller path (Euclid's algorithm). The every-pairing-at-once lineage from earlier reaches neutrality faster, by shortcuts this picture doesn't draw.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(function(){
+"use strict";
+const TAU=Math.PI*2,$=id=>document.getElementById(id),DEPTH=8;
+const PHI=(Math.sqrt(5)-1)/2;
+const PRESETS=[["2/3",2/3],["3/5",3/5],["5/8",5/8],["7/11",7/11],["golden",PHI],["√2 − 1",Math.SQRT2-1]];
+let S={x:2/3,preset:0},C={},tris=[],path=null,sel=null,anim=null,prog=1,cache=null;
+function readColors(){const cs=getComputedStyle(document.documentElement);for(const c of ["bg","panel","ink","muted","line","faint","plus","minus","ok","accent","path","fill","sel","rest"])C[c]=cs.getPropertyValue("--"+c).trim();}
+
+/* upper half-plane -> disk (Cayley), flipped so x = 1 sits at the top */
+function toDisk(x,y){const dr=x,di=y+1,nr=x,ni=y-1,den=dr*dr+di*di;const u=(nr*dr+ni*di)/den,v=(ni*dr-nr*di)/den;return [u,-v];}
+const edgePt=x=>x===Infinity?[1,0]:toDisk(x,0);
+function geodesic(a,b,n=36){const pts=[];
+  if(a===Infinity||b===Infinity){const x=a===Infinity?b:a;for(let k=0;k<=n;k++){const t=k/n,y=Math.tan(t*Math.PI/2*0.999);pts.push(toDisk(x,y));}pts.push([1,0]);if(a===Infinity)pts.reverse();return pts;}
+  const c=(a+b)/2,R=Math.abs(b-a)/2;for(let k=0;k<=n;k++){const ph=a<b?Math.PI*(1-k/n):Math.PI*k/n;pts.push(toDisk(c+R*Math.cos(ph),R*Math.sin(ph)));}return pts;}
+/* fractions as [p,q]; value */
+const val=([p,q])=>q===0?Infinity:p/q;
+function buildTris(){tris=[];
+  const rec=(L,Rr,d)=>{if(d>DEPTH)return;const M=[L[0]+Rr[0],L[1]+Rr[1]];tris.push({L,R:Rr,M,d});rec(L,M,d+1);rec(M,Rr,d+1);};
+  rec([0,1],[1,0],1);                 // (0, ∞): first child 1/1
+  rec([-1,0],[0,1],1);                // (−∞, 0) mirror side
+}
+function triPoly(t){const a=val(t.L),b=val(t.R),m=val(t.M);return [...geodesic(a,m),...geodesic(m,b),...geodesic(b,a)];}
+/* resting (Ford) circle at p/q, mapped into the disk via three points */
+function fordDisk(p,q){if(q===0)return {cx:0.5,cy:0,r:0.5};const x0=p/q,R=1/(2*q*q);
+  const P=[toDisk(x0-R,R),toDisk(x0+R,R),toDisk(x0,2*R)];const [ax,ay]=P[0],[bx,by]=P[1],[cx,cy]=P[2];
+  const d=2*(ax*(by-cy)+bx*(cy-ay)+cx*(ay-by)),ux=((ax*ax+ay*ay)*(by-cy)+(bx*bx+by*by)*(cy-ay)+(cx*cx+cy*cy)*(ay-by))/d,uy=((ax*ax+ay*ay)*(cx-bx)+(bx*bx+by*by)*(ax-cx)+(cx*cx+cy*cy)*(bx-ax))/d;
+  return {cx:ux,cy:uy,r:Math.hypot(ax-ux,ay-uy)};}
+
+/* the lineage: Stern–Brocot descent toward x (single subtract-the-smaller path) */
+function descend(x,cap=40){const out=[];let L=[0,1],R=[1,0];
+  for(let k=0;k<cap;k++){const M=[L[0]+R[0],L[1]+R[1]],m=M[0]/M[1];out.push({L,R,M,d:k+1});if(M[1]<=20000&&Math.abs(m-x)<1e-11)return {steps:out,rest:M};if(M[1]>20000)break;if(x<m)R=M;else L=M;}
+  return {steps:out,rest:null};}
+function cf(x,n=10){const out=[];for(let i=0;i<n;i++){const f=Math.floor(x+1e-12);out.push(f);const r=x-f;if(r<1e-9)break;x=1/r;}return out;}
+const frac=([p,q])=>q===0?"∞":q===1?String(p):`${p}/${q}`;
+
+function geom(){const cv=$("disk"),r=cv.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2.5),w=r.width;return {cv,dpr,w,R:w*0.43,cx:w/2,cy:w/2};}
+function drawBase(){const g=geom();cache=document.createElement("canvas");cache.width=Math.round(g.w*g.dpr);cache.height=cache.width;
+  const ctx=cache.getContext("2d");ctx.setTransform(g.dpr,0,0,g.dpr,0,0);const P=([u,v])=>[g.cx+u*g.R,g.cy-v*g.R];
+  ctx.fillStyle=C.panel;ctx.beginPath();ctx.arc(g.cx,g.cy,g.R,0,TAU);ctx.fill();
+  // resting circles
+  for(let q=1;q<=14;q++)for(let p=-3*q;p<=3*q;p++){if(gcd(Math.abs(p),q)!==1)continue;
+    const f=fordDisk(p,q);if(f.r*g.R<0.6)continue;ctx.fillStyle=C.rest;ctx.beginPath();ctx.arc(g.cx+f.cx*g.R,g.cy-f.cy*g.R,f.r*g.R,0,TAU);ctx.fill();}
+  {const f=fordDisk(1,0);ctx.fillStyle=C.rest;ctx.beginPath();ctx.arc(g.cx+f.cx*g.R,g.cy-f.cy*g.R,f.r*g.R,0,TAU);ctx.fill();}
+  // tessellation edges
+  ctx.lineJoin="round";
+  const edge=(a,b,lw,col)=>{const pts=geodesic(a,b);ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.beginPath();pts.forEach((p,i)=>{const [X,Y]=P(p);i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);});ctx.stroke();};
+  edge(0,Infinity,1.6,C.line);
+  for(const t of tris){const lw=Math.max(0.5,1.6-0.17*t.d);edge(val(t.L),val(t.M),lw,C.line);edge(val(t.M),val(t.R),lw,C.line);}
+  ctx.strokeStyle=C.muted;ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(g.cx,g.cy,g.R,0,TAU);ctx.stroke();
+  // labels
+  ctx.fillStyle=C.muted;ctx.font="11px "+getComputedStyle(document.body).fontFamily;ctx.textAlign="center";ctx.textBaseline="middle";
+  for(const [lab,x] of [["0",0],["1",1],["∞",Infinity],["1/2",.5],["2",2],["1/3",1/3],["2/3",2/3],["−1",-1]]){const [u,v]=edgePt(x);ctx.fillText(lab,g.cx+u*(g.R+11),g.cy-v*(g.R+11));}
+}
+function gcd(a,b){return b?gcd(b,a%b):a;}
+function fillPoly(ctx,g,pts,col){ctx.fillStyle=col;ctx.beginPath();pts.forEach((p,i)=>{const X=g.cx+p[0]*g.R,Y=g.cy-p[1]*g.R;i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);});ctx.closePath();ctx.fill();}
+function draw(){const g=geom();if(g.cv.width!==Math.round(g.w*g.dpr)){g.cv.width=Math.round(g.w*g.dpr);g.cv.height=g.cv.width;drawBase();}
+  const ctx=g.cv.getContext("2d");ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,g.cv.width,g.cv.height);ctx.drawImage(cache,0,0);ctx.setTransform(g.dpr,0,0,g.dpr,0,0);
+  const shown=Math.ceil(prog*path.steps.length);
+  path.steps.slice(0,shown).forEach(s=>fillPoly(ctx,g,triPoly(s),C.fill));
+  if(sel)fillPoly(ctx,g,triPoly(sel),C.sel);
+  // the ray from the centre toward x
+  const [eu,ev]=edgePt(S.x),endR=path.rest?Math.min(1,restHit()):1,len=prog*endR;
+  ctx.strokeStyle=C.path;ctx.lineWidth=2.4;ctx.beginPath();ctx.moveTo(g.cx,g.cy);ctx.lineTo(g.cx+eu*g.R*len,g.cy-ev*g.R*len);ctx.stroke();
+  ctx.fillStyle=C.path;ctx.beginPath();ctx.arc(g.cx+eu*g.R*len,g.cy-ev*g.R*len,5,0,TAU);ctx.fill();
+  ctx.fillStyle=C.ink;ctx.beginPath();ctx.arc(g.cx,g.cy,3,0,TAU);ctx.fill();
+  if(path.rest&&prog>=1){const f=fordDisk(path.rest[0],path.rest[1]);ctx.strokeStyle=C.ok;ctx.lineWidth=2.2;ctx.beginPath();ctx.arc(g.cx+f.cx*g.R,g.cy-f.cy*g.R,f.r*g.R,0,TAU);ctx.stroke();}
+}
+function restHit(){const f=fordDisk(path.rest[0],path.rest[1]),[eu,ev]=edgePt(S.x);let lo=0,hi=1;  // first point on the ray inside the resting circle
+  for(let i=0;i<40;i++){const m=(lo+hi)/2;Math.hypot(eu*m-f.cx,ev*m-f.cy)<f.r?hi=m:lo=m;}return hi;}
+
+function showFamily(t,label){const synch=Math.abs(t.L[0]*t.R[1]-t.L[1]*t.R[0]);
+  $("famTitle").textContent=label;$("fM").textContent=frac(t.R);$("fF").textContent=frac(t.L);$("fC").textContent=frac(t.M);
+  $("famNote").textContent=`Synchronous parents: ${t.R[0]}·${t.L[1]} − ${t.R[1]}·${t.L[0]} = ${synch}. Their child adds their counts: (${t.R[0]} + ${t.L[0]})/(${t.R[1]} + ${t.L[1]}) = ${frac(t.M)}.`;}
+function update(){path=descend(S.x);const n=path.steps.length;
+  $("xO").textContent=S.preset>=0?PRESETS[S.preset][0]:S.x.toFixed(3);
+  [...$("presets").children].forEach((b,i)=>b.setAttribute("aria-pressed",i===S.preset));
+  const [u,v]=edgePt(S.x);$("sAng").textContent=(Math.atan2(v,u)*180/Math.PI).toFixed(2)+"°";
+  $("sGen").textContent=path.rest?String(n):`${n}+, never ends`;
+  const c=cf(S.x);$("sCf").textContent=`[${c[0]}; ${c.slice(1).join(", ")}${path.rest?"":", …"}]`;
+  $("verdict").innerHTML=path.rest?`<span style="color:var(--ok)">Comes to rest at ${frac(path.rest)}</span> after ${n} generation${n>1?"s":""}: the ray enters its resting circle.`:`<span style="color:var(--path)">Never comes to rest.</span> The ray slips between resting circles forever; shown here for ${n} generations.`;
+  const el=$("gens");el.innerHTML="";path.steps.forEach((s,i)=>{const b=document.createElement("span");b.className="g"+(path.rest&&i===n-1?" rest":"");b.textContent=frac(s.M);b.title=`generation ${s.d}`;
+    b.addEventListener("click",()=>{sel=s;[...el.children].forEach(c=>c.classList.remove("on"));b.classList.add("on");showFamily(s,`The family at generation ${s.d}`);draw();});el.appendChild(b);});
+  sel=path.steps[n-1];showFamily(sel,path.rest?`The last family: the neutral child ${frac(sel.M)}`:`The family at generation ${sel.d}`);el.lastChild&&el.lastChild.classList.add("on");
+  prog=1;draw();}
+$("disk").addEventListener("click",e=>{const g=geom(),r=e.currentTarget.getBoundingClientRect(),u=(e.clientX-r.left-g.cx)/g.R,v=-(e.clientY-r.top-g.cy)/g.R;if(u*u+v*v>=1)return;
+  let best=null;for(const t of tris){const pts=triPoly(t);let inside=false;for(let i=0,j=pts.length-1;i<pts.length;j=i++){const [xi,yi]=pts[i],[xj,yj]=pts[j];if(((yi>v)!==(yj>v))&&(u<(xj-xi)*(v-yi)/(yj-yi)+xi))inside=!inside;}
+    if(inside&&(!best||t.d>best.d))best=t;}
+  if(best){sel=best;[...$("gens").children].forEach(c=>c.classList.remove("on"));showFamily(best,`A family at generation ${best.d}`);draw();}});
+$("go").addEventListener("click",()=>{if(anim)cancelAnimationFrame(anim);const st=performance.now(),dur=600*Math.min(path.steps.length,12);
+  const tick=now=>{prog=Math.min(1,(now-st)/dur);draw();if(prog<1)anim=requestAnimationFrame(tick);else anim=null;};anim=requestAnimationFrame(tick);});
+PRESETS.forEach(([name,x],i)=>{const b=document.createElement("button");b.textContent=name;b.addEventListener("click",()=>{S.x=x;S.preset=i;$("x").value=x;update();});$("presets").appendChild(b);});
+$("x").addEventListener("input",e=>{S.x=+e.target.value;S.preset=-1;update();});
+window.__state=()=>({n:path.steps.length,rest:path.rest,tris:tris.length});window.__set=o=>{Object.assign(S,o);update();return window.__state();};
+readColors();buildTris();
+const onTheme=()=>{readColors();drawBase();draw();},mq=matchMedia("(prefers-color-scheme: dark)");
+mq.addEventListener?mq.addEventListener("change",onTheme):mq.addListener(onTheme);
+new MutationObserver(onTheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+new ResizeObserver(()=>{const g=geom();if(g.w>0){g.cv.width=0;draw();}}).observe($("disk"));
+$("x").value=S.x;update();
+})();
+</script>
