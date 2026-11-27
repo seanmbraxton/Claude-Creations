@@ -114,3 +114,10 @@ viewer/seams_and_tones.html): neutral iff a/b is rational; depends only on the r
 p/q; comparable parents resolve in about 1.13 log2(q) + 2 generations versus up to q along a
 single subtract-the-smaller path; a parent 1/m of the other still needs about m generations;
 prime and composite q of similar size show no difference (mean residual 0.02 vs -0.005).
+
+## Draft 7 view: the jump journey (viewer/jump_journey.html)
+
+A seam's drop is instant on the parent's clock; inside it, the lineage descends (each generation
+roughly an octave finer) to the neutral child and returns. What returns is the found unit: in its
+frame every torus in the family winds a whole number of times and every seam disappears (2/3
+against 1: mother 2, father -3, children -1, 1, 0). Irrational parents never return.

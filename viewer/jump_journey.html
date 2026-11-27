@@ -1,0 +1,209 @@
+<title>Jump Journey</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* Layout: the parent's sawtooth (one instant highlighted) on top; below it the descent, one
+   phase-coloured torus per generation with its seam drawn as a hard line, ending at the neutral
+   child; a frame switch redraws every torus in the found unit's frame where the seams vanish. */
+:root{
+  --bg:#f3f5f8; --panel:#ffffff; --ink:#17202b; --muted:#5a6676; --line:#d9dee6; --chip:#eef1f6;
+  --plus:#c27c00; --minus:#2459c4; --ok:#13875a; --accent:#2459c4; --seam:#11151a;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
+  --plus:#f0b033; --minus:#6f9fff; --ok:#3fcf8e; --accent:#6f9fff; --seam:#f4f6f9; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
+  --plus:#f0b033; --minus:#6f9fff; --ok:#3fcf8e; --accent:#6f9fff; --seam:#f4f6f9; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 28px}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.7rem,4.5vw,2.3rem);line-height:1.1}
+h2{font-size:1.05rem}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--muted);max-width:70ch;margin-top:6px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+canvas{display:block;width:100%;border-radius:6px}
+#saw{height:110px;background:var(--bg)}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+button{font:inherit;font-size:.84rem;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer}
+button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:500}
+button:hover{border-color:var(--muted)}
+button.primary{background:var(--accent);color:var(--panel);border-color:var(--accent);font-weight:500}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ctl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center}
+.ctl label{font-size:.86rem}
+.ctl output{font-family:var(--f-mono);font-size:.84rem}
+.ctl input{grid-column:1/-1;width:100%;accent-color:var(--accent);height:26px}
+.verdict{font-size:1rem;font-weight:500}
+.hint{font-size:.8rem;color:var(--muted)}
+.levels{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.lvl{border:1px solid var(--line);border-radius:8px;padding:6px;display:flex;flex-direction:column;gap:2px;transition:opacity .3s,border-color .3s;min-width:0}
+.lvl canvas{aspect-ratio:4/3;background:var(--bg)}
+.lvl.dim{opacity:.28}
+.lvl.now{border-color:var(--accent)}
+.lvl .h{font-family:var(--f-mono);font-size:.74rem;color:var(--muted)}
+.lvl .c{font-family:var(--f-mono);font-size:.9rem;font-weight:500}
+.lvl .s{font-size:.76rem;color:var(--muted)}
+.p{color:var(--plus)} .n{color:var(--minus)} .z{color:var(--ok)}
+.notes{font-size:.9rem;max-width:75ch;display:flex;flex-direction:column;gap:8px}
+.notes ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:5px}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">an instant for the parent · an era for the children</div>
+    <h1>Jump Journey</h1>
+    <p class="lede">The parent's phase climbs and then jumps back: a hard seam. Seen from the parent, the jump is instant. Seen from the children, it's a journey down through generation after generation until a child is born neutral, and back up again. Colour on each torus is phase; a hard line is a seam; the flow of colour is the winding direction, the arrow of time for that torus.</p>
+  </header>
+
+  <div class="card">
+    <div class="row" id="presets"></div>
+    <div class="ctl"><label for="a">mother's charge (the father is −1)</label><output id="aO"></output><input type="range" id="a" min="0.05" max="0.95" step="0.001"></div>
+    <div class="row"><button class="primary" id="go">▶ Take the jump</button>
+      <span class="hint">frame:</span><button id="fP" aria-pressed="true">parent's frame</button><button id="fU" aria-pressed="false">found unit's frame</button></div>
+    <p class="verdict" id="verdict"></p>
+  </div>
+
+  <div class="card">
+    <h2>The parent's clock</h2>
+    <canvas id="saw" aria-label="The parent's phase over its own time: a sawtooth; each drop is a seam"></canvas>
+    <p class="hint" id="sawNote"></p>
+  </div>
+
+  <div class="card">
+    <h2>Inside the jump</h2>
+    <div class="levels" id="levels"></div>
+    <p class="hint" id="levelNote"></p>
+  </div>
+
+  <section class="card notes">
+    <h2>Reading it</h2>
+    <ul>
+      <li><b>A seam is a hard colour line.</b> A torus whose phase winds a fraction of a turn can't meet itself, so the colour jumps where the winding closes.</li>
+      <li><b>Down the line the seams get finer.</b> Each child carries the difference between a mother seam and a father seam, so finer and finer windings appear, roughly an octave per generation. Not every single step is smaller, because a child can meet a larger partner, but the detail being resolved keeps getting finer.</li>
+      <li><b>The neutral child is still.</b> Born at exactly zero, it has no winding, no seam and no flow. Its time stops, and the journey turns back.</li>
+      <li><b>What comes back is a unit, and the seams vanish.</b> Switch to the found unit's frame: every torus in the family now winds a whole number of times. The hard lines disappear. The discontinuity the parent saw was never really there; it was a whole winding seen in the wrong frame. The whole windings are the counts the journey brings back.</li>
+      <li><b>Irrational parents never return.</b> Try the golden ratio or √2: the seams get finer forever, no child is born neutral, and the parent's jump never gets its answer.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(function(){
+"use strict";
+const TAU=Math.PI*2,$=id=>document.getElementById(id),CAP=22,MAXT=2500,TOL=1e-10;
+const PHI=(Math.sqrt(5)-1)/2;
+const PRESETS=[["2/3",2/3],["3/5",3/5],["5/8",5/8],["4/5",4/5],["8/9",8/9],["golden",PHI],["1/√2",Math.SQRT1_2]];
+let S={a:2/3,preset:0,frame:"P",step:-1},C={},L=null,anim=null,t0=performance.now();
+function readColors(){const cs=getComputedStyle(document.documentElement);for(const c of ["bg","panel","ink","muted","line","plus","minus","ok","accent","seam"])C[c]=cs.getPropertyValue("--"+c).trim();}
+const isDark=()=>document.documentElement.dataset.theme==="dark"||(document.documentElement.dataset.theme!=="light"&&matchMedia("(prefers-color-scheme: dark)").matches);
+const fmt=v=>Math.abs(v)<TOL?"0":(v>0?"+":"−")+Math.abs(v).toFixed(4).replace(/0+$/,"").replace(/\.$/,"");
+const fmtW=v=>Math.abs(v-Math.round(v))<1e-6?String(Math.round(v)).replace("-","−"):v.toFixed(3).replace("-","−");
+
+/* lineage: every opposite pair collides; remember each tone's parents; follow the deepest chain */
+function lineage(a,b){
+  const all=new Map(),info=new Map();const put=(v,g,par)=>{const k=v.toFixed(10);if(!all.has(k)){all.set(k,v);info.set(k,{v,g,par});}};
+  put(a,0,null);put(-b,0,null);let neutral=null,last=0;
+  for(let g=1;g<=CAP&&!neutral;g++){const vals=[...all.values()],pos=vals.filter(x=>x>0),neg=vals.filter(x=>x<0),born=[];
+    for(const x of pos)for(const y of neg){const s=x+y;if(Math.abs(s)<TOL){if(!neutral)neutral={v:0,g,par:[x,y]};}else if(!all.has(s.toFixed(10)))born.push([s,[x,y]]);}
+    for(const [s,par] of born)put(s,g,par);last=g;if(all.size>MAXT)break;}
+  // chain from the end back to the parents
+  let end=neutral;if(!end){let best=null;for(const i of info.values())if(i.g===last&&(!best||Math.abs(i.v)<Math.abs(best.v)))best=i;end=best;}
+  const chain=[];let cur=end;
+  while(cur&&cur.par){const [x,y]=cur.par,ix=info.get(x.toFixed(10)),iy=info.get(y.toFixed(10));chain.unshift({v:cur.v,g:cur.g,mother:x,father:y});
+    cur=(ix.g>=iy.g?ix:iy);if(cur.g===0)break;}
+  const levels=[{v:a,g:0,role:"mother"},{v:-b,g:0,role:"father"}].concat(chain.map((c,i)=>({v:c.v,g:i+1,mother:c.mother,father:c.father})));
+  levels.forEach((l,i)=>l.gen=i<2?0:i-1);
+  let unit=null;const r=a/b;for(let q=1;q<=2000&&!unit;q++){const p=Math.round(r*q);if(p>0&&Math.abs(p/q-r)<1e-9)unit=b/q;}
+  return {levels,neutral,unit};
+}
+
+/* torus with phase colour: hue = frac(W*u + flow); seam where the winding closes (u = 0) */
+const NU=56,NV=22,RR=1,rr=0.42,TILT=1.05;
+function hsl(h,s,l){const f=n=>{const k=(n+h*12)%12,a=s*Math.min(l,1-l);return l-a*Math.max(-1,Math.min(k-3,9-k,1));};return `rgb(${Math.round(f(0)*255)},${Math.round(f(8)*255)},${Math.round(f(4)*255)})`;}
+function drawTorus(cv,W,flow,dim){
+  const r=cv.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2),w=r.width,h=r.height;if(w<2)return;
+  if(cv.width!==Math.round(w*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);}
+  const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,w,h);
+  const sc=Math.min(w,h*1.25)*0.33,cx=w/2,cy=h/2,ct=Math.cos(TILT),st=Math.sin(TILT),dark=isDark();
+  const P=(u,v)=>{const a=TAU*u,b=TAU*v,x=(RR+rr*Math.cos(b))*Math.cos(a),y=(RR+rr*Math.cos(b))*Math.sin(a),z=rr*Math.sin(b);
+    const y2=y*ct-z*st,z2=y*st+z*ct;return [cx+x*sc,cy+y2*sc,z2];};
+  const N=(u,v)=>{const a=TAU*u,b=TAU*v,nx=Math.cos(b)*Math.cos(a),ny=Math.cos(b)*Math.sin(a),nz=Math.sin(b);return [nx,ny*ct-nz*st,ny*st+nz*ct];};
+  const quads=[];const still=Math.abs(W)<1e-9,frac=((W%1)+1)%1,hasSeam=!still&&frac>1e-6&&frac<1-1e-6;
+  for(let i=0;i<NU;i++)for(let j=0;j<NV;j++){const u0=i/NU,u1=(i+1)/NU,v0=j/NV,v1=(j+1)/NV,uc=(i+.5)/NU,vc=(j+.5)/NV;
+    const ps=[P(u0,v0),P(u1,v0),P(u1,v1),P(u0,v1)],z=(ps[0][2]+ps[1][2]+ps[2][2]+ps[3][2])/4,n=N(uc,vc);
+    const lum=0.55+0.45*Math.max(0,-n[1]*0.5-n[2]*0.85+0.2);
+    let col;if(still)col=dark?`rgba(140,150,165,${0.45*lum+0.2})`:`rgba(150,158,170,${0.5*lum+0.25})`;
+    else{const hue=((W*uc+flow)%1+1)%1;col=hsl(hue,dark?0.62:0.68,(dark?0.3:0.42)+0.26*lum);}
+    quads.push({ps,z,col,seam:hasSeam&&i===NU-1});}
+  quads.sort((p,q)=>q.z-p.z);ctx.globalAlpha=dim?0.85:1;
+  for(const q of quads){ctx.beginPath();q.ps.forEach(([x,y],k)=>k?ctx.lineTo(x,y):ctx.moveTo(x,y));ctx.closePath();ctx.fillStyle=q.col;ctx.fill();ctx.strokeStyle=q.col;ctx.lineWidth=0.6;ctx.stroke();
+    if(q.seam){ctx.strokeStyle=C.seam;ctx.lineWidth=2.4;ctx.beginPath();ctx.moveTo(q.ps[1][0],q.ps[1][1]);ctx.lineTo(q.ps[2][0],q.ps[2][1]);ctx.stroke();}}
+  ctx.globalAlpha=1;
+  // winding arrow: counterclockwise for +, clockwise for −
+  if(!still){ctx.strokeStyle=W>0?C.plus:C.minus;ctx.lineWidth=2;const ry=sc*ct*1.55,rx=sc*1.55,a0=W>0?0.15:Math.PI-0.15,a1=W>0?0.85:Math.PI-0.85;
+    ctx.beginPath();ctx.ellipse(cx,cy,rx,ry,0,-a1,-a0,W<0);ctx.stroke();const ang=-a1,ex=cx+rx*Math.cos(ang),ey=cy+ry*Math.sin(ang),dir=W>0?-1:1;
+    const tx=-rx*Math.sin(ang)*dir,ty=ry*Math.cos(ang)*dir,tl=Math.hypot(tx,ty);ctx.fillStyle=W>0?C.plus:C.minus;ctx.beginPath();ctx.moveTo(ex+tx/tl*7,ey+ty/tl*7);ctx.lineTo(ex-ty/tl*4,ey+tx/tl*4);ctx.lineTo(ex+ty/tl*4,ey-tx/tl*4);ctx.fill();}
+}
+
+function build(){
+  L=lineage(S.a,1);const el=$("levels");el.innerHTML="";
+  L.levels.forEach((l,i)=>{const d=document.createElement("div");d.className="lvl";d.dataset.i=i;
+    const neutral=Math.abs(l.v)<TOL,cls=neutral?"z":l.v>0?"p":"n";
+    const head=i===0?"parent · mother":i===1?"parent · father":`generation ${l.gen}${neutral?" · neutral":""}`;
+    const sub=i<2?(l.v>0?"counterclockwise":"clockwise"):`from ${fmt(l.mother)} and ${fmt(l.father)}`;
+    d.innerHTML=`<div class="h">${head}</div><canvas></canvas><div class="c ${cls}" data-w></div><div class="s">${sub}</div>`;el.appendChild(d);});
+  $("aO").textContent=S.preset>=0?PRESETS[S.preset][0]:S.a.toFixed(3);
+  [...$("presets").children].forEach((b,i)=>b.setAttribute("aria-pressed",i===S.preset));
+  $("fU").disabled=!L.neutral;if(!L.neutral&&S.frame==="U")S.frame="P";
+  const n=L.levels.length-2;
+  $("verdict").innerHTML=L.neutral?`<span class="z">Neutral after ${n} generation${n===1?"":"s"}.</span> The journey found the unit ${fmt(L.unit).replace("+","")}: the mother is ${Math.round(S.a/L.unit)} of them, the father ${Math.round(1/L.unit)}.`
+    :`<span style="color:var(--muted)">Never neutral.</span> Followed ${n} generations: the seams keep getting finer and the jump never gets its answer.`;
+  $("levelNote").textContent=L.neutral?"Following the deepest line of descent: each child below was born from the two seams shown under it. The last child is born at exactly zero.":"Following the line of descent whose seam got closest to zero. It never reaches it.";
+  S.step=-1;frameUI();}
+function frameUI(){$("fP").setAttribute("aria-pressed",S.frame==="P");$("fU").setAttribute("aria-pressed",S.frame==="U");
+  document.querySelectorAll(".lvl").forEach((d,i)=>{const l=L.levels[i],W=winding(l.v);d.querySelector("[data-w]").textContent=S.frame==="U"?`${fmtW(W)} whole winding${Math.abs(Math.abs(W)-1)<1e-6?"":"s"}`:`winds ${fmt(l.v)} turn`;});}
+const winding=v=>S.frame==="U"&&L.unit?v/L.unit:v;
+
+function drawSaw(){const cv=$("saw"),r=cv.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2);cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);
+  const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);const w=r.width,h=r.height,ml=8,mt=10,W=w-16,H=h-28,T=4/S.a,X=t=>ml+W*t/T,Y=v=>mt+H*(1-v);
+  ctx.strokeStyle=C.line;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(ml,Y(0));ctx.lineTo(ml+W,Y(0));ctx.moveTo(ml,Y(1));ctx.lineTo(ml+W,Y(1));ctx.stroke();
+  ctx.strokeStyle=C.ink;ctx.lineWidth=2;ctx.beginPath();let prev=null;const N=600;
+  for(let k=0;k<=N;k++){const t=T*k/N,v=(S.a*t)%1;if(prev!==null&&v<prev){ctx.stroke();ctx.beginPath();}k&&prev!==null&&v>=prev?ctx.lineTo(X(t),Y(v)):ctx.moveTo(X(t),Y(v));prev=v;}ctx.stroke();
+  const tj=2/S.a;ctx.strokeStyle=C.accent;ctx.lineWidth=3;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(X(tj),Y(1)-4);ctx.lineTo(X(tj),Y(0)+4);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle=C.accent;ctx.font="11px "+getComputedStyle(document.body).fontFamily;ctx.textAlign="center";ctx.fillText("this instant",X(tj),h-6);
+  $("sawNote").textContent="The parent's phase over its own time. Each drop is the seam: instant on this clock. The highlighted drop is the one we follow inside.";}
+
+function frame(now){const t=(now-t0)/1000;
+  document.querySelectorAll(".lvl").forEach((d,i)=>{const l=L.levels[i],W=winding(l.v);
+    const active=S.step<0||i<=S.step;d.classList.toggle("dim",!active);d.classList.toggle("now",i===S.step);
+    const speed=0.12*Math.sign(W)*Math.min(1,0.25+Math.abs(W));drawTorus(d.querySelector("canvas"),W,active?t*speed:0,!active);});
+  requestAnimationFrame(frame);}
+
+function stop(){if(anim){anim.forEach(clearTimeout);anim=null;}$("go").textContent="▶ Take the jump";}
+$("go").addEventListener("click",()=>{if(anim){stop();S.step=-1;return;}anim=[];$("go").textContent="■ Stop";S.frame="P";frameUI();const n=L.levels.length;let t=0;
+  for(let i=0;i<n;i++){anim.push(setTimeout(()=>{S.step=i;const el=document.querySelector(`.lvl[data-i="${i}"]`);if(el&&i>1)el.scrollIntoView({behavior:"smooth",block:"nearest"});},t));t+=i<2?500:900;}
+  if(L.neutral){anim.push(setTimeout(()=>{S.frame="U";frameUI();S.step=-1;},t+700));}
+  anim.push(setTimeout(()=>{stop();S.step=-1;},t+900));});
+$("fP").addEventListener("click",()=>{S.frame="P";frameUI();});
+$("fU").addEventListener("click",()=>{if(L.neutral){S.frame="U";frameUI();}});
+PRESETS.forEach(([name,a],i)=>{const b=document.createElement("button");b.textContent=name;b.addEventListener("click",()=>{stop();S.a=a;S.preset=i;S.frame="P";$("a").value=a;build();drawSaw();});$("presets").appendChild(b);});
+let raf=0;$("a").addEventListener("input",e=>{stop();S.a=+e.target.value;S.preset=-1;S.frame="P";cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{build();drawSaw();});});
+window.__L=()=>L;window.__S=S;window.__set=o=>{Object.assign(S,o);build();drawSaw();};
+readColors();
+const onTheme=()=>{readColors();drawSaw();},mq=matchMedia("(prefers-color-scheme: dark)");
+mq.addEventListener?mq.addEventListener("change",onTheme):mq.addListener(onTheme);
+new MutationObserver(onTheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+new ResizeObserver(()=>drawSaw()).observe($("saw"));
+$("a").value=S.a;build();drawSaw();requestAnimationFrame(frame);
+})();
+</script>
