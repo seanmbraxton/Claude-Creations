@@ -121,3 +121,12 @@ A seam's drop is instant on the parent's clock; inside it, the lineage descends 
 roughly an octave finer) to the neutral child and returns. What returns is the found unit: in its
 frame every torus in the family winds a whole number of times and every seam disappears (2/3
 against 1: mother 2, father -3, children -1, 1, 0). Irrational parents never return.
+
+## Draft 8: passing a seam (torus_count/passage.py, viewer/seam_passage.html)
+
+Any open path of width eps (point, slot, curve) is a seam: a transition. A path meeting it at
+angle theta spends about eps/sin(theta) in it. Steep (sin theta >= eps): jumps the gap, an
+instant. Grazing: climbs the walls into the child behind the seam. Zooming into a seam of width
+eps gives tan(theta') = tan(theta)/eps, so depth is about log(1/theta)/log(1/eps). A neutral
+child ends the climb. Parent's clock sees at most about eps; the deepest level lives that as
+eps^(-depth) times as long. Each climb appends a branch, seen by the observer as one more hole.

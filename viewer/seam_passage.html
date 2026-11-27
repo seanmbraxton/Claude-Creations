@@ -1,0 +1,235 @@
+<title>Seam Passage</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600&display=swap">
+<style>
+/* Layout: controls; the current level's torus opened flat (phase as colour, seams as hard open
+   lines, vortices as rings) with the traveller's path; the ladder of levels visited; the two
+   clocks (parent's instant, lived aeon) and the observer's holes. */
+:root{
+  --bg:#f3f5f8; --panel:#ffffff; --ink:#17202b; --muted:#5a6676; --line:#d9dee6; --chip:#eef1f6;
+  --plus:#c27c00; --minus:#2459c4; --ok:#13875a; --accent:#2459c4; --seam:#11151a; --trav:#d11f5d;
+  --f-display:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
+  --plus:#f0b033; --minus:#6f9fff; --ok:#3fcf8e; --accent:#6f9fff; --seam:#f4f6f9; --trav:#ff5c93; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0e1217; --panel:#161b22; --ink:#e4e8ee; --muted:#8e99a8; --line:#29313b; --chip:#1e252e;
+  --plus:#f0b033; --minus:#6f9fff; --ok:#3fcf8e; --accent:#6f9fff; --seam:#f4f6f9; --trav:#ff5c93; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 28px}
+.wrap{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
+h1,h2{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.7rem,4.5vw,2.3rem);line-height:1.1}
+h2{font-size:1.05rem}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.lede{color:var(--muted);max-width:70ch;margin-top:6px}
+.grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;min-width:0}
+canvas{display:block;width:100%;border-radius:6px;background:var(--bg)}
+#field{aspect-ratio:1/1}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+button{font:inherit;font-size:.84rem;color:var(--ink);background:var(--chip);border:1px solid var(--line);border-radius:6px;padding:8px 12px;cursor:pointer}
+button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);font-weight:500}
+button:hover{border-color:var(--muted)}
+button.primary{background:var(--accent);color:var(--panel);border-color:var(--accent);font-weight:500}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.ctl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:center}
+.ctl label{font-size:.86rem}
+.ctl output{font-family:var(--f-mono);font-size:.84rem}
+.ctl input{grid-column:1/-1;width:100%;accent-color:var(--accent);height:26px}
+.verdict{font-size:1rem;font-weight:500}
+.hint{font-size:.8rem;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tile{border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+.tile .k{font-size:.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.tile .v{font-family:var(--f-mono);font-size:.95rem;font-weight:500;overflow-wrap:anywhere}
+.ladder{display:flex;flex-direction:column;gap:6px}
+.step{display:grid;grid-template-columns:64px minmax(0,1fr);gap:10px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:6px;transition:border-color .3s,opacity .3s}
+.step canvas{width:64px;height:64px;aspect-ratio:1/1}
+.step.now{border-color:var(--accent)}
+.step.future{opacity:.35}
+.step .t{font-size:.84rem}
+.step .m{font-family:var(--f-mono);font-size:.74rem;color:var(--muted)}
+.cross{color:var(--ok)} .climb{color:var(--trav)} .neutral{color:var(--ok)}
+.holes{display:flex;flex-wrap:wrap;gap:5px;min-height:16px}
+.hole{width:12px;height:12px;border-radius:50%;border:2px solid var(--trav);background:var(--bg)}
+.notes{font-size:.9rem;max-width:75ch;display:flex;flex-direction:column;gap:8px}
+.notes ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:5px}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">seams make vortices · the angle decides: jump the gap or climb the walls</div>
+    <h1>Seam Passage</h1>
+    <p class="lede">Each torus, opened flat, carries a mother seam (+) and a father seam (−): open lines of width ε, each ending in a pair of vortices. Where they overlap their mismatches combine, and that overlap is the child's seam, with new vortices born at its ends. A traveller comes toward the child's seam at the angle you set. Steep, it jumps the gap in an instant. Grazing, it climbs the walls into the child, where the seam looks wider and the angle steeper, and so on down until it can cross or reaches the neutral child.</p>
+  </header>
+
+  <div class="card">
+    <div class="row" id="presets"></div>
+    <div class="grid">
+      <div class="ctl"><label for="ang">angle of approach to the seam</label><output id="angO"></output><input type="range" id="ang" min="0" max="1" step="0.001"></div>
+      <div class="ctl"><label for="eps">seam width ε</label><output id="epsO"></output><input type="range" id="eps" min="0.02" max="0.3" step="0.005"></div>
+    </div>
+    <div class="row"><button class="primary" id="go">▶ Approach the seam</button><button id="clear">Clear the holes</button></div>
+    <p class="verdict" id="verdict"></p>
+    <div class="stats">
+      <div class="tile"><div class="k">Parent's clock</div><div class="v" id="tPar"></div></div>
+      <div class="tile"><div class="k">Lived at the deepest level</div><div class="v" id="tLiv"></div></div>
+      <div class="tile"><div class="k">Levels climbed</div><div class="v" id="tDep"></div></div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2 id="lvlTitle">Level 0: the parent</h2>
+      <canvas id="field" aria-label="The current torus opened flat: colour is phase; hard lines are seams; rings are vortices; the traveller's path comes in at the chosen angle"></canvas>
+      <p class="hint">Opened flat: left and right edges join, as do top and bottom. Gold rings are counterclockwise vortices, blue rings clockwise. The thick stretch where the two seams overlap is the child's seam, and its ends are the newborn vortices.</p>
+    </div>
+    <div class="card">
+      <h2>The ladder</h2>
+      <div class="ladder" id="ladder"></div>
+      <h2>The observer's holes</h2>
+      <div class="holes" id="holes"></div>
+      <p class="hint">Every climb appends a branch: a whole torus that the observer, inside, sees only as one more hole. Every jump across adds nothing.</p>
+    </div>
+  </div>
+
+  <section class="card notes">
+    <h2>The rules in play</h2>
+    <ul>
+      <li><b>Seams are open lines with vortex ends.</b> Each seam runs from a counterclockwise vortex to a clockwise one, so each torus is twisted locally but untwisted as a whole.</li>
+      <li><b>Overlap makes the child.</b> The mother seam (+) and father seam (−) overlap, their mismatches combine, and the overlap carries the child's charge. The ends of the overlap are newborn vortices.</li>
+      <li><b>The angle decides.</b> Time spent in a seam of width ε at angle θ is about ε/sin θ. Steep, that's a vanishing instant: you jump the gap. Within about ε of grazing you can't get across: you climb the walls.</li>
+      <li><b>Each level steepens the angle.</b> Zooming into a seam of width ε stretches the across-direction by 1/ε, so the child sees tan θ′ = tan θ / ε. Flatter approaches climb more levels, about log(1/θ) / log(1/ε) of them.</li>
+      <li><b>The neutral child ends the climb.</b> It has no seam. For rational parents the ladder has a bottom; for irrational ones it doesn't.</li>
+      <li><b>Instant above, aeon below.</b> On the parent's clock a passage takes at most about one seam width, ε: a crossing takes ε/sin θ, and a climber simply vanishes into the seam. Each level down runs on a clock 1/ε times faster, so that same instant is lived as ε<sup>−depth</sup> times as long at the bottom.</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(function(){
+"use strict";
+const TAU=Math.PI*2,$=id=>document.getElementById(id),TOL=1e-10,CAP=16;
+const PHI=(Math.sqrt(5)-1)/2;
+const PRESETS=[["2/3 and 1",2/3],["3/5 and 1",3/5],["5/8 and 1",5/8],["8/9 and 1",8/9],["golden and 1",PHI],["1/√2 and 1",Math.SQRT1_2]];
+let S={a:2/3,preset:0,ang:0.55,eps:0.08},C={},chain=[],view={k:0,dot:null,path:null,flash:null},anim=null,holes=[];
+function readColors(){const cs=getComputedStyle(document.documentElement);for(const c of ["bg","panel","ink","muted","line","plus","minus","ok","accent","seam","trav"])C[c]=cs.getPropertyValue("--"+c).trim();}
+const isDark=()=>document.documentElement.dataset.theme==="dark"||(document.documentElement.dataset.theme!=="light"&&matchMedia("(prefers-color-scheme: dark)").matches);
+const fmt=v=>Math.abs(v)<TOL?"0":(v>0?"+":"−")+Math.abs(v).toFixed(4).replace(/0+$/,"").replace(/\.$/,"");
+
+/* lineage: every opposite pair collides; follow the deepest line of descent (as in Jump Journey) */
+function lineage(a,b){
+  const all=new Map(),info=new Map(),put=(v,g,par)=>{const k=v.toFixed(10);if(!all.has(k)){all.set(k,v);info.set(k,{v,g,par});}};
+  put(a,0,null);put(-b,0,null);let neutral=null,last=0;
+  for(let g=1;g<=CAP&&!neutral;g++){const vals=[...all.values()],pos=vals.filter(x=>x>0),neg=vals.filter(x=>x<0),born=[];
+    for(const x of pos)for(const y of neg){const s=x+y;if(Math.abs(s)<TOL){if(!neutral)neutral={v:0,g,par:[x,y]};}else if(!all.has(s.toFixed(10)))born.push([s,[x,y]]);}
+    for(const [s,par] of born)put(s,g,par);last=g;if(all.size>2500)break;}
+  let end=neutral;if(!end){let best=null;for(const i of info.values())if(i.g===last&&(!best||Math.abs(i.v)<Math.abs(best.v)))best=i;end=best;}
+  const out=[];let cur=end;
+  while(cur&&cur.par){const [x,y]=cur.par,ix=info.get(x.toFixed(10)),iy=info.get(y.toFixed(10));out.unshift({mother:x,father:y,child:cur.v});cur=(ix.g>=iy.g?ix:iy);if(cur.g===0)break;}
+  if(neutral)out.push({mother:0,father:0,child:0,neutral:true});
+  return out;
+}
+
+/* the field: mother seam on [M0,M1], father seam on [F0,F1] along y = 0.5; overlap [F0,M1] is the child's seam */
+const M0=0.14,M1=0.6,F0=0.4,F1=0.86,YS=0.5,G=150;let DM=null,DF=null;
+function segDelta(x0,x1){const D=new Float32Array(G*G),cx=(x0+x1)/2,d=(x1-x0)/2;
+  for(let j=0;j<G;j++)for(let i=0;i<G;i++){const px=(i+.5)/G,py=(j+.5)/G;let s=0;
+    for(let kx=-2;kx<=2;kx++)for(let ky=-3;ky<=3;ky++){const X=px-cx+kx,Y=-(py-YS)+ky;s+=Math.atan2(Y,X+d)-Math.atan2(Y,X-d);}
+    D[j*G+i]=s/TAU;}return D;}
+function hsl(h,s,l){const f=n=>{const k=(n+h*12)%12,a=s*Math.min(l,1-l);return l-a*Math.max(-1,Math.min(k-3,9-k,1));};return [f(0),f(8),f(4)];}
+const off=document.createElement("canvas");off.width=G;off.height=G;
+function drawField(cv,lvl,flow,small){
+  const r=cv.getBoundingClientRect(),dpr=Math.min(devicePixelRatio||1,2),w=r.width,h=r.height;if(w<2)return;
+  if(cv.width!==Math.round(w*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);}
+  const ctx=cv.getContext("2d");ctx.setTransform(dpr,0,0,dpr,0,0);const dark=isDark(),L=chain[lvl];
+  const oc=off.getContext("2d"),img=oc.createImageData(G,G);
+  if(L.neutral){for(let p=0;p<G*G;p++){const v=dark?60:205;img.data[p*4]=v;img.data[p*4+1]=v+4;img.data[p*4+2]=v+10;img.data[p*4+3]=255;}}
+  else for(let p=0;p<G*G;p++){const hue=((L.mother*DM[p]+L.father*DF[p]+flow)%1+1)%1,[rr,gg,bb]=hsl(hue,dark?0.6:0.66,dark?0.42:0.62);img.data[p*4]=rr*255;img.data[p*4+1]=gg*255;img.data[p*4+2]=bb*255;img.data[p*4+3]=255;}
+  oc.putImageData(img,0,0);ctx.imageSmoothingEnabled=true;ctx.drawImage(off,0,0,w,h);
+  if(L.neutral){ctx.fillStyle=C.ok;ctx.font=`500 ${small?9:13}px `+getComputedStyle(document.body).fontFamily;ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(small?"neutral":"neutral child: no seam, no vortices",w/2,h/2);return;}
+  const X=x=>x*w,Y=y=>y*h,lw=small?1.5:3;
+  const seam=(x0,x1,c,width)=>{ctx.strokeStyle=c;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(X(x0),Y(YS));ctx.lineTo(X(x1),Y(YS));ctx.stroke();};
+  // seams are drawn only where the phase actually jumps: mother alone, father alone, and the overlap (the child)
+  const jumps=q=>{const f=((q%1)+1)%1;return f>1e-6&&f<1-1e-6;};   /* a whole-turn mismatch leaves no visible seam */
+  if(jumps(L.mother))seam(M0,F0,C.seam,lw);if(jumps(L.father))seam(M1,F1,C.seam,lw);
+  if(Math.abs(L.child)>TOL){const ew=Math.max(lw*1.8,S.eps*h*0.5);ctx.globalAlpha=.85;seam(F0,M1,C.trav,ew);ctx.globalAlpha=1;}
+  const ring=(x,q)=>{ctx.fillStyle=C.panel;ctx.strokeStyle=q>0?C.plus:C.minus;ctx.lineWidth=small?1.4:2.4;ctx.beginPath();ctx.arc(X(x),Y(YS),small?2.6:6,0,TAU);ctx.fill();ctx.stroke();
+    if(!small){ctx.fillStyle=q>0?C.plus:C.minus;ctx.font="500 10px "+getComputedStyle(document.body).fontFamily;ctx.textAlign="center";ctx.textBaseline="bottom";ctx.fillText(fmt(q),X(x),Y(YS)-9);}};
+  ring(M0,L.mother);ring(M1,-L.mother);ring(F0,L.father);ring(F1,-L.father);
+  if(!small){ctx.fillStyle=C.ink;ctx.font="10px "+getComputedStyle(document.body).fontFamily;ctx.textAlign="center";ctx.textBaseline="top";
+    ctx.fillText("mother",X((M0+F0)/2),Y(YS)+12);ctx.fillText("father",X((M1+F1)/2),Y(YS)+12);
+    ctx.font="500 11px "+getComputedStyle(document.body).fontFamily;ctx.fillStyle=C.trav;ctx.fillText(Math.abs(L.child)<TOL?"child 0: seam closed":`child ${fmt(L.child)}`,X((F0+M1)/2),Y(YS)+Math.max(16,S.eps*h*0.25+8));}
+}
+
+/* the passage rule */
+function passage(theta){const steps=[];let k=0,th=theta;
+  while(true){const L=chain[k];if(!L||L.neutral||Math.abs(L.child)<TOL){steps.push({k,th,act:"neutral"});break;}
+    if(Math.sin(th)>=S.eps){steps.push({k,th,act:"cross"});break;}
+    steps.push({k,th,act:"climb"});th=Math.atan(Math.tan(th)/S.eps);k++;if(k>=chain.length){steps.push({k,th,act:"endless"});break;}}
+  const depth=steps.filter(s=>s.act==="climb").length,tp=depth?S.eps:S.eps/Math.max(Math.sin(theta),S.eps);/* a climber vanishes into the seam: the parent sees only its width */return {steps,depth,tp,tl:tp/Math.pow(S.eps,depth)};}
+const theta=()=>Math.max(1e-6,(Math.PI/2)*Math.pow(S.ang,3));          // cubic slider: fine control near grazing
+const deg=t=>{const d=t*180/Math.PI;return d>=1?d.toFixed(1)+"°":d>=0.01?d.toFixed(3)+"°":d.toExponential(1)+"°";};
+const num=v=>v<1e-3||v>=1e4?v.toExponential(1):v<1?v.toPrecision(2):v.toFixed(v<10?2:0);
+
+function renderLadder(P,now){const el=$("ladder");el.innerHTML="";
+  P.steps.forEach((s,i)=>{const d=document.createElement("div");d.className="step"+(i===now?" now":"")+(now>=0&&i>now?" future":"");
+    const what=s.act==="cross"?'<span class="cross">jumps the gap</span>':s.act==="climb"?'<span class="climb">climbs the walls</span>':s.act==="neutral"?'<span class="neutral">reaches the neutral child: nothing left to cross</span>':'<span class="climb">still climbing: the ladder has no bottom</span>';
+    d.innerHTML=`<canvas></canvas><div><div class="t">Level ${s.k}: ${what}</div><div class="m">angle ${deg(s.th)} · seam ${chain[s.k]?fmt(chain[s.k].child):"—"}</div></div>`;el.appendChild(d);
+    requestAnimationFrame(()=>drawField(d.querySelector("canvas"),Math.min(s.k,chain.length-1),0,true));});}
+function summarize(P){
+  const last=P.steps[P.steps.length-1];
+  $("verdict").innerHTML=P.depth===0?(last.act==="neutral"?'<span class="cross">Nothing to cross.</span>':`<span class="cross">Jumps the gap.</span> Steep enough (${deg(P.steps[0].th)} against ε = ${S.eps}) to cross in an instant.`)
+    :`<span class="climb">Climbs ${P.depth} level${P.depth>1?"s":""}.</span> `+(last.act==="cross"?`At level ${last.k} the angle has steepened to ${deg(last.th)} and it jumps the gap there, then returns.`:last.act==="neutral"?"It reaches the neutral child, where there's no seam left, and returns with the count.":"The parents are irrational, so there's always another level.");
+  $("tPar").textContent=`${num(P.tp)} ticks`;$("tLiv").textContent=`${num(P.tl)} ticks`;$("tDep").textContent=P.depth;}
+function update(){$("angO").textContent=deg(theta());$("epsO").textContent=S.eps.toFixed(3);
+  [...$("presets").children].forEach((b,i)=>b.setAttribute("aria-pressed",i===S.preset));
+  const P=passage(theta());summarize(P);if(!anim){renderLadder(P,-1);view.k=0;view.path=null;view.dot=null;}}
+function setChain(){chain=lineage(S.a,1);}
+
+/* animation */
+let t0=performance.now();
+function frameLoop(now){const cv=$("field"),t=(now-t0)/1000;drawField(cv,view.k,t*0.05,false);
+  const r=cv.getBoundingClientRect(),ctx=cv.getContext("2d"),w=r.width,h=r.height;
+  if(view.path){const [x0,y0,x1,y1]=view.path;ctx.strokeStyle=C.trav;ctx.lineWidth=2;ctx.setLineDash([5,4]);ctx.beginPath();ctx.moveTo(x0*w,y0*h);ctx.lineTo(x1*w,y1*h);ctx.stroke();ctx.setLineDash([]);}
+  if(view.dot){ctx.fillStyle=C.trav;ctx.strokeStyle=C.panel;ctx.lineWidth=2;ctx.beginPath();ctx.arc(view.dot[0]*w,view.dot[1]*h,6,0,TAU);ctx.fill();ctx.stroke();}
+  if(view.flash){const a=Math.max(0,1-(now-view.flash.t)/700);if(a>0){ctx.strokeStyle=view.flash.c;ctx.globalAlpha=a;ctx.lineWidth=3;ctx.beginPath();ctx.arc(view.flash.x*w,view.flash.y*h,10+30*(1-a),0,TAU);ctx.stroke();ctx.globalAlpha=1;}}
+  requestAnimationFrame(frameLoop);}
+function stopAnim(){if(anim){anim.forEach(clearTimeout);anim=null;}$("go").textContent="▶ Approach the seam";}
+function approachPath(th){const hx=(F0+M1)/2,hy=YS,len=0.42,dx=Math.cos(th),dy=Math.sin(th);
+  // the drawn angle is exaggerated toward visible when tiny, but the decision uses the true angle
+  const vis=Math.max(th,0.06),vx=Math.cos(vis),vy=Math.sin(vis);return [hx-vx*len,hy+vy*len,hx,hy,vx,vy];}
+$("go").addEventListener("click",()=>{if(anim){stopAnim();return;}const P=passage(theta());anim=[];$("go").textContent="■ Stop";let t=0;
+  P.steps.forEach((s,i)=>{
+    anim.push(setTimeout(()=>{view.k=Math.min(s.k,chain.length-1);$("lvlTitle").textContent=s.k===0?"Level 0: the parent":`Level ${s.k}: inside the child`;renderLadder(P,i);
+      const [x0,y0,hx,hy,vx,vy]=approachPath(s.th);view.path=[x0,y0,hx,hy];const st=performance.now(),dur=900;
+      const mv=()=>{const f=Math.min(1,(performance.now()-st)/dur);view.dot=[x0+(hx-x0)*f,y0+(hy-y0)*f];if(f<1&&anim)requestAnimationFrame(mv);
+        else if(anim){if(s.act==="climb"){view.flash={x:hx,y:hy,t:performance.now(),c:C.trav};holes.push(1);drawHoles();}
+          else if(s.act==="cross"){view.flash={x:hx,y:hy,t:performance.now(),c:C.ok};view.path=[x0,y0,hx+vx*0.3,hy-vy*0.3];const st2=performance.now();const mv2=()=>{const g=Math.min(1,(performance.now()-st2)/350);view.dot=[hx+vx*0.3*g,hy-vy*0.3*g];if(g<1&&anim)requestAnimationFrame(mv2);};mv2();}
+          else{view.flash={x:hx,y:hy,t:performance.now(),c:C.ok};}}};mv();},t));
+    t+=1500;});
+  // return: back up the ladder quickly
+  for(let k=P.depth;k>=0;k--){anim.push(setTimeout(()=>{view.k=Math.min(k,chain.length-1);view.path=null;view.dot=null;$("lvlTitle").textContent=k===0?"Level 0: back at the parent, one instant later":`Level ${k}: returning`;},t));t+=280;}
+  anim.push(setTimeout(()=>{stopAnim();renderLadder(P,-1);},t+100));});
+function drawHoles(){const el=$("holes");el.innerHTML="";holes.forEach(()=>{const d=document.createElement("span");d.className="hole";el.appendChild(d);});if(!holes.length)el.innerHTML='<span class="hint">none yet</span>';}
+$("clear").addEventListener("click",()=>{holes=[];drawHoles();});
+PRESETS.forEach(([name,a],i)=>{const b=document.createElement("button");b.textContent=name;b.addEventListener("click",()=>{stopAnim();S.a=a;S.preset=i;setChain();update();});$("presets").appendChild(b);});
+$("ang").addEventListener("input",e=>{stopAnim();S.ang=+e.target.value;update();});
+$("eps").addEventListener("input",e=>{stopAnim();S.eps=+e.target.value;update();});
+window.__pass=a=>{S.ang=a;update();return passage(theta());};window.__set=o=>{Object.assign(S,o);setChain();update();};window.__chain=()=>chain;
+readColors();DM=segDelta(M0,M1);DF=segDelta(F0,F1);
+const onTheme=()=>{readColors();update();},mq=matchMedia("(prefers-color-scheme: dark)");
+mq.addEventListener?mq.addEventListener("change",onTheme):mq.addListener(onTheme);
+new MutationObserver(onTheme).observe(document.documentElement,{attributes:true,attributeFilter:["data-theme"]});
+$("ang").value=S.ang;$("eps").value=S.eps;setChain();update();drawHoles();requestAnimationFrame(frameLoop);
+})();
+</script>
